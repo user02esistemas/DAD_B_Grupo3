@@ -29,8 +29,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existingUser = await prisma.users.findUnique({
-      where: { email },
+    const existingUser = await prisma.usuario.findUnique({
+      where: { correo: email },
     });
 
     if (existingUser) {
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existingDni = await prisma.users.findUnique({
+    const existingDni = await prisma.usuario.findUnique({
       where: { dni },
     });
 
@@ -53,15 +53,13 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await prisma.users.create({
+    const newUser = await prisma.usuario.create({
       data: {
-        name,
-        email,
-        password: hashedPassword,
+        nombre: name,
+        correo: email,
+        contrasena: hashedPassword,
         dni,
-        phone,
-        birthDate: birthDateObj,
-        // role defaults to 'cliente' per schema
+        telefono: phone,
       },
     });
 

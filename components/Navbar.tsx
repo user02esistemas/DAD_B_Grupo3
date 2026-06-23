@@ -17,7 +17,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="bg-white shadow-md border-b border-gray-100 sticky top-0 z-50">
+    <nav className="bg-white shadow-md border-b border-gray-100 relative z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo and Brand */}
@@ -29,10 +29,10 @@ export default function Navbar() {
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex md:items-center md:space-x-8">
-            <Link href="#" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Inicio</Link>
-            <Link href="#" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Sucursales</Link>
-            <Link href="#" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">¿Quiénes Somos?</Link>
-            <Link href="#" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Compra tu pasaje</Link>
+            <Link href="/" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Inicio</Link>
+            <Link href="/seguimiento" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Revisar Encomienda</Link>
+            <Link href="/quienes-somos" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">¿Quiénes Somos?</Link>
+            <Link href="/compra" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Compra tu pasaje</Link>
           </div>
 
           {/* Desktop Right Side */}
@@ -97,10 +97,10 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="md:hidden">
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Inicio</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Sucursales</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">¿Quiénes Somos?</Link>
-            <Link href="#" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Compra tu pasaje</Link>
+            <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Inicio</Link>
+            <Link href="/seguimiento" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Revisar Encomienda</Link>
+            <Link href="/quienes-somos" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">¿Quiénes Somos?</Link>
+            <Link href="/compra" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Compra tu pasaje</Link>
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200">
             {session ? (

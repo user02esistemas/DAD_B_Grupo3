@@ -16,15 +16,15 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Faltan credenciales");
         }
 
-        const user = await prisma.users.findUnique({
-          where: { email: credentials.email }
+        const user = await prisma.usuario.findUnique({
+          where: { correo: credentials.email }
         });
 
         if (!user) {
           throw new Error("Usuario no encontrado");
         }
 
-        const isValidPassword = await bcrypt.compare(credentials.password, user.password);
+        const isValidPassword = await bcrypt.compare(credentials.password, user.contrasena);
 
         if (!isValidPassword) {
           throw new Error("Contraseña incorrecta");
@@ -33,9 +33,9 @@ export const authOptions: NextAuthOptions = {
         // Convert BigInt id to string for NextAuth compatibility
         return {
           id: user.id.toString(),
-          email: user.email,
-          name: user.name,
-          role: user.role?.toString(),
+          email: user.correo,
+          name: user.nombre,
+          role: user.rol?.toString(),
         };
       }
     })
