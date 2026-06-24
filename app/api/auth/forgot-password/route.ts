@@ -6,16 +6,25 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
   try {
-    const { email } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const email = body.email;
 
-    if (!email) {
+    if (!email || typeof email !== "string") {
       return NextResponse.json(
-        { message: "Se requiere un correo electrónico" },
+        { message: "Se requiere un correo electrónico válido" },
         { status: 400 }
       );
     }
 
-    const user = await prisma.usuario.findUnique({
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json(
+        { message: "El correo electrónico no tiene un formato válido" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.cliente.findUnique({
       where: { correo: email },
     });
 
@@ -33,11 +42,7 @@ export async function POST(req: Request) {
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
-    // Nota: Como se eliminó verification_codes del esquema, aquí deberíamos crear 
-    // la lógica con el nuevo modelo si existe, o usar CodigoDescuento temporalmente.
-    // Para que compile, comentamos la inserción si ya no existe la tabla de verificación de email:
-    /*
-    await prisma.verification_codes.create({
+    await prisma.verificationCode.create({
       data: {
         user_id: user.id,
         code,
@@ -45,7 +50,6 @@ export async function POST(req: Request) {
         is_used: false,
       },
     });
-    */
 
     const { data, error: resendError } = await resend.emails.send({
       from: "onboarding@resend.dev",

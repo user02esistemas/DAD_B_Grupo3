@@ -4,16 +4,39 @@ import bcrypt from "bcrypt";
 
 export async function POST(req: Request) {
   try {
-    const { email, code, newPassword } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { email, code, newPassword } = body;
 
-    if (!email || !code || !newPassword) {
+    if (!email || !code || !newPassword || typeof email !== "string" || typeof code !== "string" || typeof newPassword !== "string") {
       return NextResponse.json(
-        { message: "Faltan campos obligatorios" },
+        { message: "Faltan campos obligatorios o tienen formatos inválidos" },
         { status: 400 }
       );
     }
 
-    const user = await prisma.usuario.findUnique({
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      return NextResponse.json(
+        { message: "El formato de correo electrónico no es válido" },
+        { status: 400 }
+      );
+    }
+
+    if (code.trim().length !== 6 || !/^\d+$/.test(code.trim())) {
+      return NextResponse.json(
+        { message: "El código debe ser numérico y de exactamente 6 dígitos" },
+        { status: 400 }
+      );
+    }
+
+    if (newPassword.length < 8) {
+      return NextResponse.json(
+        { message: "La nueva contraseña debe tener al menos 8 caracteres" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.cliente.findUnique({
       where: { correo: email },
     });
 
@@ -24,9 +47,8 @@ export async function POST(req: Request) {
       );
     }
 
-    /*
     // Find a valid verification code
-    const verificationCode = await prisma.verification_codes.findFirst({
+    const verificationCode = await prisma.verificationCode.findFirst({
       where: {
         user_id: user.id,
         code: code,
@@ -46,23 +68,20 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    */
 
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Run updates in a transaction to ensure both happen or neither
+    // Run updates in a transaction
     await prisma.$transaction([
-      prisma.usuario.update({
+      prisma.cliente.update({
         where: { id: user.id },
         data: { contrasena: hashedPassword },
       }),
-      /*
-      prisma.verification_codes.update({
+      prisma.verificationCode.update({
         where: { id: verificationCode.id },
         data: { is_used: true },
       }),
-      */
     ]);
 
     return NextResponse.json(

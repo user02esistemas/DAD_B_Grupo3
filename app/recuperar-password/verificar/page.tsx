@@ -19,12 +19,6 @@ function VerifyPasswordContent() {
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (initialEmail) {
-      setFormData((prev) => ({ ...prev, email: initialEmail }));
-    }
-  }, [initialEmail]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
