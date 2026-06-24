@@ -37,15 +37,17 @@ model Sucursal {
 }
 
 model Bus {
-  id           BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
-  placa        String    @unique @db.VarChar(15)
-  marca        String?   @db.VarChar(50)
-  capacidad    Int
-  pisos        Int       @default(1) // NUEVO: Cantidad de pisos (1 o 2)
-  created_at   DateTime? @default(now()) @db.Timestamp(0)
-  updated_at   DateTime? @default(now()) @db.Timestamp(0)
+  id                    BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  placa                 String    @unique @db.VarChar(15)
+  marca                 String?   @db.VarChar(50)
+  capacidad             Int
+  pisos                 Int       @default(1)
+  asientos_piso_1       Int?
+  asientos_restringidos String?   @db.Text
+  created_at            DateTime? @default(now()) @db.Timestamp(0)
+  updated_at            DateTime? @default(now()) @db.Timestamp(0)
   
-  viajes       Viaje[]
+  viajes                Viaje[]
 }
 
 model Ruta {
@@ -99,7 +101,16 @@ model AsientoViaje {
 model Pasaje {
   id               BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
   asiento_viaje_id BigInt    @unique @db.UnsignedBigInt
-  usuario_id       BigInt    @db.UnsignedBigInt
+  
+  // NUEVOS CAMPOS DEL PASAJERO FÍSICO/WEB
+  nombres          String    @db.VarChar(255)
+  apellidos        String    @db.VarChar(255)
+  dni              String    @db.VarChar(15)
+  telefono         String?   @db.VarChar(20)
+
+  // El usuario de la plataforma web ahora es OPCIONAL
+  usuario_id       BigInt?   @db.UnsignedBigInt
+  
   precio           Decimal   @db.Decimal(8, 2)
   fecha_compra     DateTime? @default(now()) @db.Timestamp(0)
   codigo_qr        String?   @unique @db.VarChar(255)
@@ -107,7 +118,7 @@ model Pasaje {
   updated_at       DateTime? @default(now()) @db.Timestamp(0)
 
   asiento_viaje AsientoViaje @relation(fields: [asiento_viaje_id], references: [id], onDelete: Cascade)
-  usuario       Usuario      @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
+  usuario       Usuario?     @relation(fields: [usuario_id], references: [id], onDelete: SetNull)
 }
 
 model Encomienda {

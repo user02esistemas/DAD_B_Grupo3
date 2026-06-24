@@ -11,7 +11,10 @@ import {
   Bus, 
   LogOut,
   Menu,
-  X
+  X,
+  Building,
+  Route,
+  MapPin
 } from "lucide-react";
 import { useState } from "react";
 
@@ -23,8 +26,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const navigation = [
     { name: "Inicio", href: "/admin", icon: LayoutDashboard },
     { name: "Venta Pasajes", href: "/admin/pasajes", icon: Ticket },
+    { name: "Programación Viajes", href: "/admin/viajes", icon: Route },
     { name: "Gestión Encomiendas", href: "/admin/encomiendas", icon: Package },
+    { name: "Gestión de Rutas", href: "/admin/rutas", icon: MapPin },
     { name: "Flota de Buses", href: "/admin/buses", icon: Bus },
+    { name: "Sucursales", href: "/admin/sucursales", icon: Building },
   ];
 
   return (

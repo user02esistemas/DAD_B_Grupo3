@@ -162,11 +162,22 @@ export async function getTripSeats(tripId: string) {
 }
 
 // 5. simularPagoYCrearTicket
-export async function simularPagoYCrearTicket(tripSeatId: string, email: string, price: string) {
+export async function simularPagoYCrearTicket(
+  tripSeatId: string, 
+  price: string,
+  pasajeroData: { nombres: string; apellidos: string; dni: string; telefono?: string },
+  email?: string
+) {
   try {
-    const user = await prisma.usuario.findUnique({ where: { correo: email } });
-    if (!user) throw new Error("Usuario no encontrado");
-    const userId = user.id;
+    let userId: bigint | null = null;
+    
+    // Si proveen email (tienen sesión activa o intentaron vincular), buscamos el usuario
+    if (email) {
+      const user = await prisma.usuario.findUnique({ where: { correo: email } });
+      if (user) {
+        userId = user.id;
+      }
+    }
 
     const result = await prisma.$transaction(async (tx) => {
       const seat = await tx.asientoViaje.findUnique({
@@ -185,6 +196,10 @@ export async function simularPagoYCrearTicket(tripSeatId: string, email: string,
       const ticket = await tx.pasaje.create({
         data: {
           asiento_viaje_id: BigInt(tripSeatId),
+          nombres: pasajeroData.nombres,
+          apellidos: pasajeroData.apellidos,
+          dni: pasajeroData.dni,
+          telefono: pasajeroData.telefono || null,
           usuario_id: userId,
           precio: parseFloat(price),
           codigo_qr: `QR-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Date.now()}`,

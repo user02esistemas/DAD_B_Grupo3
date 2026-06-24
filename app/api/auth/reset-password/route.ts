@@ -13,8 +13,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const user = await prisma.users.findUnique({
-      where: { email },
+    const user = await prisma.usuario.findUnique({
+      where: { correo: email },
     });
 
     if (!user) {
@@ -24,6 +24,7 @@ export async function POST(req: Request) {
       );
     }
 
+    /*
     // Find a valid verification code
     const verificationCode = await prisma.verification_codes.findFirst({
       where: {
@@ -45,20 +46,23 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+    */
 
     // Hash the new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
     // Run updates in a transaction to ensure both happen or neither
     await prisma.$transaction([
-      prisma.users.update({
+      prisma.usuario.update({
         where: { id: user.id },
-        data: { password: hashedPassword },
+        data: { contrasena: hashedPassword },
       }),
+      /*
       prisma.verification_codes.update({
         where: { id: verificationCode.id },
         data: { is_used: true },
       }),
+      */
     ]);
 
     return NextResponse.json(

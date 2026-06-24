@@ -33,6 +33,7 @@ export default function CompraPage() {
   // Step 4: Checkout
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [ticketResult, setTicketResult] = useState<any | null>(null);
+  const [pasajero, setPasajero] = useState({ nombres: "", apellidos: "", dni: "", telefono: "" });
 
   useEffect(() => {
     async function loadLocations() {
@@ -68,14 +69,30 @@ export default function CompraPage() {
     setLoading(false);
   };
 
+  const goToStep4 = () => {
+    // Si hay sesión activa, pre-completamos los nombres si están vacíos
+    if (session?.user?.name && !pasajero.nombres) {
+      const partes = session.user.name.split(" ");
+      const nombresStr = partes.slice(0, Math.ceil(partes.length / 2)).join(" ");
+      const apellidosStr = partes.slice(Math.ceil(partes.length / 2)).join(" ");
+      setPasajero(p => ({ ...p, nombres: nombresStr, apellidos: apellidosStr }));
+    }
+    setStep(4);
+  };
+
   const handlePayment = async () => {
-    if (!session?.user?.email) return;
+    if (!pasajero.nombres || !pasajero.apellidos || !pasajero.dni) {
+      alert("Nombres, Apellidos y DNI son obligatorios");
+      return;
+    }
+
     setLoading(true);
     try {
       const result = await simularPagoYCrearTicket(
         selectedSeat.id, 
-        session.user.email, 
-        selectedTrip.ruta.precio_base
+        selectedTrip.ruta.precio_base,
+        pasajero,
+        session?.user?.email || undefined
       );
       setTicketResult(result);
       setPaymentSuccess(true);
@@ -115,29 +132,6 @@ export default function CompraPage() {
 
   if (status === "loading") {
     return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-[#f07639] w-10 h-10" /></div>;
-  }
-
-  // Requiere autenticación
-  if (status === "unauthenticated") {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-xl text-center">
-          <BusFront className="mx-auto h-16 w-16 text-[#f07639]" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">Inicia sesión para comprar</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Necesitas tener una cuenta en El Cumbe para poder adquirir tus pasajes de manera segura.
-          </p>
-          <div className="mt-8 space-y-4">
-            <Link href="/login" className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-[#f07639] hover:bg-[#d8662d] transition-colors">
-              Iniciar Sesión
-            </Link>
-            <Link href="/registro" className="w-full flex justify-center py-3 px-4 border border-[#f07639] rounded-xl shadow-sm text-sm font-medium text-[#f07639] bg-white hover:bg-orange-50 transition-colors">
-              Crear una cuenta
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   return (
@@ -280,27 +274,51 @@ export default function CompraPage() {
 
               <div className="flex flex-col md:flex-row gap-12">
                 <div className="flex-1">
-                  <div className="bg-gray-100 p-8 rounded-[3rem] border-4 border-gray-200 max-w-xs mx-auto relative">
-                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 text-gray-400">
-                      <div className="w-16 h-2 bg-gray-300 rounded-full"></div>
+                  <div className="bg-gray-100 p-8 rounded-[3rem] border-4 border-gray-200 max-w-xs mx-auto relative shadow-inner">
+                    <div className="absolute top-6 left-1/2 transform -translate-x-1/2 text-gray-400 flex flex-col items-center">
+                      {/* Volante de Bus */}
+                      <svg className="w-14 h-14 opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M12 15l-3.5 6" />
+                        <path d="M12 15l3.5 6" />
+                        <path d="M12 9V2" />
+                        <path d="M4 10l5.5 2" />
+                        <path d="M20 10l-5.5 2" />
+                      </svg>
                     </div>
-                    <div className="mt-8 grid grid-cols-4 gap-4">
+                    <div className="mt-16 grid grid-cols-4 gap-4">
                       {seats.map((seat) => {
                         const isAvailable = seat.estado === "disponible";
                         const isSelected = selectedSeat?.id === seat.id;
+                        
+                        let bgColor = "bg-white border-green-500 border-b-[6px] text-green-700 hover:bg-green-50";
+                        let iconColor = "text-green-500";
+                        
+                        if (!isAvailable) {
+                          bgColor = "bg-gray-200 border-gray-400 border-b-[6px] text-gray-400 cursor-not-allowed opacity-80";
+                          iconColor = "text-gray-400";
+                        }
+                        
+                        if (isSelected) {
+                          bgColor = "bg-[#f07639] border-[#d8662d] border-b-[6px] text-white shadow-xl scale-110 transform -translate-y-1";
+                          iconColor = "text-white";
+                        }
+
                         return (
                           <button
                             key={seat.id}
                             disabled={!isAvailable}
                             onClick={() => setSelectedSeat(seat)}
                             className={`
-                              h-12 w-full rounded-t-lg rounded-b-sm border-2 font-bold text-sm flex items-center justify-center transition-all
-                              ${isSelected ? "bg-[#f07639] border-[#f07639] text-white shadow-md transform -translate-y-1" : ""}
-                              ${!isSelected && isAvailable ? "bg-white border-gray-300 text-gray-600 hover:border-[#f07639] hover:text-[#f07639]" : ""}
-                              ${!isAvailable ? "bg-gray-300 border-gray-300 text-gray-400 cursor-not-allowed" : ""}
+                              relative w-full h-16 rounded-t-3xl rounded-b-lg flex flex-col items-center justify-center transition-all
+                              ${bgColor}
                             `}
                           >
-                            {seat.numero_asiento}
+                            <svg className={`w-6 h-6 mb-1 ${iconColor}`} viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M4 18v3h2v-3h12v3h2v-3H4zm15-8h-1V6c0-2.21-1.79-4-4-4H10c-2.21 0-4 1.79-4 4v4H5c-1.1 0-2 .9-2 2v4h18v-4c0-1.1-.9-2-2-2zm-3 0H8V6c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2v4z"/>
+                            </svg>
+                            <span className="text-sm font-black leading-none">{seat.numero_asiento}</span>
                           </button>
                         );
                       })}
@@ -320,7 +338,7 @@ export default function CompraPage() {
 
                   <button
                     disabled={!selectedSeat}
-                    onClick={() => setStep(4)}
+                    onClick={goToStep4}
                     className="w-full flex justify-center items-center py-4 px-4 border border-transparent rounded-xl shadow-sm text-lg font-bold text-white bg-[#f07639] hover:bg-[#d8662d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f07639] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                   >
                     Continuar al Pago <ArrowRight className="ml-2 w-5 h-5" />
@@ -355,6 +373,50 @@ export default function CompraPage() {
                       <p className="text-xl font-bold text-gray-900">Total a Pagar</p>
                       <p className="text-3xl font-extrabold text-[#f07639]">S/ {selectedTrip.ruta.precio_base}</p>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Formulario del Pasajero */}
+              <div className="bg-white rounded-2xl p-8 border border-gray-200 mb-8 shadow-sm">
+                <h3 className="text-lg font-bold text-gray-900 mb-6">Datos del Pasajero</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
+                    <input 
+                      type="text" 
+                      value={pasajero.nombres}
+                      onChange={(e) => setPasajero({...pasajero, nombres: e.target.value.toUpperCase()})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#f07639] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
+                    <input 
+                      type="text" 
+                      value={pasajero.apellidos}
+                      onChange={(e) => setPasajero({...pasajero, apellidos: e.target.value.toUpperCase()})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#f07639] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">DNI *</label>
+                    <input 
+                      type="text" 
+                      maxLength={15}
+                      value={pasajero.dni}
+                      onChange={(e) => setPasajero({...pasajero, dni: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#f07639] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Celular (Opcional)</label>
+                    <input 
+                      type="text" 
+                      value={pasajero.telefono}
+                      onChange={(e) => setPasajero({...pasajero, telefono: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#f07639] outline-none"
+                    />
                   </div>
                 </div>
               </div>
