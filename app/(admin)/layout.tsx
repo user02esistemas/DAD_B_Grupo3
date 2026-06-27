@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { 
-  BusFront, 
-  LayoutDashboard, 
-  Ticket, 
-  Package, 
-  Bus, 
+import {
+  BusFront,
+  LayoutDashboard,
+  Ticket,
+  Package,
+  Bus,
   LogOut,
   Menu,
   X,
@@ -37,7 +37,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 z-40 bg-gray-900/80 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
@@ -48,34 +48,71 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         fixed md:sticky top-0 left-0 z-50 h-screen w-64 bg-gray-900 text-white flex flex-col transition-transform duration-300
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
-        <div className="flex items-center justify-between h-16 px-4 bg-gray-950">
-          <Link href="/admin" className="flex items-center space-x-2">
-            <BusFront className="w-8 h-8 text-[#f07639]" />
-            <span className="text-xl font-bold tracking-tight">El Cumbe Admin</span>
+        <div className="flex items-center justify-between h-35 px-4 bg-gray-950">
+          <Link href="/admin" className="flex flex-col items-center justify-center w-full py-2">
+            <img src="/logocumbe.png" alt="El Cumbe Logo" className="h-20 w-auto mb-1 object-contain" />
+            <span className="text-[9px] font-black tracking-[0.25em] bg-red-600 text-white px-2.5 py-0.5 rounded-sm uppercase">
+              Admin
+            </span>
           </Link>
-          <button className="md:hidden text-gray-400 hover:text-white" onClick={() => setSidebarOpen(false)}>
+          <button className="md:hidden absolute right-4 top-6 text-gray-400 hover:text-white" onClick={() => setSidebarOpen(false)}>
             <X className="w-6 h-6" />
           </button>
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`
-                  flex items-center px-4 py-3 rounded-xl transition-colors
-                  ${isActive ? "bg-[#f07639] text-white font-bold shadow-md" : "text-gray-400 hover:bg-gray-800 hover:text-white font-medium"}
-                `}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <item.icon className={`w-5 h-5 mr-3 ${isActive ? "text-white" : "text-gray-400"}`} />
-                {item.name}
-              </Link>
-            );
-          })}
+          {/* Main Services */}
+          <div className="space-y-2">
+            <h3 className="px-4 text-[10px] font-black tracking-widest text-gray-500 uppercase mb-3">Servicios Principales</h3>
+            {[
+              { name: "Inicio", href: "/admin", icon: LayoutDashboard },
+              { name: "Pasajes", href: "/admin/pasajes", icon: Ticket },
+              { name: "Encomiendas", href: "/admin/encomiendas", icon: Package },
+            ].map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`
+                    flex items-center px-4 py-3 rounded-xl transition-colors whitespace-nowrap
+                    ${isActive ? "bg-[#f07639] text-white font-bold shadow-md" : "text-gray-400 hover:bg-gray-800 hover:text-white font-medium"}
+                  `}
+                >
+                  <item.icon className={`w-5 h-5 mr-3 ${isActive ? "text-white" : "text-gray-400"}`} />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          {/* Management */}
+          <div className="space-y-2 mt-6">
+            <h3 className="px-4 text-[10px] font-black tracking-widest text-gray-500 uppercase mb-3">Gestión y Logística</h3>
+            {[
+              { name: "Viajes", href: "/admin/viajes", icon: Route },
+              { name: "Rutas", href: "/admin/rutas", icon: MapPin },
+              { name: "Buses", href: "/admin/buses", icon: Bus },
+              { name: "Sucursales", href: "/admin/sucursales", icon: Building },
+            ].map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`
+                    flex items-center px-4 py-3 rounded-xl transition-colors whitespace-nowrap
+                    ${isActive ? "bg-[#f07639] text-white font-bold shadow-md" : "text-gray-400 hover:bg-gray-800 hover:text-white font-medium"}
+                  `}
+                >
+                  <item.icon className={`w-5 h-5 mr-3 ${isActive ? "text-white" : "text-gray-400"}`} />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
 
         <div className="p-4 bg-gray-950 border-t border-gray-800">
@@ -111,7 +148,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </button>
             <h1 className="text-xl font-bold text-gray-800 hidden sm:block">Panel de Control</h1>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <div className="text-right hidden sm:block">
               <p className="text-sm font-bold text-gray-900">{session?.user?.name}</p>

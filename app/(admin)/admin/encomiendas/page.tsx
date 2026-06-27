@@ -1,13 +1,15 @@
 import { obtenerEncomiendas } from "../../actions/encomiendas";
 import { obtenerViajes } from "../../actions/viajes";
+import { obtenerSucursales } from "../../actions/sucursales";
 import EncomiendaClient from "./EncomiendaClient";
 
 export const dynamic = "force-dynamic";
 
 export default async function EncomiendasPage() {
-  const [encomiendasRes, viajesRes] = await Promise.all([
+  const [encomiendasRes, viajesRes, sucursalesRes] = await Promise.all([
     obtenerEncomiendas(),
-    obtenerViajes()
+    obtenerViajes(),
+    obtenerSucursales()
   ]);
 
   if (!encomiendasRes.success) {
@@ -28,6 +30,7 @@ export default async function EncomiendasPage() {
       <EncomiendaClient 
         initialEncomiendas={encomiendasRes.data || []} 
         viajesActivos={viajesActivos} 
+        sucursales={sucursalesRes.success ? sucursalesRes.data : []}
       />
     </div>
   );

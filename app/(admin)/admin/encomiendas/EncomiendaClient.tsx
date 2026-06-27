@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Package, Search, Edit2, MapPin, Truck, CheckCircle, PackageOpen, FileText } from "lucide-react";
-import { actualizarEstadoEncomienda } from "../../actions/encomiendas";
+import { Package, Search, Edit2, MapPin, Truck, CheckCircle, PackageOpen, FileText, PlusCircle } from "lucide-react";
+import { actualizarEstadoEncomienda, obtenerEncomiendas } from "../../actions/encomiendas";
+import RegistroEncomienda from "./RegistroEncomienda";
 
 type Viaje = {
   id: string;
@@ -28,12 +29,17 @@ type Encomienda = {
 
 export default function EncomiendaClient({ 
   initialEncomiendas,
-  viajesActivos
+  viajesActivos,
+  sucursales
 }: { 
   initialEncomiendas: Encomienda[],
-  viajesActivos: Viaje[]
+  viajesActivos: Viaje[],
+  sucursales: { id: string; nombre: string }[]
 }) {
   const [encomiendas, setEncomiendas] = useState<Encomienda[]>(initialEncomiendas);
+  
+  // Vista actual
+  const [view, setView] = useState<"lista" | "registro">("lista");
   
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState("");
@@ -124,21 +130,58 @@ export default function EncomiendaClient({
     }
   };
 
+  const refreshList = async () => {
+    const res = await obtenerEncomiendas();
+    if (res.success && res.data) {
+      setEncomiendas(res.data);
+    }
+  };
+
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Gestión de Encomiendas</h2>
           <p className="mt-1 text-sm text-gray-500">
-            Administra los envíos, rastrea paquetes y actualiza sus estados.
+            Registra nuevos envíos, rastrea paquetes y actualiza sus estados.
           </p>
         </div>
       </div>
 
-      {/* Filtros */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+      {/* Selector de Vista */}
+      <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 mb-6 flex space-x-2">
+        <button
+          onClick={() => setView("lista")}
+          className={`flex-1 py-3 px-4 rounded-xl font-bold transition-colors flex items-center justify-center ${
+            view === "lista" ? "bg-[#f07639] text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+          }`}
+        >
+          <Package className="w-5 h-5 mr-2" /> Lista de Encomiendas
+        </button>
+        <button
+          onClick={() => setView("registro")}
+          className={`flex-1 py-3 px-4 rounded-xl font-bold transition-colors flex items-center justify-center ${
+            view === "registro" ? "bg-[#f07639] text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+          }`}
+        >
+          <PlusCircle className="w-5 h-5 mr-2" /> Registrar Encomienda
+        </button>
+      </div>
+
+      {view === "registro" ? (
+        <RegistroEncomienda 
+          sucursales={sucursales} 
+          onSuccess={() => {
+            refreshList();
+            setView("lista");
+          }} 
+        />
+      ) : (
+        <>
+          {/* Filtros */}
+          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="h-5 w-5 text-gray-400" />
           </div>
           <input
@@ -314,6 +357,8 @@ export default function EncomiendaClient({
             </form>
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

@@ -69,3 +69,67 @@ export async function actualizarEstadoEncomienda(
     return { success: false, error: "Error al actualizar el estado de la encomienda" };
   }
 }
+
+export async function registrarEncomienda(data: {
+  remitente: { dni: string; nombres: string; apellidos: string; telefono?: string };
+  destinatario: { dni: string; nombres: string; apellidos: string; telefono?: string };
+  paquete: { origen_id: string; destino_id: string; peso_kg: string; precio: string; descripcion: string };
+}) {
+  try {
+    const resultado = await prisma.$transaction(async (tx) => {
+      // 1. Upsert Remitente
+      const remitente = await tx.persona.upsert({
+        where: { dni: data.remitente.dni },
+        create: {
+          dni: data.remitente.dni,
+          nombres: data.remitente.nombres.toUpperCase(),
+          apellidos: data.remitente.apellidos.toUpperCase(),
+          telefono: data.remitente.telefono || null,
+        },
+        update: {
+          telefono: data.remitente.telefono || undefined,
+        }
+      });
+
+      // 2. Upsert Destinatario
+      const destinatario = await tx.persona.upsert({
+        where: { dni: data.destinatario.dni },
+        create: {
+          dni: data.destinatario.dni,
+          nombres: data.destinatario.nombres.toUpperCase(),
+          apellidos: data.destinatario.apellidos.toUpperCase(),
+          telefono: data.destinatario.telefono || null,
+        },
+        update: {
+          telefono: data.destinatario.telefono || undefined,
+        }
+      });
+
+      // 3. Generar código de seguimiento
+      const codigoSeguimiento = `ENC-${Date.now()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+
+      // 4. Crear Encomienda
+      const nuevaEncomienda = await tx.encomienda.create({
+        data: {
+          codigo_seguimiento: codigoSeguimiento,
+          remitente_id: remitente.id,
+          destinatario_id: destinatario.id,
+          origen_id: parseId(data.paquete.origen_id),
+          destino_id: parseId(data.paquete.destino_id),
+          peso_kg: parseFloat(data.paquete.peso_kg),
+          precio: parseFloat(data.paquete.precio),
+          descripcion: data.paquete.descripcion,
+          estado: 'recepcionado'
+        }
+      });
+
+      return nuevaEncomienda;
+    });
+
+    revalidatePath("/admin/encomiendas");
+    return { success: true, data: serializeBigInt(resultado) };
+  } catch (error: any) {
+    console.error("Error al registrar encomienda:", error);
+    return { success: false, error: error.message || "Error al registrar la encomienda" };
+  }
+}
