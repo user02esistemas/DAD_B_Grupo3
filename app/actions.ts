@@ -1502,3 +1502,75 @@ export async function enviarTicketEmail(emailDestino: string, tickets: any[], tr
   }
 }
 
+export async function registrarReclamo(data: {
+  nombres: string;
+  apellidos: string;
+  dni: string;
+  telefono: string;
+  correo: string;
+  tipo: string;
+  fecha_incidente: string;
+  detalle_incidente: string;
+  pedido_cliente: string;
+}) {
+  try {
+    const { nombres, apellidos, dni, telefono, correo, tipo, fecha_incidente, detalle_incidente, pedido_cliente } = data;
+
+    if (!nombres || !apellidos || !dni || !tipo || !fecha_incidente || !detalle_incidente || !pedido_cliente) {
+      return { success: false, error: "Todos los campos obligatorios deben ser completados." };
+    }
+
+    // 1. Buscar o crear la Persona a partir del DNI
+    const persona = await prisma.persona.upsert({
+      where: { dni },
+      update: {
+        nombres: nombres.trim().toUpperCase(),
+        apellidos: apellidos.trim().toUpperCase(),
+        telefono: telefono ? telefono.trim() : null
+      },
+      create: {
+        nombres: nombres.trim().toUpperCase(),
+        apellidos: apellidos.trim().toUpperCase(),
+        dni: dni.trim(),
+        telefono: telefono ? telefono.trim() : null
+      }
+    });
+
+    // 2. Generar código correlativo de reclamo
+    const count = await prisma.reclamo.count();
+    const correlativo = String(count + 1).padStart(4, "0");
+    const codigoReclamo = `REC-2026-${correlativo}`;
+
+    // 3. Registrar el reclamo en la base de datos
+    const nuevoReclamo = await prisma.reclamo.create({
+      data: {
+        codigo_reclamo: codigoReclamo,
+        persona_id: persona.id,
+        tipo: tipo, // "reclamo" o "queja"
+        fecha_incidente: new Date(fecha_incidente),
+        detalle_incidente: detalle_incidente.trim(),
+        pedido_cliente: pedido_cliente.trim(),
+        estado: "pendiente"
+      }
+    });
+
+    return { 
+      success: true, 
+      data: {
+        codigo: nuevoReclamo.codigo_reclamo,
+        tipo: nuevoReclamo.tipo,
+        persona: {
+          nombres: persona.nombres,
+          apellidos: persona.apellidos,
+          dni: persona.dni
+        }
+      } 
+    };
+
+  } catch (error: any) {
+    console.error("Error al registrar reclamo:", error);
+    return { success: false, error: error.message || "Error interno al procesar el reclamo." };
+  }
+}
+
+

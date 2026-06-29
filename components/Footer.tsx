@@ -11,9 +11,9 @@ export default function Footer() {
           <div className="flex flex-col space-y-3">
             <h4 className="text-lg font-semibold text-gray-100 mb-2">Enlaces Rápidos</h4>
             <Link href="/" className="text-gray-400 hover:text-[#f07639] transition-colors">Inicio</Link>
-            <Link href="#" className="text-gray-400 hover:text-[#f07639] transition-colors">Sucursales</Link>
-            <Link href="#" className="text-gray-400 hover:text-[#f07639] transition-colors">¿Quiénes Somos?</Link>
-            <Link href="#" className="text-gray-400 hover:text-[#f07639] transition-colors">Ayuda</Link>
+            <Link href="/quienes-somos" className="text-gray-400 hover:text-[#f07639] transition-colors">Sucursales</Link>
+            <Link href="/quienes-somos" className="text-gray-400 hover:text-[#f07639] transition-colors">¿Quiénes Somos?</Link>
+            <Link href="/ayuda" className="text-gray-400 hover:text-[#f07639] transition-colors">Ayuda</Link>
           </div>
 
           {/* Columna 2: Logo */}
