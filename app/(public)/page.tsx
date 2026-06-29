@@ -67,13 +67,26 @@ export default async function Home() {
             <div className="mt-10 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
               <span className="text-gray-700 font-medium text-lg">Contáctanos:</span>
               <div className="flex space-x-4">
-                <a href="#" className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1">
+                <a 
+                  href="https://facebook.com/TransportesELCUMBE" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1"
+                >
                   <FaFacebook size={24} />
                 </a>
-                <a href="#" className="w-12 h-12 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-500 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1">
+                <a 
+                  href="#" 
+                  className="w-12 h-12 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-500 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1"
+                >
                   <FaInstagram size={24} />
                 </a>
-                <a href="#" className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1">
+                <a 
+                  href="https://wa.me/51976202295" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1"
+                >
                   <FaWhatsapp size={24} />
                 </a>
               </div>

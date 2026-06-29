@@ -1,4 +1,4 @@
-import { Target, Lightbulb } from "lucide-react";
+import { Target, Lightbulb, MapPin, Phone } from "lucide-react";
 
 export default function QuienesSomos() {
   return (
@@ -74,7 +74,7 @@ export default function QuienesSomos() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Sucursal Chiclayo */}
-            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-gray-200/30 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer">
+            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-gray-200/30 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer flex flex-col justify-between">
               <div className="w-full h-48 overflow-hidden">
                 <img 
                   src="/chiclayo.png" 
@@ -82,13 +82,21 @@ export default function QuienesSomos() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
-              <div className="p-5 text-center bg-white relative z-10 border-t border-gray-50">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#f07639] transition-colors">Chiclayo</h3>
+              <div className="p-5 bg-white relative z-10 border-t border-gray-50 flex flex-col gap-3 text-left">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#f07639] transition-colors border-b border-gray-50 pb-2">Chiclayo</h3>
+                <div className="flex items-start gap-2 text-xs text-gray-500 leading-snug">
+                  <MapPin className="w-3.5 h-3.5 text-[#f07639] flex-shrink-0 mt-0.5" />
+                  <span>Av. José Quiñones 425</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <Phone className="w-3.5 h-3.5 text-[#f07639] flex-shrink-0" />
+                  <span>(074) 231 454 / 964 435 513</span>
+                </div>
               </div>
             </div>
 
             {/* Sucursal Jaén */}
-            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-gray-200/30 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer">
+            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-gray-200/30 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer flex flex-col justify-between">
               <div className="w-full h-48 overflow-hidden">
                 <img 
                   src="/jaen.png" 
@@ -96,13 +104,21 @@ export default function QuienesSomos() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
-              <div className="p-5 text-center bg-white relative z-10 border-t border-gray-50">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#f07639] transition-colors">Jaén</h3>
+              <div className="p-5 bg-white relative z-10 border-t border-gray-50 flex flex-col gap-3 text-left">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#f07639] transition-colors border-b border-gray-50 pb-2">Jaén</h3>
+                <div className="flex items-start gap-2 text-xs text-gray-500 leading-snug">
+                  <MapPin className="w-3.5 h-3.5 text-[#f07639] flex-shrink-0 mt-0.5" />
+                  <span>Av. Mesones Muro Esquina con la Marina – TETSUR</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <Phone className="w-3.5 h-3.5 text-[#f07639] flex-shrink-0" />
+                  <span>(083) 312 789</span>
+                </div>
               </div>
             </div>
 
             {/* Sucursal Cajamarca */}
-            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-gray-200/30 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer">
+            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-gray-200/30 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer flex flex-col justify-between">
               <div className="w-full h-48 overflow-hidden">
                 <img 
                   src="/cajamarca.png" 
@@ -110,13 +126,21 @@ export default function QuienesSomos() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
-              <div className="p-5 text-center bg-white relative z-10 border-t border-gray-50">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#f07639] transition-colors">Cajamarca</h3>
+              <div className="p-5 bg-white relative z-10 border-t border-gray-50 flex flex-col gap-3 text-left">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#f07639] transition-colors border-b border-gray-50 pb-2">Cajamarca</h3>
+                <div className="flex items-start gap-2 text-xs text-gray-500 leading-snug">
+                  <MapPin className="w-3.5 h-3.5 text-[#f07639] flex-shrink-0 mt-0.5" />
+                  <span>Av. San Martín de Porres 140</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <Phone className="w-3.5 h-3.5 text-[#f07639] flex-shrink-0" />
+                  <span>(084) 234 567</span>
+                </div>
               </div>
             </div>
 
             {/* Sucursal Trujillo */}
-            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-gray-200/30 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer">
+            <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-gray-200/30 hover:-translate-y-1.5 transition-all duration-300 group cursor-pointer flex flex-col justify-between">
               <div className="w-full h-48 overflow-hidden">
                 <img 
                   src="/trujillo.png" 
@@ -124,8 +148,16 @@ export default function QuienesSomos() {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
-              <div className="p-5 text-center bg-white relative z-10 border-t border-gray-50">
-                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#f07639] transition-colors">Trujillo</h3>
+              <div className="p-5 bg-white relative z-10 border-t border-gray-50 flex flex-col gap-3 text-left">
+                <h3 className="text-lg font-bold text-gray-900 group-hover:text-[#f07639] transition-colors border-b border-gray-50 pb-2">Trujillo</h3>
+                <div className="flex items-start gap-2 text-xs text-gray-500 leading-snug">
+                  <MapPin className="w-3.5 h-3.5 text-[#f07639] flex-shrink-0 mt-0.5" />
+                  <span>Av. Nicolás de Piérola 1300 (A una cuadra del Óvalo Mochica)</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <Phone className="w-3.5 h-3.5 text-[#f07639] flex-shrink-0" />
+                  <span>(044) 123 456</span>
+                </div>
               </div>
             </div>
           </div>

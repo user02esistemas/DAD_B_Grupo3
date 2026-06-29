@@ -47,6 +47,7 @@ export default function Navbar() {
             <Link href="/" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Inicio</Link>
             <Link href="/seguimiento" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Revisar Encomienda</Link>
             <Link href="/quienes-somos" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">¿Quiénes Somos?</Link>
+            <Link href="/ayuda" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Ayuda / FAQs</Link>
             <Link href="/compra" className="text-gray-600 hover:text-[#f07639] transition-colors px-3 py-2 text-sm font-medium">Compra tu pasaje</Link>
           </div>
 
@@ -126,6 +127,7 @@ export default function Navbar() {
             <Link href="/" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Inicio</Link>
             <Link href="/seguimiento" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Revisar Encomienda</Link>
             <Link href="/quienes-somos" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">¿Quiénes Somos?</Link>
+            <Link href="/ayuda" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50" onClick={() => setIsMobileMenuOpen(false)}>Ayuda / FAQs</Link>
             <Link href="/compra" className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50">Compra tu pasaje</Link>
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200">
