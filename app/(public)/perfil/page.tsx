@@ -49,6 +49,8 @@ function PerfilContent() {
     const tab = searchParams.get("tab");
     if (tab === "tickets" || tab === "datos") {
       setActiveTab(tab);
+    } else if (!tab) {
+      setActiveTab("datos");
     }
   }, [searchParams]);
 

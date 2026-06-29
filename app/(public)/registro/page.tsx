@@ -46,7 +46,8 @@ function getPasswordStrength(password: string): StrengthIndicator {
 export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: "",
+    nombres: "",
+    apellidos: "",
     email: "",
     password: "",
     dni: "",
@@ -65,9 +66,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setError(null);
 
-    // 1. Validar nombre completo (solo letras y espacios)
-    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(formData.name.trim())) {
-      setError("El nombre completo solo debe contener letras y espacios.");
+    // 1. Validar nombres y apellidos (solo letras y espacios)
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(formData.nombres.trim())) {
+      setError("El nombre solo debe contener letras y espacios.");
+      return;
+    }
+
+    if (!/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(formData.apellidos.trim())) {
+      setError("Los apellidos solo deben contener letras y espacios.");
       return;
     }
 
@@ -206,31 +212,61 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  Nombre completo
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label
+                    htmlFor="nombres"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Nombres
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="nombres"
+                      name="nombres"
+                      type="text"
+                      required
+                      className="focus:ring-[#f07639] focus:border-[#f07639] block w-full pl-10 sm:text-sm border-gray-300 rounded-lg py-3 border bg-gray-50 text-gray-900"
+                      placeholder="Ingresa tus nombres"
+                      value={formData.nombres}
+                      onChange={(e) => {
+                        const cleanValue = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "");
+                        setFormData({ ...formData, nombres: cleanValue });
+                      }}
+                      disabled={isLoading}
+                    />
                   </div>
-                  <input
-                    id="name"
-                    name="name"
-                    type="text"
-                    required
-                    className="focus:ring-[#f07639] focus:border-[#f07639] block w-full pl-10 sm:text-sm border-gray-300 rounded-lg py-3 border bg-gray-50 text-gray-900"
-                    placeholder="Nombre y Apellidos"
-                    value={formData.name}
-                    onChange={(e) => {
-                      const cleanValue = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "");
-                      setFormData({ ...formData, name: cleanValue });
-                    }}
-                    disabled={isLoading}
-                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="apellidos"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Apellidos
+                  </label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      id="apellidos"
+                      name="apellidos"
+                      type="text"
+                      required
+                      className="focus:ring-[#f07639] focus:border-[#f07639] block w-full pl-10 sm:text-sm border-gray-300 rounded-lg py-3 border bg-gray-50 text-gray-900"
+                      placeholder="Ingresa tus apellidos"
+                      value={formData.apellidos}
+                      onChange={(e) => {
+                        const cleanValue = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "");
+                        setFormData({ ...formData, apellidos: cleanValue });
+                      }}
+                      disabled={isLoading}
+                    />
+                  </div>
                 </div>
               </div>
 

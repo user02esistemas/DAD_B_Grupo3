@@ -4,13 +4,28 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { User, ChevronDown, Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   if (["/login", "/registro", "/recuperar-password", "/verificar"].includes(pathname)) {
     return null;
@@ -40,39 +55,41 @@ export default function Navbar() {
             {status === "loading" ? (
               <div className="h-8 w-24 bg-gray-200 animate-pulse rounded-md"></div>
             ) : session ? (
-              <div className="relative">
+              <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="flex items-center gap-2 text-gray-700 hover:text-[#f07639] focus:outline-none transition-colors"
+                  className="flex items-center gap-2 text-gray-700 hover:text-[#f07639] focus:outline-none transition-all duration-200"
                 >
-                  <div className="bg-gray-100 p-2 rounded-full">
-                    <User className="h-5 w-5 text-gray-600" />
+                  <div className="bg-gray-100 p-2 rounded-full hover:bg-orange-50 hover:text-[#f07639] transition-colors">
+                    <User className="h-5 w-5" />
                   </div>
                   <span className="font-medium text-sm">{session.user?.name}</span>
-                  <ChevronDown className="h-4 w-4" />
+                  <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180 text-[#f07639]' : ''}`} />
                 </button>
 
-                {isDropdownOpen && (
-                  <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
-                    {session.user?.role === "cliente" ? (
-                      <>
-                        <Link href="/perfil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsDropdownOpen(false)}>Mi Perfil</Link>
-                        <Link href="/perfil?tab=tickets" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsDropdownOpen(false)}>Mis Pasajes</Link>
-                      </>
-                    ) : (
-                      <Link href="/admin" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100" onClick={() => setIsDropdownOpen(false)}>Panel Admin</Link>
-                    )}
-                    <button
-                      onClick={() => {
-                        setIsDropdownOpen(false);
-                        signOut({ callbackUrl: '/' });
-                      }}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Cerrar sesión
-                    </button>
-                  </div>
-                )}
+                {/* Dropdown transition Wrapper */}
+                <div 
+                  className={`origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 transition-all duration-200 ease-out
+                    ${isDropdownOpen ? 'opacity-100 transform scale-100 translate-y-0 visible' : 'opacity-0 transform scale-95 -translate-y-2 invisible pointer-events-none'}`}
+                >
+                  {session.user?.role === "cliente" ? (
+                    <>
+                      <Link href="/perfil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-[#f07639] transition-colors" onClick={() => setIsDropdownOpen(false)}>Mi Perfil</Link>
+                      <Link href="/perfil?tab=tickets" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-[#f07639] transition-colors" onClick={() => setIsDropdownOpen(false)}>Mis Pasajes</Link>
+                    </>
+                  ) : (
+                    <Link href="/admin" className="block px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-[#f07639] transition-colors" onClick={() => setIsDropdownOpen(false)}>Panel Admin</Link>
+                  )}
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      signOut({ callbackUrl: '/' });
+                    }}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-orange-50 hover:text-[#f07639] transition-colors"
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
               </div>
             ) : (
               <>

@@ -5,9 +5,9 @@ import { NextRequest } from "next/server";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, dni, phone, birth_date } = await req.json();
+    const { nombres, apellidos, email, password, dni, phone, birth_date } = await req.json();
 
-    if (!name || !email || !password || !dni || !phone || !birth_date) {
+    if (!nombres || !apellidos || !email || !password || !dni || !phone || !birth_date) {
       return NextResponse.json(
         { message: "Faltan campos obligatorios" },
         { status: 400 }
@@ -42,21 +42,17 @@ export async function POST(req: NextRequest) {
     }
 
     const result = await prisma.$transaction(async (tx) => {
-      // Como el front envía 'name', lo dividimos temporalmente
-      const partes = name.trim().split(" ");
-      const nombres = partes[0] || "";
-      const apellidos = partes.length > 1 ? partes.slice(1).join(" ") : ".";
-
       // 1. Buscar o crear la Persona
       const persona = await tx.persona.upsert({
         where: { dni },
         update: {
-          // Opcional: podríamos actualizar el teléfono si cambió
+          nombres: nombres.trim().toUpperCase(),
+          apellidos: apellidos.trim().toUpperCase(),
           telefono: phone
         },
         create: {
-          nombres: nombres.toUpperCase(),
-          apellidos: apellidos.toUpperCase(),
+          nombres: nombres.trim().toUpperCase(),
+          apellidos: apellidos.trim().toUpperCase(),
           dni,
           telefono: phone,
         },

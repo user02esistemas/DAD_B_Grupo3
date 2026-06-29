@@ -146,3 +146,8 @@
 ## 15. [2026-06-27] Los tickets del usuario no aparecían en el Perfil
 - **Problema:** Tras la migración al esquema de `Persona`, la función `getClienteProfile` solo estaba consultando los pasajes asignados directamente al `persona_id` asociado a la cuenta. Esto provocaba que los pasajes comprados por el usuario (donde él es el `comprador_id` pero quizás compró para otro pasajero) no se mostraran en su lista de "Mis Pasajes". Además, el frontend esperaba los campos de nombre y apellido directamente en el objeto del pasaje.
 - **Solución:** Se modificó la consulta en `app/actions.ts` para buscar los pasajes donde el usuario sea el `comprador_id` OR su respectivo `persona_id`. Adicionalmente, se mapearon los datos del `pasajero` (`nombres`, `apellidos`, `dni`) directamente en el objeto principal del pasaje devuelto para mantener total retrocompatibilidad con el frontend.
+
+## 16. [2026-06-27] División incorrecta de Nombres y Apellidos en la base de datos al registrar usuarios
+- **Problema:** El formulario de registro en el frontend (`app/(public)/registro/page.tsx`) enviaba un campo único `name` que el endpoint de la API (`app/api/auth/register/route.ts`) dividía mediante `.split(" ")` tomando la primera palabra como nombres y el resto como apellidos. Esto causaba un registro incorrecto en la tabla `Persona` para personas con múltiples nombres (ej. Juan Carlos).
+- **Solución:** Se reemplazó el campo único `name` en el formulario y en el estado de React del frontend por dos inputs y campos independientes: `nombres` y `apellidos`. Asimismo, se modificó la API de registro para recibir ambos parámetros y guardarlos directamente y sin divisiones en la base de datos.
+

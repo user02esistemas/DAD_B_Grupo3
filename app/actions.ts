@@ -153,7 +153,11 @@ export async function searchTrips(originId: string, destinationId: string, date:
           }
         },
         bus: true,
-        asientos_viaje: true,
+        asientos_viaje: {
+          select: {
+            estado: true
+          }
+        },
       },
       orderBy: {
         fecha_salida: "asc",
