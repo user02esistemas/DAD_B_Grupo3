@@ -3,12 +3,12 @@ import { BookOpen } from "lucide-react";
 
 export default function Footer() {
   return (
-    <footer className="bg-[#1B211A] text-white py-8 border-t border-gray-800 mt-auto">
+    <footer className="bg-[#1B211A] text-white py-5 border-t border-gray-800 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-center md:items-start text-center md:text-left">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center md:items-start text-center md:text-left">
 
           {/* Columna 1: Enlaces */}
-          <div className="flex flex-col space-y-3">
+          <div className="flex flex-col space-y-1.5">
             <h4 className="text-lg font-semibold text-gray-100 mb-2">Enlaces Rápidos</h4>
             <Link href="/" className="text-gray-400 hover:text-[#f07639] transition-colors">Inicio</Link>
             <Link href="/quienes-somos" className="text-gray-400 hover:text-[#f07639] transition-colors">Sucursales</Link>
@@ -22,7 +22,7 @@ export default function Footer() {
               <img
                 src="/logocumbe.png"
                 alt="El Cumbe Logo"
-                className="h-16 md:h-20 w-auto object-contain hover:opacity-90 transition-opacity"
+                className="h-12 md:h-14 w-auto object-contain hover:opacity-90 transition-opacity"
               />
             </Link>
           </div>
@@ -41,7 +41,7 @@ export default function Footer() {
 
         </div>
 
-        <div className="mt-8 pt-6 border-t border-gray-800 text-center md:flex md:justify-between md:items-center">
+        <div className="mt-6 pt-4 border-t border-gray-800 text-center md:flex md:justify-between md:items-center">
           <p className="text-gray-500 text-sm">
             &copy; 2026 El Cumbe. Todos los derechos reservados.
           </p>

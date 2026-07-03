@@ -139,32 +139,35 @@ export default function EncomiendaClient({
 
   return (
     <div>
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestión de Encomiendas</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Registra nuevos envíos, rastrea paquetes y actualiza sus estados.
-          </p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#f07639] to-[#d45a1f] flex items-center justify-center text-white shadow-lg shadow-[#f07639]/20">
+            <Package className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Gestión de Encomiendas</h2>
+            <p className="text-[12px] text-slate-400 font-medium">Registra envíos, rastrea paquetes y actualiza estados.</p>
+          </div>
         </div>
       </div>
 
       {/* Selector de Vista */}
-      <div className="bg-white p-2 rounded-2xl shadow-sm border border-gray-100 mb-6 flex space-x-2">
+      <div className="bg-white p-1.5 rounded-2xl border border-slate-100 mb-6 flex space-x-1.5">
         <button
           onClick={() => setView("lista")}
-          className={`flex-1 py-3 px-4 rounded-xl font-bold transition-colors flex items-center justify-center ${
-            view === "lista" ? "bg-[#f07639] text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+          className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-[13px] transition-all flex items-center justify-center ${
+            view === "lista" ? "bg-gradient-to-r from-[#f07639] to-[#d45a1f] text-white shadow-lg shadow-[#f07639]/15" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"
           }`}
         >
-          <Package className="w-5 h-5 mr-2" /> Lista de Encomiendas
+          <Package className="w-4 h-4 mr-2" /> Lista de Encomiendas
         </button>
         <button
           onClick={() => setView("registro")}
-          className={`flex-1 py-3 px-4 rounded-xl font-bold transition-colors flex items-center justify-center ${
-            view === "registro" ? "bg-[#f07639] text-white" : "bg-gray-50 text-gray-500 hover:bg-gray-100"
+          className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-[13px] transition-all flex items-center justify-center ${
+            view === "registro" ? "bg-gradient-to-r from-[#f07639] to-[#d45a1f] text-white shadow-lg shadow-[#f07639]/15" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"
           }`}
         >
-          <PlusCircle className="w-5 h-5 mr-2" /> Registrar Encomienda
+          <PlusCircle className="w-4 h-4 mr-2" /> Registrar Encomienda
         </button>
       </div>
 
@@ -179,48 +182,47 @@ export default function EncomiendaClient({
       ) : (
         <>
           {/* Filtros */}
-          <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col sm:flex-row gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-slate-100 mb-5 flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-5 w-5 text-gray-400" />
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                <Search className="h-4 w-4 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-2.5 bg-[#f8f9fc] border border-slate-200/60 rounded-xl focus:border-[#f07639]/30 focus:bg-white text-[13px] font-semibold text-slate-700 placeholder-slate-400 outline-none transition-all"
+                placeholder="Buscar por DNI o Código de Seguimiento..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="w-full sm:w-64">
+              <select
+                value={filterEstado}
+                onChange={(e) => setFilterEstado(e.target.value)}
+                className="block w-full px-4 py-2.5 bg-[#f8f9fc] border border-slate-200/60 rounded-xl focus:border-[#f07639]/30 focus:bg-white text-[13px] font-semibold text-slate-700 outline-none transition-all appearance-none cursor-pointer"
+              >
+                <option value="todos">Todos los estados</option>
+                <option value="recepcionado">Recepcionados</option>
+                <option value="en_transito">En Tránsito</option>
+                <option value="listo_para_recojo">Listos para Recojo</option>
+                <option value="entregado">Entregados</option>
+              </select>
+            </div>
           </div>
-          <input
-            type="text"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-[#f07639] focus:border-[#f07639] sm:text-sm outline-none transition-all"
-            placeholder="Buscar por DNI o Código de Seguimiento..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <div className="w-full sm:w-64">
-          <select
-            value={filterEstado}
-            onChange={(e) => setFilterEstado(e.target.value)}
-            className="block w-full pl-3 pr-10 py-2 border border-gray-200 rounded-xl focus:ring-[#f07639] focus:border-[#f07639] sm:text-sm outline-none transition-all bg-white"
-          >
-            <option value="todos">Todos los estados</option>
-            <option value="recepcionado">Recepcionados</option>
-            <option value="en_transito">En Tránsito</option>
-            <option value="listo_para_recojo">Listos para Recojo</option>
-            <option value="entregado">Entregados</option>
-          </select>
-        </div>
-      </div>
 
-      {/* Tabla */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-6 py-4 text-sm font-semibold text-gray-900">Código / Fecha</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-900">Ruta</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-900">Remitente / Destinatario</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-center">Estado</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Acciones</th>
+              <tr className="bg-[#f8f9fc] border-b border-slate-100">
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Código / Fecha</th>
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Ruta</th>
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Remitente / Destinatario</th>
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Estado</th>
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-50">
               {filteredEncomiendas.length > 0 ? (
                 filteredEncomiendas.map((enc) => (
                   <tr key={enc.id} className="hover:bg-gray-50 transition-colors">

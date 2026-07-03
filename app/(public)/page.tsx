@@ -76,7 +76,9 @@ export default async function Home() {
                   <FaFacebook size={24} />
                 </a>
                 <a 
-                  href="#" 
+                  href="https://www.instagram.com/elcumbesac/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
                   className="w-12 h-12 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-500 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1"
                 >
                   <FaInstagram size={24} />

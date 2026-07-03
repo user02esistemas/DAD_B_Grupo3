@@ -91,33 +91,36 @@ export default function SucursalClient({ initialData }: { initialData: Sucursal[
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Gestión de Sucursales</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Administra las sedes y puntos de venta de la empresa.
-          </p>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#f07639] to-[#d45a1f] flex items-center justify-center text-white shadow-lg shadow-[#f07639]/20">
+            <Building className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">Gestión de Sucursales</h2>
+            <p className="text-[12px] text-slate-400 font-medium">Sedes y puntos de venta de la empresa.</p>
+          </div>
         </div>
         <button
           onClick={() => handleOpenModal()}
-          className="bg-[#f07639] hover:bg-orange-600 text-white px-4 py-2 rounded-xl font-medium flex items-center shadow-sm transition-colors"
+          className="bg-gradient-to-r from-[#f07639] to-[#d45a1f] hover:from-[#e06528] hover:to-[#c7551d] text-white px-5 py-2.5 rounded-xl font-bold text-[13px] flex items-center shadow-lg shadow-[#f07639]/15 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-[#f07639]/25"
         >
-          <Plus className="w-5 h-5 mr-2" />
+          <Plus className="w-4 h-4 mr-2" />
           Nueva Sucursal
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="px-6 py-4 text-sm font-semibold text-gray-900">Nombre</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-900">Dirección</th>
-                <th className="px-6 py-4 text-sm font-semibold text-gray-900 text-right">Acciones</th>
+              <tr className="bg-[#f8f9fc] border-b border-slate-100">
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Nombre</th>
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Dirección</th>
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-slate-50">
               {sucursales.length > 0 ? (
                 sucursales.map((sucursal) => (
                   <tr key={sucursal.id} className="hover:bg-gray-50 transition-colors">
