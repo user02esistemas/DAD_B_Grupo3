@@ -421,8 +421,14 @@ export default function ViajeClient({
 
       {/* Modal Formulario */}
       {mounted && isFormOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] overflow-y-auto bg-black/40 backdrop-blur-sm flex justify-center items-start py-8 px-4 sm:px-6">
-          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden relative my-auto p-8">
+        <div 
+          onClick={handleCloseForm}
+          className="fixed inset-0 z-[9999] overflow-y-auto bg-black/40 backdrop-blur-sm flex justify-center items-start py-8 px-4 sm:px-6"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden relative my-auto p-8"
+          >
             <button
               onClick={handleCloseForm}
               className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors text-2xl leading-none"

@@ -309,8 +309,14 @@ export default function ListaPasajes({ sucursales }: { sucursales: Sucursal[] })
 
       {/* Modal de Detalle del Ticket */}
       {mounted && selectedTicket && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+        <div 
+          onClick={() => setSelectedTicket(null)}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200"
+          >
             {/* Header decorativo */}
             <div className="bg-gray-900 p-6 text-white text-center relative">
               <button 
@@ -386,8 +392,14 @@ export default function ListaPasajes({ sucursales }: { sucursales: Sucursal[] })
 
       {/* Modal de Edición de Pasaje */}
       {mounted && editingTicket && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200">
+        <div 
+          onClick={() => setEditingTicket(null)}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-[2rem] w-full max-w-md shadow-2xl overflow-hidden relative animate-in fade-in zoom-in-95 duration-200"
+          >
             {/* Header del Modal */}
             <div className="bg-blue-600 p-6 text-white text-center relative">
               <button 

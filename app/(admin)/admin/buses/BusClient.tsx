@@ -368,8 +368,14 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
 
       {/* Modal Formulario Bus */}
       {mounted && isModalOpen && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
+        <div 
+          onClick={handleCloseModal}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden"
+          >
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
               <h3 className="text-lg font-bold text-gray-900">
                 {editingId ? "Editar Bus" : "Nuevo Bus"}
@@ -560,8 +566,17 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
 
       {/* Modal Configuración de Asientos (Cuadrícula) */}
       {mounted && isConfigModalOpen && selectedBus && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div 
+          onClick={() => {
+            setIsConfigModalOpen(false);
+            setSelectedBus(null);
+          }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
+          >
             <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
               <div>
                 <h3 className="text-lg font-bold text-gray-900">
