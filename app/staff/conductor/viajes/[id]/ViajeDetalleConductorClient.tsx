@@ -1,13 +1,57 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { updateEstadoViaje, registrarGasto, reportarNovedad } from "@/app/(admin)/actions/conductor";
-import { ArrowLeft, MapPin, Bus, Clock, Box, Play, CheckCircle, Receipt, Wrench, AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { ArrowLeft, MapPin, Bus, Clock, Box, Play, CheckCircle, Receipt, Wrench, AlertCircle, Wifi, WifiOff, Navigation } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+// Coordenadas fijas de paradas para geolocalización
+type StopCoords = {
+  lat: number;
+  lng: number;
+};
+
+const STOP_COORDINATES: Record<string, StopCoords> = {
+  "Jaén": { lat: -5.7088, lng: -78.8081 },
+  "Chamaya": { lat: -5.7628, lng: -78.7478 },
+  "Bagua Grande": { lat: -5.7562, lng: -78.4419 },
+  "Olmos": { lat: -5.9849, lng: -79.7453 },
+  "Chiclayo": { lat: -6.7714, lng: -79.8406 },
+  
+  "Trujillo": { lat: -8.1160, lng: -79.0300 },
+  "Mocupe": { lat: -7.1481, lng: -79.6192 },
+  "Guadalupe": { lat: -7.2483, lng: -79.4758 },
+  "Pacasmayo": { lat: -7.4006, lng: -79.5714 },
+
+  "Cajamarca": { lat: -7.1638, lng: -78.5003 },
+  "Chilete": { lat: -7.2250, lng: -78.8475 },
+  "Tembladera": { lat: -7.2536, lng: -79.1306 },
+  "Ciudad de Dios": { lat: -7.3756, lng: -79.4128 },
+  
+  "Control A": { lat: -6.0000, lng: -79.0000 },
+  "Control B": { lat: -6.3000, lng: -79.3000 },
+};
+
+// Fórmula del Semiverseno (Haversine) para calcular distancia en km
+const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+  const R = 6371; // Radio de la Tierra en km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 export default function ViajeDetalleConductorClient({ viaje, conductorId }: { viaje: any, conductorId: number }) {
   const router = useRouter();
+  const watchIdRef = useRef<number | null>(null);
+  
   const [activeTab, setActiveTab] = useState("ruta");
   const [isUpdating, setIsUpdating] = useState(false);
   const [gastoForm, setGastoForm] = useState({ concepto: "", monto: "" });
@@ -23,6 +67,11 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
   
   // Paradas completadas en la hoja de ruta
   const [completedStops, setCompletedStops] = useState<string[]>([]);
+
+  // Estados de ubicación GPS real
+  const [currentCoords, setCurrentCoords] = useState<StopCoords | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<"inactivo" | "activo" | "error">("inactivo");
+  const [lastNotification, setLastNotification] = useState<string | null>(null);
 
   const formatDuracion = (minutos: number) => {
     const h = Math.floor(minutos / 60);
@@ -75,7 +124,80 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
     if (paradasSaved) {
       setCompletedStops(JSON.parse(paradasSaved));
     }
-  }, [viaje.id]);
+
+    // Si el viaje ya está en ruta, iniciar tracking GPS automáticamente
+    if (viaje.estado === "en_ruta") {
+      startGpsTracking();
+    }
+
+    return () => {
+      stopGpsTracking();
+    };
+  }, [viaje.id, viaje.estado]);
+
+  // Iniciar el rastreo por GPS
+  const startGpsTracking = () => {
+    if (typeof window === "undefined" || !navigator.geolocation) return;
+    
+    stopGpsTracking(); // Limpiar previo si existe
+
+    setGpsStatus("activo");
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const coords = { lat: latitude, lng: longitude };
+        setCurrentCoords(coords);
+        checkProximity(latitude, longitude);
+      },
+      (error) => {
+        console.error("Error GPS:", error);
+        setGpsStatus("error");
+      },
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+    );
+  };
+
+  // Detener el rastreo GPS
+  const stopGpsTracking = () => {
+    if (watchIdRef.current !== null && navigator.geolocation) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+  };
+
+  // Evaluar cercanía a las paradas y auto-marcar
+  const checkProximity = (currentLat: number, currentLng: number) => {
+    let stateChanged = false;
+    const currentCompleted = JSON.parse(localStorage.getItem(`completed_stops_${viaje.id}`) || "[]");
+    const updatedStops = [...currentCompleted];
+
+    paradas.forEach((stop) => {
+      const stopCoords = STOP_COORDINATES[stop];
+      if (stopCoords && !updatedStops.includes(stop)) {
+        const distance = getDistanceKm(currentLat, currentLng, stopCoords.lat, stopCoords.lng);
+        if (distance < 2.0) { // Menos de 2 km de radio
+          updatedStops.push(stop);
+          stateChanged = true;
+          setLastNotification(`📍 ¡Llegaste a la parada de control: ${stop}!`);
+        }
+      }
+    });
+
+    if (stateChanged) {
+      setCompletedStops(updatedStops);
+      localStorage.setItem(`completed_stops_${viaje.id}`, JSON.stringify(updatedStops));
+    }
+  };
+
+  // Simular movimiento GPS (inyectar coordenadas)
+  const triggerSimulatedLocation = (stopName: string) => {
+    const coords = STOP_COORDINATES[stopName];
+    if (coords) {
+      setCurrentCoords(coords);
+      setGpsStatus("activo");
+      checkProximity(coords.lat, coords.lng);
+    }
+  };
 
   // Sincronizar cola local con el servidor al volver a estar "En Línea"
   const handleSyncData = async (gastosToSync: any[], novedadesToSync: any[]) => {
@@ -88,7 +210,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
         const res = await registrarGasto({
           viaje_id: viaje.id,
           conductor_id: conductorId,
-          concepto: gasto.concepto,
+          concepto: gasto.concepto.replace(" (Local/Pendiente)", ""),
           monto: Number(gasto.monto)
         });
         if (res.success) successCount++;
@@ -101,7 +223,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
           bus_id: viaje.bus.id,
           conductor_id: conductorId,
           categoria: nov.categoria,
-          descripcion: nov.descripcion
+          descripcion: nov.descripcion.replace(" (Local/Pendiente)", "")
         });
         if (res.success) successCount++;
       }
@@ -139,6 +261,45 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
     }
   };
 
+  // Función para iniciar el viaje pidiendo permisos GPS de forma nativa
+  const handleIniciarViaje = async () => {
+    if (typeof window !== "undefined" && navigator.geolocation) {
+      setIsUpdating(true);
+      
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          // Permiso concedido, iniciar tracking e iniciar viaje en DB
+          const { latitude, longitude } = position.coords;
+          
+          const res = await updateEstadoViaje(viaje.id, "en_ruta");
+          if (res.success) {
+            startGpsTracking();
+            setCurrentCoords({ lat: latitude, lng: longitude });
+            checkProximity(latitude, longitude);
+            router.refresh();
+          } else {
+            alert("Error al iniciar viaje en el servidor.");
+          }
+          setIsUpdating(false);
+        },
+        async (error) => {
+          // Permiso denegado: iniciar de todos modos pero avisar
+          alert("⚠️ Permiso de GPS denegado. El viaje se iniciará de todos modos, pero el conductor deberá marcar las paradas de forma manual en el checklist.");
+          const res = await updateEstadoViaje(viaje.id, "en_ruta");
+          if (res.success) {
+            router.refresh();
+          } else {
+            alert("Error al iniciar viaje en el servidor.");
+          }
+          setIsUpdating(false);
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    } else {
+      handleEstadoChange("en_ruta");
+    }
+  };
+
   const handleEstadoChange = async (nuevoEstado: string) => {
     if (isOffline) {
       alert("⚠️ No puedes cambiar el estado del viaje mientras estás Sin Señal.");
@@ -148,6 +309,9 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
     setIsUpdating(true);
     const res = await updateEstadoViaje(viaje.id, nuevoEstado);
     if (res.success) {
+      if (nuevoEstado === "completado") {
+        stopGpsTracking();
+      }
       router.refresh();
     } else {
       alert("Error al actualizar estado");
@@ -232,7 +396,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
     }
   };
 
-  // Toggle de parada completada
+  // Toggle de parada manual
   const handleToggleParada = (stopName: string) => {
     let updated: string[];
     if (completedStops.includes(stopName)) {
@@ -272,6 +436,19 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
         {/* Simulador Offline */}
         {mounted && (
           <div className="flex items-center gap-3">
+            {/* Indicador GPS */}
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm ${
+              gpsStatus === "activo"
+                ? "bg-blue-50 text-blue-700 border-blue-200"
+                : gpsStatus === "error"
+                ? "bg-red-50 text-red-700 border-red-200"
+                : "bg-slate-50 text-slate-500 border-slate-200"
+            }`}>
+              <Navigation className={`w-3.5 h-3.5 ${gpsStatus === 'activo' ? 'animate-spin' : ''}`} />
+              GPS: {gpsStatus === "activo" ? "Activo" : gpsStatus === "error" ? "Falla" : "Inactivo"}
+            </div>
+
+            {/* Indicador de Red */}
             <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all shadow-sm ${
               isOffline 
                 ? "bg-red-50 text-red-700 border-red-200" 
@@ -289,6 +466,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
                 </>
               )}
             </div>
+            
             <button
               onClick={toggleOfflineMode}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors shadow-sm ${
@@ -316,6 +494,22 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
         </div>
       )}
 
+      {/* Alerta GPS Notificación */}
+      {mounted && lastNotification && (
+        <div className="bg-green-50 border border-green-200 text-green-950 rounded-2xl p-4 mb-6 flex items-center justify-between animate-fadeIn text-sm">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
+            <p className="font-bold">{lastNotification}</p>
+          </div>
+          <button 
+            onClick={() => setLastNotification(null)}
+            className="text-green-800 hover:text-green-950 text-xs font-black uppercase tracking-wider bg-green-150/40 hover:bg-green-150 px-2 py-1 rounded-lg"
+          >
+            Entendido
+          </button>
+        </div>
+      )}
+
       {/* Tarjeta de Resumen */}
       <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mb-6 relative overflow-hidden">
         {viaje.estado === "en_ruta" && (
@@ -337,7 +531,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
             {viaje.estado === "programado" && (
               <button 
                 disabled={isUpdating}
-                onClick={() => handleEstadoChange("en_ruta")}
+                onClick={handleIniciarViaje}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/30 flex items-center justify-center disabled:opacity-50 transition-all hover:scale-[1.02]"
               >
                 <Play className="w-4 h-4 mr-2" />
@@ -416,7 +610,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
 
             {/* Croquis de Ruta SVG Interactivo */}
             <div className="space-y-4">
-              <h3 className="text-sm font-extrabold text-slate-600 uppercase tracking-wider">Mapa de Progreso Offline</h3>
+              <h3 className="text-sm font-extrabold text-slate-600 uppercase tracking-wider">Mapa de Progreso GPS (Offline)</h3>
               
               <div className="w-full overflow-hidden bg-slate-50 border border-slate-100 rounded-3xl p-6 relative">
                 {/* SVG del trayecto */}
@@ -486,6 +680,37 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Simulador de GPS (Súper UX para pruebas) */}
+              <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5 mt-6">
+                <div className="flex items-center gap-2 mb-2">
+                  <Navigation className="w-4.5 h-4.5 text-[#f07639]" />
+                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Simulador de Movimiento GPS</h4>
+                </div>
+                <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
+                  Haz clic en cualquiera de las paradas a continuación para simular las coordenadas GPS del bus y comprobar la detección automática en la hoja de ruta:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {paradas.map(p => (
+                    <button
+                      key={`sim-${p}`}
+                      type="button"
+                      onClick={() => triggerSimulatedLocation(p)}
+                      className="px-3 py-2 bg-white border border-slate-200 hover:border-[#f07639] hover:text-[#f07639] text-slate-700 text-xs font-bold rounded-xl transition-all shadow-sm hover:bg-orange-50/20"
+                    >
+                      📍 Llegar a {p}
+                    </button>
+                  ))}
+                </div>
+                {currentCoords && (
+                  <div className="mt-4 pt-3 border-t border-slate-200/50 text-[11px] text-slate-500 font-semibold flex items-center justify-between">
+                    <span>Ubicación GPS Actual del Bus:</span>
+                    <span className="bg-slate-200/80 px-2 py-0.5 rounded text-slate-800 font-mono">
+                      {currentCoords.lat.toFixed(5)}, {currentCoords.lng.toFixed(5)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -567,7 +792,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
 
         {activeTab === "novedades" && (
           <div>
-            <h2 className="text-lg font-bold text-slate-800 mb-4">Reportar Novedad Mecánica</h2>
+            <h2 className="text-lg font-bold text-slate-800 mb-4">Reporte de Novedad Mecánica</h2>
             
             <form onSubmit={handleGuardarNovedad} className="bg-red-50/50 p-5 rounded-2xl border border-red-100 mb-6">
               <div className="mb-4">
