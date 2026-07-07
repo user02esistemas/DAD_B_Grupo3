@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Edit2, Trash2, Hash, Box, Settings, Bus as BusIcon } from "lucide-react";
+import { Plus, Edit2, Trash2, Hash, Box, Settings, Bus as BusIcon, X } from "lucide-react";
 import { crearBus, actualizarBus, eliminarBus } from "../../actions/buses";
 
 type Bus = {
@@ -46,6 +46,80 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Redimensionar imagen en el cliente usando Canvas a un máximo de 600px de ancho/alto
+  const resizeImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const MAX_WIDTH = 600;
+          const MAX_HEIGHT = 600;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Convertir a base64 con compresión de calidad 0.7
+          const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+          resolve(dataUrl);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const currentImages = formData.imagenes ? formData.imagenes.split(",").filter(Boolean) : [];
+    const availableSlots = 6 - currentImages.length; // Máximo 6 imágenes
+
+    if (files.length > availableSlots) {
+      alert(`Solo puedes seleccionar un máximo de 6 fotos. Te quedan ${availableSlots} espacios.`);
+      return;
+    }
+
+    setIsLoading(true);
+    const newImagesBase64: string[] = [];
+    for (let i = 0; i < files.length; i++) {
+      try {
+        const base64 = await resizeImage(files[i]);
+        newImagesBase64.push(base64);
+      } catch (err) {
+        console.error("Error al procesar imagen:", err);
+      }
+    }
+
+    const updatedImages = [...currentImages, ...newImagesBase64].join(",");
+    setFormData({ ...formData, imagenes: updatedImages });
+    setIsLoading(false);
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    const currentImages = formData.imagenes ? formData.imagenes.split(",").filter(Boolean) : [];
+    const updatedImages = currentImages.filter((_, idx) => idx !== indexToRemove).join(",");
+    setFormData({ ...formData, imagenes: updatedImages });
+  };
 
   // === HANDLERS CRUD ===
   const handleOpenModal = (bus?: Bus) => {
@@ -403,19 +477,62 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Imágenes del Bus (Rutas o URLs)
+                  <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                    Imágenes del Bus (Máximo 6 fotos)
                   </label>
-                  <textarea
-                    rows={2}
-                    value={formData.imagenes || ""}
-                    onChange={(e) => setFormData({ ...formData, imagenes: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all"
-                    placeholder="Ej. /images/buses/bus1.jpg, /images/buses/bus2.jpg"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Separa múltiples rutas con comas.
-                  </p>
+                  
+                  {/* Grid de previsualización */}
+                  {formData.imagenes && formData.imagenes.split(",").filter(Boolean).length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
+                      {formData.imagenes.split(",").filter(Boolean).map((img, idx) => (
+                        <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 group">
+                          <img 
+                            src={img} 
+                            alt={`Preview ${idx + 1}`} 
+                            className="w-full h-full object-cover" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-650 text-white rounded-full transition-colors cursor-pointer"
+                            title="Eliminar foto"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Botón de carga */}
+                  {(!formData.imagenes || formData.imagenes.split(",").filter(Boolean).length < 6) ? (
+                    <div>
+                      <input 
+                        type="file" 
+                        id="bus-images"
+                        multiple 
+                        accept="image/*" 
+                        onChange={handleFileChange}
+                        className="hidden" 
+                      />
+                      <label 
+                        htmlFor="bus-images"
+                        className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200/80 hover:border-[#f07639]/40 bg-slate-50/50 hover:bg-orange-50/20 rounded-2xl p-5 cursor-pointer transition-all gap-2 text-center"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center text-slate-400">
+                          <Plus className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-[12px] font-bold text-slate-700">Seleccionar Imágenes</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">El tamaño se ajustará automáticamente al subir</p>
+                        </div>
+                      </label>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 font-semibold text-center py-2 bg-slate-50 rounded-xl border border-slate-100">
+                      Has alcanzado el límite de 6 imágenes.
+                    </p>
+                  )}
                 </div>
               </div>
 
