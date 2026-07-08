@@ -29,6 +29,7 @@ model Persona {
   viajes_como_conductor Viaje[]           @relation("Piloto")
   gastos_registrados    GastoRuta[]
   novedades_reportadas  NovedadMecanica[]
+  bitacoras_registradas BitacoraViaje[]
 }
 
 model Usuario {
@@ -114,6 +115,7 @@ model Viaje {
   gastos         GastoRuta[]
   novedades      NovedadMecanica[]
   alertas        AlertaCentral[]
+  bitacoras      BitacoraViaje[]
 }
 
 model AsientoViaje {
@@ -294,3 +296,19 @@ model AlertaCentral {
 
   viaje         Viaje     @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
 }
+
+model BitacoraViaje {
+  id            BigInt    @id @default(autoincrement()) @db.UnsignedBigInt
+  viaje_id      BigInt    @db.UnsignedBigInt
+  conductor_id  BigInt    @db.UnsignedBigInt
+  tipo          String    @db.VarChar(100)
+  gravedad      String    @db.VarChar(50)
+  descripcion   String    @db.Text
+  retraso_minutos Int     @default(0)
+  created_at    DateTime? @default(now()) @db.Timestamp(0)
+  updated_at    DateTime? @default(now()) @db.Timestamp(0)
+
+  viaje         Viaje     @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
+  conductor     Persona   @relation(fields: [conductor_id], references: [id], onDelete: Cascade)
+}
+

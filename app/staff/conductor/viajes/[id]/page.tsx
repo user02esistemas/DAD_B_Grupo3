@@ -21,6 +21,7 @@ export default async function DetalleViajeConductorPage({ params }: { params: Pr
       encomiendas: { include: { destino: true } },
       gastos: true,
       novedades: true,
+      bitacoras: true,
     }
   });
 

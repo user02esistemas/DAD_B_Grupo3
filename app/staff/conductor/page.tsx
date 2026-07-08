@@ -37,21 +37,21 @@ export default async function ConductorDashboard() {
           <p className="text-slate-500 text-sm font-medium">Gestiona tus rutas, estado de viaje y más.</p>
         </Link>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] opacity-60">
-          <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center mb-5 shadow-inner">
+        <Link href="/staff/conductor/novedades" className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgb(0,0,0,0.08)] transition-all group hover:-translate-y-1 block">
+          <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-500 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-inner">
             <Wrench className="w-7 h-7" />
           </div>
           <h3 className="text-xl font-bold text-slate-800 mb-1">Novedades</h3>
-          <p className="text-slate-500 text-sm font-medium">Reporta fallas mecánicas en ruta. (Proximamente)</p>
-        </div>
+          <p className="text-slate-500 text-sm font-medium">Estado del bus asignado e historial de fallas mecánicas.</p>
+        </Link>
 
-        <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] opacity-60">
-          <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-5 shadow-inner">
+        <Link href="/staff/conductor/alertas" className="bg-white p-6 rounded-3xl border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.03)] hover:shadow-[0_4px_20px_rgb(0,0,0,0.08)] transition-all group hover:-translate-y-1 block">
+          <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-inner">
             <AlertTriangle className="w-7 h-7" />
           </div>
           <h3 className="text-xl font-bold text-slate-800 mb-1">Alertas</h3>
-          <p className="text-slate-500 text-sm font-medium">Mensajes directos de la central. (Proximamente)</p>
-        </div>
+          <p className="text-slate-500 text-sm font-medium">Bandeja de mensajes urgentes de la central.</p>
+        </Link>
       </div>
     </div>
   );

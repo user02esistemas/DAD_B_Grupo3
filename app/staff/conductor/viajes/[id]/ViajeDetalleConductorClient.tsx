@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { updateEstadoViaje, registrarGasto, reportarNovedad } from "@/app/(admin)/actions/conductor";
-import { ArrowLeft, MapPin, Bus, Clock, Box, Play, CheckCircle, Receipt, Wrench, AlertCircle, Wifi, WifiOff, Navigation } from "lucide-react";
+import { updateEstadoViaje, registrarGasto, registrarOcurrenciaRuta } from "@/app/(admin)/actions/conductor";
+import { ArrowLeft, MapPin, Bus, Clock, Box, Play, CheckCircle, Receipt, Wrench, AlertCircle, Wifi, WifiOff, Navigation, ClipboardList } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -55,7 +55,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
   const [activeTab, setActiveTab] = useState("ruta");
   const [isUpdating, setIsUpdating] = useState(false);
   const [gastoForm, setGastoForm] = useState({ concepto: "", monto: "" });
-  const [novedadForm, setNovedadForm] = useState({ categoria: "Motor", descripcion: "" });
+  const [novedadForm, setNovedadForm] = useState({ tipo: "Tránsito", gravedad: "Baja", descripcion: "", retraso_minutos: "0" });
 
   // Estados de conexión offline y sincronización
   const [mounted, setMounted] = useState(false);
@@ -421,14 +421,15 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
         if (res.success) successCount++;
       }
 
-      // 2. Sincronizar Novedades Mecánicas
+      // 2. Sincronizar Ocurrencias de la Bitácora
       for (const nov of novedadesToSync) {
-        const res = await reportarNovedad({
+        const res = await registrarOcurrenciaRuta({
           viaje_id: viaje.id,
-          bus_id: viaje.bus.id,
           conductor_id: conductorId,
-          categoria: nov.categoria,
-          descripcion: nov.descripcion.replace(" (Local/Pendiente)", "")
+          tipo: nov.tipo,
+          gravedad: nov.gravedad,
+          descripcion: nov.descripcion.replace(" (Local/Pendiente)", ""),
+          retraso_minutos: Number(nov.retraso_minutos)
         });
         if (res.success) successCount++;
       }
@@ -571,31 +572,34 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
       // Guardar localmente
       const nuevaNovedadLocal = {
         id: `local-n_${Date.now()}`,
-        categoria: novedadForm.categoria,
+        tipo: novedadForm.tipo,
+        gravedad: novedadForm.gravedad,
         descripcion: `${novedadForm.descripcion} (Local/Pendiente)`,
-        estado: "pendiente"
+        retraso_minutos: Number(novedadForm.retraso_minutos),
+        created_at: new Date().toISOString()
       };
       const updatedLocalNovedades = [...localNovedades, nuevaNovedadLocal];
       setLocalNovedades(updatedLocalNovedades);
       localStorage.setItem(`queued_novedades_${viaje.id}`, JSON.stringify(updatedLocalNovedades));
-      setNovedadForm({ categoria: "Motor", descripcion: "" });
-      alert("💾 Novedad guardada localmente. Se sincronizará cuando recuperes señal.");
+      setNovedadForm({ tipo: "Tránsito", gravedad: "Baja", descripcion: "", retraso_minutos: "0" });
+      alert("💾 Ocurrencia guardada localmente. Se sincronizará al conectar señal.");
       setIsUpdating(false);
     } else {
       // Enviar al servidor
-      const res = await reportarNovedad({
+      const res = await registrarOcurrenciaRuta({
         viaje_id: viaje.id,
-        bus_id: viaje.bus.id,
         conductor_id: conductorId,
-        categoria: novedadForm.categoria,
-        descripcion: novedadForm.descripcion
+        tipo: novedadForm.tipo,
+        gravedad: novedadForm.gravedad,
+        descripcion: novedadForm.descripcion,
+        retraso_minutos: Number(novedadForm.retraso_minutos)
       });
       if (res.success) {
-        setNovedadForm({ categoria: "Motor", descripcion: "" });
+        setNovedadForm({ tipo: "Tránsito", gravedad: "Baja", descripcion: "", retraso_minutos: "0" });
         router.refresh();
-        alert("Novedad reportada. Mantenimiento ha sido notificado.");
+        alert("✔️ Incidente de bitácora registrado con éxito.");
       } else {
-        alert("Error al registrar novedad.");
+        alert("Error al registrar incidente.");
       }
       setIsUpdating(false);
     }
@@ -619,7 +623,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
 
   // Combinación de datos en servidor + datos locales en cola offline
   const allGastos = [...viaje.gastos, ...localGastos];
-  const allNovedades = [...viaje.novedades, ...localNovedades];
+  const allNovedades = [...(viaje.bitacoras || []), ...localNovedades];
 
   return (
     <div className="max-w-4xl mx-auto pb-20">
@@ -769,7 +773,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
           { id: "ruta", label: "Hoja de Ruta", icon: MapPin },
           { id: "encomiendas", label: "Encomiendas", icon: Box },
           { id: "gastos", label: "Gastos (Peajes)", icon: Receipt },
-          { id: "novedades", label: "Fallas Mecánicas", icon: Wrench },
+          { id: "novedades", label: "Bitácora / Incidentes", icon: ClipboardList },
         ].map((t) => (
           <button
             key={t.id}
@@ -969,55 +973,98 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
 
         {activeTab === "novedades" && (
           <div>
-            <h2 className="text-lg font-bold text-slate-800 mb-4">Reporte de Novedad Mecánica</h2>
+            <h2 className="text-lg font-bold text-slate-800 mb-4">Bitácora de Ruta / Incidentes</h2>
             
-            <form onSubmit={handleGuardarNovedad} className="bg-red-50/50 p-5 rounded-2xl border border-red-100 mb-6">
-              <div className="mb-4">
-                <label className="block text-xs font-bold text-slate-500 mb-1">Categoría</label>
-                <select 
-                  value={novedadForm.categoria}
-                  onChange={(e) => setNovedadForm({...novedadForm, categoria: e.target.value})}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-red-400 bg-white text-sm"
-                >
-                  <option>Motor</option>
-                  <option>Llantas</option>
-                  <option>Frenos</option>
-                  <option>Interiores / Asientos</option>
-                  <option>Aire Acondicionado</option>
-                  <option>Otro</option>
-                </select>
+            <form onSubmit={handleGuardarNovedad} className="bg-slate-50 p-5 rounded-2xl border border-slate-200 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Tipo de Incidente</label>
+                  <select 
+                    value={novedadForm.tipo}
+                    onChange={(e) => setNovedadForm({...novedadForm, tipo: e.target.value})}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#f07639] bg-white text-sm"
+                  >
+                    <option>Tránsito</option>
+                    <option>Clima</option>
+                    <option>Pasajeros</option>
+                    <option>Fiscalización</option>
+                    <option>Encomiendas</option>
+                    <option>Otro</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Gravedad</label>
+                  <select 
+                    value={novedadForm.gravedad}
+                    onChange={(e) => setNovedadForm({...novedadForm, gravedad: e.target.value})}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#f07639] bg-white text-sm"
+                  >
+                    <option>Baja</option>
+                    <option>Media</option>
+                    <option>Alta</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Retraso Estimado (min)</label>
+                  <input 
+                    type="number"
+                    min="0"
+                    required
+                    value={novedadForm.retraso_minutos}
+                    onChange={(e) => setNovedadForm({...novedadForm, retraso_minutos: e.target.value})}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#f07639] bg-white text-sm"
+                  />
+                </div>
               </div>
+
               <div className="mb-4">
-                <label className="block text-xs font-bold text-slate-500 mb-1">Descripción del problema</label>
+                <label className="block text-xs font-bold text-slate-500 mb-1">Descripción del Suceso</label>
                 <textarea 
                   required
                   rows={3}
                   value={novedadForm.descripcion}
                   onChange={(e) => setNovedadForm({...novedadForm, descripcion: e.target.value})}
-                  placeholder="Describe brevemente el ruido o problema que notaste..."
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-red-400 bg-white text-sm"
+                  placeholder="Describe brevemente lo ocurrido en la carretera..."
+                  className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#f07639] bg-white text-sm"
                 />
               </div>
-              <button disabled={isUpdating} type="submit" className="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-bold flex justify-center items-center transition-colors">
-                <AlertCircle className="w-5 h-5 mr-2" /> Enviar Reporte a Mantenimiento
+
+              <button disabled={isUpdating} type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold flex justify-center items-center transition-colors">
+                <ClipboardList className="w-5 h-5 mr-2" /> Registrar en Bitácora
               </button>
             </form>
 
             <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-500">Historial de Reportes</h3>
+              <h3 className="text-sm font-bold text-slate-500">Historial de la Bitácora</h3>
               {allNovedades.map((n: any) => (
                 <div key={n.id} className="p-4 rounded-xl border border-slate-100 bg-slate-50 flex justify-between items-start">
-                  <div>
-                    <span className="inline-block px-2 py-1 rounded bg-slate-200 text-[10px] font-bold text-slate-600 mb-2">{n.categoria}</span>
-                    <p className="text-sm text-slate-700">{n.descripcion}</p>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="inline-block px-2 py-0.5 rounded bg-slate-200 text-[10px] font-bold text-slate-600 uppercase">{n.tipo}</span>
+                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                        n.gravedad === 'Alta' 
+                          ? 'bg-red-100 text-red-700' 
+                          : n.gravedad === 'Media' 
+                          ? 'bg-amber-100 text-amber-700' 
+                          : 'bg-slate-100 text-slate-600'
+                      }`}>{n.gravedad}</span>
+                      {Number(n.retraso_minutos) > 0 && (
+                        <span className="inline-block px-2 py-0.5 rounded bg-red-50 border border-red-100 text-[10px] font-extrabold text-red-600">
+                          Retraso: +{n.retraso_minutos} min
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm font-medium text-slate-700">{n.descripcion}</p>
+                    <p className="text-[10px] text-slate-400 font-bold">
+                      {new Date(n.created_at || Date.now()).toLocaleString()}
+                    </p>
                   </div>
-                  <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded ${n.estado === 'pendiente' ? 'bg-orange-100 text-orange-600' : 'bg-green-100 text-green-600'}`}>
-                    {n.estado}
-                  </span>
                 </div>
               ))}
               {allNovedades.length === 0 && (
-                <p className="text-slate-400 text-sm text-center py-4">Sin reportes registrados en este viaje.</p>
+                <p className="text-slate-400 text-sm text-center py-4">Sin incidentes registrados en este viaje.</p>
               )}
             </div>
           </div>
