@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Plus, XCircle, Pencil, Calendar, Hash, MapPin, Bus as BusIcon, Search } from "lucide-react";
-import { crearViajeConAsientos, cancelarViaje, actualizarViaje } from "../../actions/viajes";
+import { Plus, XCircle, Pencil, Calendar, Hash, MapPin, Bus as BusIcon, Search, Bell } from "lucide-react";
+import { crearViajeConAsientos, cancelarViaje, actualizarViaje, enviarAlertaCentral } from "../../actions/viajes";
 
 type Ruta = {
   id: string;
@@ -56,6 +56,39 @@ export default function ViajeClient({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [editingViajeId, setEditingViajeId] = useState<string | null>(null);
+
+  // Alerta Central Modal
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [alertTargetViaje, setAlertTargetViaje] = useState<Viaje | null>(null);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [isSendingAlert, setIsSendingAlert] = useState(false);
+
+  const handleOpenAlertModal = (viaje: Viaje) => {
+    setAlertTargetViaje(viaje);
+    setAlertMessage("");
+    setIsAlertModalOpen(true);
+  };
+
+  const handleCloseAlertModal = () => {
+    setIsAlertModalOpen(false);
+    setAlertTargetViaje(null);
+  };
+
+  const handleSendAlert = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!alertTargetViaje || !alertMessage.trim()) return;
+
+    setIsSendingAlert(true);
+    const res = await enviarAlertaCentral(alertTargetViaje.id, alertMessage);
+    setIsSendingAlert(false);
+
+    if (res.success) {
+      alert("✔️ Alerta enviada con éxito al conductor.");
+      handleCloseAlertModal();
+    } else {
+      alert("❌ Error: " + (res.error || "No se pudo enviar la alerta."));
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -386,24 +419,35 @@ export default function ViajeClient({
                       {getStatusBadge(viaje.estado)}
                     </td>
                     <td className="px-6 py-4 text-right">
-                      {viaje.estado === 'programado' && (
-                        <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-3">
+                        {viaje.estado === 'programado' && (
+                          <>
+                            <button
+                              onClick={() => handleEditForm(viaje)}
+                              className="text-slate-400 hover:text-blue-500 transition-colors"
+                              title="Editar Viaje"
+                            >
+                              <Pencil className="w-5 h-5 inline-block" />
+                            </button>
+                            <button
+                              onClick={() => handleCancel(viaje.id)}
+                              className="text-slate-400 hover:text-red-500 transition-colors"
+                              title="Cancelar Viaje"
+                            >
+                              <XCircle className="w-5 h-5 inline-block" />
+                            </button>
+                          </>
+                        )}
+                        {viaje.estado !== 'cancelado' && viaje.estado !== 'completado' && (
                           <button
-                            onClick={() => handleEditForm(viaje)}
-                            className="text-slate-400 hover:text-blue-500 transition-colors"
-                            title="Editar Viaje"
+                            onClick={() => handleOpenAlertModal(viaje)}
+                            className="text-slate-400 hover:text-amber-500 transition-colors"
+                            title="Enviar Alerta Central"
                           >
-                            <Pencil className="w-5 h-5 inline-block" />
+                            <Bell className="w-5 h-5 inline-block" />
                           </button>
-                          <button
-                            onClick={() => handleCancel(viaje.id)}
-                            className="text-slate-400 hover:text-red-500 transition-colors"
-                            title="Cancelar Viaje"
-                          >
-                            <XCircle className="w-5 h-5 inline-block" />
-                          </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -550,6 +594,69 @@ export default function ViajeClient({
                   className="bg-[#f07639] hover:bg-[#e06528] text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md shadow-[#f07639]/15 hover:shadow-lg hover:shadow-[#f07639]/25 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-[1.02]"
                 >
                   {isLoading ? "Guardando..." : (editingViajeId ? "Guardar Cambios" : "Programar Viaje")}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Modal Enviar Alerta */}
+      {mounted && isAlertModalOpen && alertTargetViaje && createPortal(
+        <div 
+          onClick={handleCloseAlertModal}
+          className="fixed inset-0 z-[9999] overflow-y-auto bg-black/40 backdrop-blur-sm flex justify-center items-start py-8 px-4 sm:px-6"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden relative my-auto p-8 space-y-6"
+          >
+            <button
+              onClick={handleCloseAlertModal}
+              className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors text-2xl leading-none"
+            >
+              &times;
+            </button>
+
+            <div>
+              <h3 className="text-xl font-bold text-slate-800">
+                Enviar Alerta al Conductor
+              </h3>
+              <p className="text-xs text-slate-400 font-medium mt-1">
+                Viaje: {alertTargetViaje.ruta.origen.nombre} → {alertTargetViaje.ruta.destino.nombre} ({alertTargetViaje.bus.placa})
+              </p>
+            </div>
+            
+            <form onSubmit={handleSendAlert} className="space-y-5">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
+                  Mensaje de Advertencia
+                </label>
+                <textarea 
+                  required
+                  rows={4}
+                  value={alertMessage}
+                  onChange={(e) => setAlertMessage(e.target.value)}
+                  placeholder="Escribe el mensaje de alerta (ej: Clima inestable, desvío por obras, etc.)..."
+                  className="w-full px-4 py-3 border border-slate-200 outline-none focus:border-[#f07639] rounded-xl bg-white text-sm"
+                />
+              </div>
+
+              <div className="flex justify-end items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleCloseAlertModal}
+                  className="px-5 py-2.5 text-gray-500 hover:text-gray-700 transition-colors font-semibold text-sm rounded-xl hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSendingAlert || !alertMessage.trim()}
+                  className="bg-[#f07639] hover:bg-[#e06528] text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md shadow-[#f07639]/15 hover:shadow-lg disabled:opacity-50"
+                >
+                  {isSendingAlert ? "Enviando..." : "Enviar Alerta"}
                 </button>
               </div>
             </form>

@@ -317,3 +317,25 @@ export async function actualizarViaje(id: string | number, data: {
     return { success: false, error: error.message || "Error al actualizar viaje" };
   }
 }
+
+export async function enviarAlertaCentral(viajeId: string | number, mensaje: string) {
+  try {
+    const vId = parseId(viajeId);
+    if (!mensaje.trim()) {
+      return { success: false, error: "El mensaje no puede estar vacío." };
+    }
+
+    const alerta = await prisma.alertaCentral.create({
+      data: {
+        viaje_id: vId,
+        mensaje: mensaje.trim(),
+        leido: false
+      }
+    });
+
+    return { success: true, data: serializeBigInt(alerta) };
+  } catch (error) {
+    console.error("Error al enviar alerta de central:", error);
+    return { success: false, error: "Error al enviar la alerta." };
+  }
+}
