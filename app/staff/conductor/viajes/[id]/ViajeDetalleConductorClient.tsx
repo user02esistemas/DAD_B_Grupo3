@@ -889,62 +889,6 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
                   </div>
                 )}
               </div>
-
-              {/* Checklist de Paradas de Control */}
-              <div className="space-y-3 bg-slate-50/50 p-5 rounded-2xl border border-slate-100/50">
-                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">Confirmación de Paradas Pasadas</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                  {paradas.map((stop) => (
-                    <label 
-                      key={stop} 
-                      className={`flex items-center gap-3 px-4 py-3 rounded-xl border cursor-pointer select-none transition-all ${
-                        completedStops.includes(stop)
-                          ? "bg-orange-50/50 text-[#f07639] border-orange-100 font-bold"
-                          : "bg-white text-slate-600 border-slate-150 hover:bg-slate-50 font-medium"
-                      }`}
-                    >
-                      <input 
-                        type="checkbox"
-                        checked={completedStops.includes(stop)}
-                        onChange={() => handleToggleParada(stop)}
-                        className="w-4.5 h-4.5 rounded border-slate-300 text-[#f07639] focus:ring-[#f07639]/30 transition-all cursor-pointer"
-                      />
-                      <span className="text-xs">{stop}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              {/* Simulador de GPS (Súper UX para pruebas) */}
-              <div className="bg-slate-50 border border-slate-200/60 rounded-2xl p-5 mt-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <Navigation className="w-4.5 h-4.5 text-[#f07639]" />
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Simulador de Movimiento GPS</h4>
-                </div>
-                <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
-                  Haz clic en cualquiera de las paradas a continuación para simular que el bus llega a dicha ubicación y observar el movimiento en vivo sobre el mapa de Google Maps:
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {paradas.map(p => (
-                    <button
-                      key={`sim-${p}`}
-                      type="button"
-                      onClick={() => triggerSimulatedLocation(p)}
-                      className="px-3 py-2 bg-white border border-slate-200 hover:border-[#f07639] hover:text-[#f07639] text-slate-700 text-xs font-bold rounded-xl transition-all shadow-sm hover:bg-orange-50/20"
-                    >
-                      📍 Llegar a {p}
-                    </button>
-                  ))}
-                </div>
-                {currentCoords && (
-                  <div className="mt-4 pt-3 border-t border-slate-200/50 text-[11px] text-slate-500 font-semibold flex items-center justify-between">
-                    <span>Ubicación GPS Actual del Bus:</span>
-                    <span className="bg-slate-200/80 px-2 py-0.5 rounded text-slate-800 font-mono">
-                      {currentCoords.lat.toFixed(5)}, {currentCoords.lng.toFixed(5)}
-                    </span>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
         )}
