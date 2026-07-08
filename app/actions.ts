@@ -1579,4 +1579,34 @@ export async function registrarReclamo(data: {
   }
 }
 
+export async function buscarPersonaPorDNI(dni: string) {
+  try {
+    const persona = await prisma.persona.findUnique({
+      where: { dni: dni.trim() },
+      include: {
+        usuario: {
+          select: { correo: true }
+        }
+      }
+    });
+
+    if (!persona) {
+      return { success: false, error: "Persona no encontrada" };
+    }
+
+    return {
+      success: true,
+      data: {
+        nombres: persona.nombres,
+        apellidos: persona.apellidos,
+        telefono: persona.telefono || "",
+        correo: persona.usuario?.correo || ""
+      }
+    };
+  } catch (error: any) {
+    console.error("Error al buscar persona por DNI:", error);
+    return { success: false, error: error.message || "Error al buscar persona" };
+  }
+}
+
 

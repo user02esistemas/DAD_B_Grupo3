@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useSession } from "next-auth/react";
 import { 
   MessageSquareWarning, 
   Search, 
@@ -16,6 +17,7 @@ import {
 import { updateReclamoEstado } from "@/app/(admin)/actions/reclamaciones";
 
 export default function ReclamacionesClient({ initialData }: { initialData: any[] }) {
+  const { data: session } = useSession();
   const [reclamos, setReclamos] = useState(initialData);
   const [mounted, setMounted] = useState(false);
   
@@ -249,7 +251,9 @@ export default function ReclamacionesClient({ initialData }: { initialData: any[
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Respuesta Oficial (Admin)</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Respuesta Oficial ({session?.user?.name || "Admin"})
+                  </label>
                   <textarea
                     value={respuestaEdit}
                     onChange={(e) => setRespuestaEdit(e.target.value)}

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Book, Send, CheckCircle2, ArrowLeft, Printer, ShieldAlert } from "lucide-react";
-import { registrarReclamo } from "@/app/actions";
+import { useState, useEffect } from "react";
+import { Book, Send, CheckCircle2, ArrowLeft, Printer, ShieldAlert, Loader2 } from "lucide-react";
+import { registrarReclamo, buscarPersonaPorDNI } from "@/app/actions";
 import Link from "next/link";
 
 export default function LibroReclamacionesPage() {
@@ -19,6 +19,7 @@ export default function LibroReclamacionesPage() {
   });
 
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearchingDni, setIsSearchingDni] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<{
     codigo: string;
@@ -29,6 +30,32 @@ export default function LibroReclamacionesPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
+  useEffect(() => {
+    const searchDni = async () => {
+      if (/^\d{8}$/.test(formData.dni)) {
+        setIsSearchingDni(true);
+        try {
+          const res = await buscarPersonaPorDNI(formData.dni);
+          if (res.success && res.data) {
+            setFormData(prev => ({
+              ...prev,
+              nombres: res.data.nombres,
+              apellidos: res.data.apellidos,
+              telefono: res.data.telefono || prev.telefono,
+              correo: res.data.correo || prev.correo
+            }));
+          }
+        } catch (err) {
+          console.error("Error al buscar DNI:", err);
+        } finally {
+          setIsSearchingDni(false);
+        }
+      }
+    };
+
+    searchDni();
+  }, [formData.dni]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,17 +213,29 @@ export default function LibroReclamacionesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">DNI <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    name="dni"
-                    required
-                    maxLength={8}
-                    pattern="\d{8}"
-                    placeholder="8 dígitos"
-                    value={formData.dni}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="dni"
+                      required
+                      maxLength={8}
+                      pattern="\d{8}"
+                      placeholder="8 dígitos"
+                      value={formData.dni}
+                      onChange={handleChange}
+                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm"
+                    />
+                    {isSearchingDni && (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                        <Loader2 className="h-4 w-4 text-[#f07639] animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  {isSearchingDni && (
+                    <p className="text-[10px] text-[#f07639] font-bold mt-1 animate-pulse">
+                      Buscando datos del DNI...
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-600 mb-1">Correo Electrónico <span className="text-red-500">*</span></label>
