@@ -192,18 +192,18 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
     const directionsService = new google.maps.DirectionsService();
     const directionsRenderer = new google.maps.DirectionsRenderer({
       map: map,
-      suppressMarkers: true, // Desactivar marcadores por defecto para usar los personalizados
+      suppressMarkers: true,
       polylineOptions: {
-        strokeColor: "#f07639", // Línea naranja de la empresa
+        strokeColor: "#f07639", // Línea naranja
         strokeWeight: 6,
       },
     });
     directionsRendererRef.current = directionsRenderer;
 
-    // Trazar ruta real entre Origen y Destino
     const originPlace = `${viaje.ruta.origen.nombre}, Peru`;
     const destPlace = `${viaje.ruta.destino.nombre}, Peru`;
 
+    // Intentar trazar ruta real de Google Maps
     directionsService.route(
       {
         origin: originPlace,
@@ -234,11 +234,72 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
               url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
             },
           });
+        } else {
+          // FALLBACK: Si no hay API Key facturada, dibujar polilínea de paradas
+          console.warn("Directions failed, using polyline fallback:", status);
+          const pathCoordinates = paradas
+            .map((p) => STOP_COORDINATES[p])
+            .filter((c): c is StopCoords => !!c);
+
+          if (pathCoordinates.length > 0) {
+            const fallbackPath = new google.maps.Polyline({
+              path: pathCoordinates,
+              geodesic: true,
+              strokeColor: "#f07639",
+              strokeOpacity: 1.0,
+              strokeWeight: 6,
+              map: map,
+            });
+
+            (directionsRendererRef as any).currentFallbackPolyline = fallbackPath;
+
+            // Marcador Origen
+            new google.maps.Marker({
+              position: pathCoordinates[0],
+              map: map,
+              title: `Terminal de Origen: ${viaje.ruta.origen.nombre}`,
+              icon: {
+                url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+              },
+            });
+
+            // Marcador Destino
+            new google.maps.Marker({
+              position: pathCoordinates[pathCoordinates.length - 1],
+              map: map,
+              title: `Terminal de Llegada: ${viaje.ruta.destino.nombre}`,
+              icon: {
+                url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+              },
+            });
+
+            // Marcadores intermedios
+            for (let i = 1; i < pathCoordinates.length - 1; i++) {
+              new google.maps.Marker({
+                position: pathCoordinates[i],
+                map: map,
+                title: `Control: ${paradas[i]}`,
+                icon: {
+                  path: google.maps.SymbolPath.CIRCLE,
+                  scale: 5,
+                  fillColor: "#f07639",
+                  fillOpacity: 0.8,
+                  strokeColor: "#ffffff",
+                  strokeWeight: 1.5,
+                },
+              });
+            }
+
+            // Ajustar límites
+            const bounds = new google.maps.LatLngBounds();
+            pathCoordinates.forEach((c) => bounds.extend(new google.maps.LatLng(c.lat, c.lng)));
+            map.fitBounds(bounds);
+          }
         }
       }
     );
 
-    // Crear Marcador del Bus (Círculo azul animado con borde blanco)
+    // Crear Marcador del Bus
     const initialCoords = currentCoords || STOP_COORDINATES[viaje.ruta.origen.nombre] || { lat: -5.7088, lng: -78.8081 };
     const busMarker = new google.maps.Marker({
       position: initialCoords,
@@ -247,7 +308,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
       icon: {
         path: google.maps.SymbolPath.CIRCLE,
         scale: 9,
-        fillColor: "#3b82f6", // Azul de posición
+        fillColor: "#3b82f6",
         fillOpacity: 1,
         strokeColor: "#ffffff",
         strokeWeight: 2,
@@ -257,6 +318,9 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
 
     return () => {
       if (directionsRendererRef.current) directionsRendererRef.current.setMap(null);
+      if ((directionsRendererRef as any).currentFallbackPolyline) {
+        (directionsRendererRef as any).currentFallbackPolyline.setMap(null);
+      }
       if (busMarkerRef.current) busMarkerRef.current.setMap(null);
       googleMapInstance.current = null;
     };
