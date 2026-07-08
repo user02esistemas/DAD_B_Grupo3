@@ -73,6 +73,13 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
   const [gpsStatus, setGpsStatus] = useState<"inactivo" | "activo" | "error">("inactivo");
   const [lastNotification, setLastNotification] = useState<string | null>(null);
 
+  // Estados de carga de Google Maps
+  const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const googleMapInstance = useRef<any>(null);
+  const busMarkerRef = useRef<any>(null);
+  const directionsRendererRef = useRef<any>(null);
+
   const formatDuracion = (minutos: number) => {
     const h = Math.floor(minutos / 60);
     const m = minutos % 60;
@@ -96,6 +103,32 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
   };
 
   const paradas = getParadas(viaje.ruta.origen.nombre, viaje.ruta.destino.nombre);
+
+  // Carga asíncrona de Google Maps API
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if ((window as any).google && (window as any).google.maps) {
+      setGoogleMapsLoaded(true);
+      return;
+    }
+
+    // Callback de inicialización para la API de Google Maps
+    (window as any).initGoogleMapsCallback = () => {
+      setGoogleMapsLoaded(true);
+    };
+
+    const script = document.createElement("script");
+    // NOTA: Para producción, reemplaza '&key=' por tu API Key real de Google Maps Cloud Console
+    script.src = `https://maps.googleapis.com/maps/api/js?callback=initGoogleMapsCallback`;
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+
+    return () => {
+      delete (window as any).initGoogleMapsCallback;
+    };
+  }, []);
 
   // Inicializar estados desde localStorage en el cliente
   useEffect(() => {
@@ -134,6 +167,114 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
       stopGpsTracking();
     };
   }, [viaje.id, viaje.estado]);
+
+  // Inicializar y dibujar mapa de Google Maps
+  useEffect(() => {
+    if (!googleMapsLoaded || isOffline || activeTab !== "ruta" || !mapContainerRef.current) return;
+
+    const google = (window as any).google;
+
+    // Crear instancia del mapa
+    const map = new google.maps.Map(mapContainerRef.current, {
+      zoom: 8,
+      center: { lat: -6.2, lng: -79.2 }, // Centrado aproximado del norte del Perú
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+    });
+    googleMapInstance.current = map;
+
+    // Añadir capa de tráfico en tiempo real
+    const trafficLayer = new google.maps.TrafficLayer();
+    trafficLayer.setMap(map);
+
+    // Configurar servicio de Direcciones de Google
+    const directionsService = new google.maps.DirectionsService();
+    const directionsRenderer = new google.maps.DirectionsRenderer({
+      map: map,
+      suppressMarkers: true, // Desactivar marcadores por defecto para usar los personalizados
+      polylineOptions: {
+        strokeColor: "#f07639", // Línea naranja de la empresa
+        strokeWeight: 6,
+      },
+    });
+    directionsRendererRef.current = directionsRenderer;
+
+    // Trazar ruta real entre Origen y Destino
+    const originPlace = `${viaje.ruta.origen.nombre}, Peru`;
+    const destPlace = `${viaje.ruta.destino.nombre}, Peru`;
+
+    directionsService.route(
+      {
+        origin: originPlace,
+        destination: destPlace,
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (response: any, status: string) => {
+        if (status === "OK") {
+          directionsRenderer.setDirections(response);
+          const leg = response.routes[0].legs[0];
+
+          // Marcador Terminal de Salida (Verde)
+          new google.maps.Marker({
+            position: leg.start_location,
+            map: map,
+            title: `Terminal de Origen: ${viaje.ruta.origen.nombre}`,
+            icon: {
+              url: "https://maps.google.com/mapfiles/ms/icons/green-dot.png",
+            },
+          });
+
+          // Marcador Terminal de Destino (Rojo)
+          new google.maps.Marker({
+            position: leg.end_location,
+            map: map,
+            title: `Terminal de Llegada: ${viaje.ruta.destino.nombre}`,
+            icon: {
+              url: "https://maps.google.com/mapfiles/ms/icons/red-dot.png",
+            },
+          });
+        }
+      }
+    );
+
+    // Crear Marcador del Bus (Círculo azul animado con borde blanco)
+    const initialCoords = currentCoords || STOP_COORDINATES[viaje.ruta.origen.nombre] || { lat: -5.7088, lng: -78.8081 };
+    const busMarker = new google.maps.Marker({
+      position: initialCoords,
+      map: map,
+      title: "Ubicación actual del bus",
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 9,
+        fillColor: "#3b82f6", // Azul de posición
+        fillOpacity: 1,
+        strokeColor: "#ffffff",
+        strokeWeight: 2,
+      },
+    });
+    busMarkerRef.current = busMarker;
+
+    return () => {
+      if (directionsRendererRef.current) directionsRendererRef.current.setMap(null);
+      if (busMarkerRef.current) busMarkerRef.current.setMap(null);
+      googleMapInstance.current = null;
+    };
+  }, [googleMapsLoaded, isOffline, activeTab, viaje.ruta.origen.nombre, viaje.ruta.destino.nombre]);
+
+  // Actualizar la posición del Marcador del Bus en el Google Map
+  useEffect(() => {
+    if (!googleMapsLoaded || !busMarkerRef.current || !currentCoords || isOffline) return;
+
+    const google = (window as any).google;
+    const newPos = new google.maps.LatLng(currentCoords.lat, currentCoords.lng);
+    busMarkerRef.current.setPosition(newPos);
+
+    // Re-centrar suavemente el mapa en el bus
+    if (googleMapInstance.current) {
+      googleMapInstance.current.panTo(newPos);
+    }
+  }, [currentCoords, googleMapsLoaded, isOffline]);
 
   // Iniciar el rastreo por GPS
   const startGpsTracking = () => {
@@ -189,7 +330,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
     }
   };
 
-  // Simular movimiento GPS (inyectar coordenadas)
+  // Simular movimiento GPS (inyectar coordenadas de prueba)
   const triggerSimulatedLocation = (stopName: string) => {
     const coords = STOP_COORDINATES[stopName];
     if (coords) {
@@ -608,53 +749,81 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
               </div>
             </div>
 
-            {/* Croquis de Ruta SVG Interactivo */}
+            {/* Google Map real interactivo (En línea) o Fallback SVG (Offline) */}
             <div className="space-y-4">
-              <h3 className="text-sm font-extrabold text-slate-600 uppercase tracking-wider">Mapa de Progreso GPS (Offline)</h3>
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-extrabold text-slate-600 uppercase tracking-wider">
+                  {isOffline ? "Mapa de Progreso Offline (Doble Cobertura)" : "Mapa de Ruta en Tiempo Real (Google Maps)"}
+                </h3>
+                {mounted && !isOffline && (
+                  <span className="text-[10px] bg-green-150/40 text-green-700 font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                    Capa de Tráfico Activa
+                  </span>
+                )}
+              </div>
               
-              <div className="w-full overflow-hidden bg-slate-50 border border-slate-100 rounded-3xl p-6 relative">
-                {/* SVG del trayecto */}
-                <svg viewBox="0 0 500 80" className="w-full h-20">
-                  {/* Línea base */}
-                  <line x1="40" y1="40" x2="460" y2="40" stroke="#e2e8f0" strokeWidth="4" strokeLinecap="round" />
-                  {/* Línea de progreso */}
-                  <line 
-                    x1="40" 
-                    y1="40" 
-                    x2={40 + (420 * progressPct) / 100} 
-                    y2="40" 
-                    stroke="#f07639" 
-                    strokeWidth="4" 
-                    strokeLinecap="round" 
-                    className="transition-all duration-500" 
-                  />
-                  {/* Círculos de paradas */}
-                  {paradas.map((p, idx) => {
-                    const x = 40 + (420 * idx) / (paradas.length - 1);
-                    const isPassed = completedStops.includes(p);
-                    return (
-                      <g key={p}>
-                        <circle 
-                          cx={x} 
-                          cy="40" 
-                          r="10" 
-                          fill={isPassed ? "#f07639" : "#ffffff"} 
-                          stroke={isPassed ? "#f07639" : "#cbd5e1"} 
-                          strokeWidth="3" 
-                          className="transition-all duration-300" 
-                        />
-                        <text 
-                          x={x} 
-                          y="20" 
-                          textAnchor="middle" 
-                          className="text-[10px] font-black text-slate-600 uppercase fill-current tracking-tight"
-                        >
-                          {p}
-                        </text>
-                      </g>
-                    );
-                  })}
-                </svg>
+              {/* Contenedor del Mapa */}
+              <div className="relative w-full h-[360px] overflow-hidden bg-slate-100 border border-slate-200 rounded-3xl shadow-inner">
+                {/* Fallback Offline (SVG) */}
+                {isOffline && (
+                  <div className="absolute inset-0 flex flex-col justify-center items-center p-6 bg-slate-50 animate-fadeIn">
+                    <svg viewBox="0 0 500 80" className="w-full max-w-lg mb-6">
+                      <line x1="40" y1="40" x2="460" y2="40" stroke="#e2e8f0" strokeWidth="4" strokeLinecap="round" />
+                      <line 
+                        x1="40" 
+                        y1="40" 
+                        x2={40 + (420 * progressPct) / 100} 
+                        y2="40" 
+                        stroke="#f07639" 
+                        strokeWidth="4" 
+                        strokeLinecap="round" 
+                        className="transition-all duration-500" 
+                      />
+                      {paradas.map((p, idx) => {
+                        const x = 40 + (420 * idx) / (paradas.length - 1);
+                        const isPassed = completedStops.includes(p);
+                        return (
+                          <g key={p}>
+                            <circle 
+                              cx={x} 
+                              cy="40" 
+                              r="10" 
+                              fill={isPassed ? "#f07639" : "#ffffff"} 
+                              stroke={isPassed ? "#f07639" : "#cbd5e1"} 
+                              strokeWidth="3" 
+                              className="transition-all duration-300" 
+                            />
+                            <text 
+                              x={x} 
+                              y="20" 
+                              textAnchor="middle" 
+                              className="text-[9px] font-black text-slate-600 uppercase fill-current tracking-tight"
+                            >
+                              {p}
+                            </text>
+                          </g>
+                        );
+                      })}
+                    </svg>
+                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider text-center">
+                      Visualización Offline de Paradas de Control
+                    </p>
+                  </div>
+                )}
+
+                {/* Google Map real (Visible en línea) */}
+                <div 
+                  ref={mapContainerRef} 
+                  className={`w-full h-full ${isOffline ? "hidden" : "block"}`}
+                />
+
+                {/* Mensaje de carga inicial de Google Maps */}
+                {!googleMapsLoaded && !isOffline && (
+                  <div className="absolute inset-0 flex flex-col justify-center items-center bg-slate-100 text-slate-500 gap-2">
+                    <Clock className="w-8 h-8 animate-spin text-[#f07639]" />
+                    <p className="text-xs font-bold">Cargando Google Maps API...</p>
+                  </div>
+                )}
               </div>
 
               {/* Checklist de Paradas de Control */}
@@ -689,7 +858,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
                   <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Simulador de Movimiento GPS</h4>
                 </div>
                 <p className="text-[11px] text-slate-500 mb-3 leading-relaxed">
-                  Haz clic en cualquiera de las paradas a continuación para simular las coordenadas GPS del bus y comprobar la detección automática en la hoja de ruta:
+                  Haz clic en cualquiera de las paradas a continuación para simular que el bus llega a dicha ubicación y observar el movimiento en vivo sobre el mapa de Google Maps:
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {paradas.map(p => (
