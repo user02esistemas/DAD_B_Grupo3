@@ -14,8 +14,19 @@ export default async function DetalleViajeOperarioPage({ params }: { params: Pro
     redirect("/login");
   }
 
+  // Validar si el ID es numérico para evitar errores al convertir a BigInt
+  if (!resolvedParams.id || !/^\d+$/.test(resolvedParams.id)) {
+    return (
+      <div className="p-8 text-center text-slate-500">
+        <h1 className="text-xl font-bold">Viaje no encontrado.</h1>
+        <p className="text-sm mt-2">El identificador de viaje proporcionado no es válido.</p>
+      </div>
+    );
+  }
+
+  const viajeId = BigInt(resolvedParams.id);
   const viaje = await prisma.viaje.findUnique({
-    where: { id: BigInt(resolvedParams.id) },
+    where: { id: viajeId },
     include: {
       ruta: { include: { origen: { select: { nombre: true } }, destino: { select: { nombre: true } } } },
       bus: { select: { placa: true, capacidad: true, pisos: true } },
