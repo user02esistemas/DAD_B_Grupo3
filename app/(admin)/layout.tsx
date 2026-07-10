@@ -17,6 +17,7 @@ import {
   ChevronRight,
   MessageSquareWarning,
   User,
+  Globe,
 } from "lucide-react";
 import { useState } from "react";
 import NotificacionesDropdown from "./admin/NotificacionesDropdown";
@@ -194,6 +195,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-4">
             {/* Notificaciones */}
             <NotificacionesDropdown />
+
+            {/* Volver a la Web */}
+            <Link
+              href="/"
+              className="hidden md:flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-orange-50 text-slate-500 hover:text-[#f07639] rounded-xl transition-colors border border-slate-100 font-bold text-[11px] shadow-sm"
+              title="Ir a la Web Principal (Pública)"
+            >
+              <Globe className="w-3.5 h-3.5" />
+              Ver Web
+            </Link>
             
             {/* User info */}
             <div className="relative">
@@ -224,6 +235,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     >
                       <User className="w-4 h-4 mr-2.5" />
                       Ver Perfil
+                    </Link>
+                    <Link 
+                      href="/"
+                      onClick={() => setUserDropdownOpen(false)}
+                      className="flex items-center px-4 py-2.5 text-[13px] font-semibold text-slate-600 hover:bg-[#f07639]/5 hover:text-[#f07639] transition-colors border-t border-slate-50"
+                    >
+                      <Globe className="w-4 h-4 mr-2.5" />
+                      Ir a la Web
                     </Link>
                     <button 
                       onClick={() => {
