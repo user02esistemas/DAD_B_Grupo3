@@ -16,6 +16,7 @@ import {
   MapPin,
   ChevronRight,
   MessageSquareWarning,
+  Users,
 } from "lucide-react";
 import { useState } from "react";
 import NotificacionesDropdown from "./admin/NotificacionesDropdown";
@@ -28,7 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const userRole = session?.user?.role || "cliente";
 
   const mainNav = [
-    { name: "Inicio", href: "/admin", icon: LayoutDashboard, roles: ["admin", "vendedor"] },
+    { name: "Inicio", href: "/admin", icon: LayoutDashboard, roles: ["admin", "vendedor", "gerente"] },
     { name: "Pasajes", href: "/admin/pasajes", icon: Ticket, roles: ["admin", "vendedor"] },
     { name: "Encomiendas", href: "/admin/encomiendas", icon: Package, roles: ["admin", "vendedor"] },
   ];
@@ -38,7 +39,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: "Rutas", href: "/admin/rutas", icon: MapPin, roles: ["admin"] },
     { name: "Buses", href: "/admin/buses", icon: Bus, roles: ["admin"] },
     { name: "Sucursales", href: "/admin/sucursales", icon: Building, roles: ["admin"] },
-    { name: "Reclamaciones", href: "/admin/reclamaciones", icon: MessageSquareWarning, roles: ["admin"] },
+    { name: "Usuarios", href: "/admin/usuarios", icon: Users, roles: ["admin", "gerente"] },
+    { name: "Reclamaciones", href: "/admin/reclamaciones", icon: MessageSquareWarning, roles: ["admin", "gerente"] },
   ];
 
   const getPageTitle = () => {

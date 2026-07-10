@@ -153,46 +153,46 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
         </style>
       </head>
       <body>
-        <div class="text-center">
-          <div class="header">TRANSPORTES EL CUMBE</div>
-          <div class="subtitle">R.U.C. 20123456789</div>
-          <div class="subtitle">Oficina Principal - Venta Presencial</div>
-          <div class="divider"></div>
-          <div class="ticket-title">Boleto de Pasaje</div>
-          <div class="bold">${ticket.codigo_qr}</div>
-          <div class="subtitle">Compra: ${fechaCompraStr}</div>
+        <div className="text-center">
+          <div className="header">TRANSPORTES EL CUMBE</div>
+          <div className="subtitle">R.U.C. 20123456789</div>
+          <div className="subtitle">Oficina Principal - Venta Presencial</div>
+          <div className="divider"></div>
+          <div className="ticket-title">Boleto de Pasaje</div>
+          <div className="bold">${ticket.codigo_qr}</div>
+          <div className="subtitle">Compra: ${fechaCompraStr}</div>
         </div>
 
-        <div class="divider"></div>
+        <div className="divider"></div>
 
-        <div class="row"><span class="bold">Pasajero:</span><span>${pasajero.nombres.toUpperCase()}</span></div>
-        <div class="row"><span></span><span>${pasajero.apellidos.toUpperCase()}</span></div>
-        <div class="row"><span class="bold">DNI:</span><span>${pasajero.dni}</span></div>
-        ${pasajero.telefono ? `<div class="row"><span class="bold">Teléfono:</span><span>${pasajero.telefono}</span></div>` : ""}
+        <div className="row"><span className="bold">Pasajero:</span><span>${pasajero.nombres.toUpperCase()}</span></div>
+        <div className="row"><span></span><span>${pasajero.apellidos.toUpperCase()}</span></div>
+        <div className="row"><span className="bold">DNI:</span><span>${pasajero.dni}</span></div>
+        ${pasajero.telefono ? `<div className="row"><span className="bold">Teléfono:</span><span>${pasajero.telefono}</span></div>` : ""}
 
-        <div class="divider"></div>
+        <div className="divider"></div>
 
-        <div class="text-center bold" style="margin-bottom: 2mm;">DETALLE DEL VIAJE</div>
-        <div class="row"><span class="bold">Origen:</span><span>${viajeObj.ruta.origen.nombre}</span></div>
-        <div class="row"><span class="bold">Destino:</span><span>${viajeObj.ruta.destino.nombre}</span></div>
-        <div class="row"><span class="bold">F. Viaje:</span><span>${fechaSalidaStr}</span></div>
-        <div class="row"><span class="bold">H. Viaje:</span><span>${horaSalidaStr}</span></div>
-        <div class="row"><span class="bold">Bus Placa:</span><span>${viajeObj.bus.placa}</span></div>
+        <div className="text-center bold" style="margin-bottom: 2mm;">DETALLE DEL VIAJE</div>
+        <div className="row"><span className="bold">Origen:</span><span>${viajeObj.ruta.origen.nombre}</span></div>
+        <div className="row"><span className="bold">Destino:</span><span>${viajeObj.ruta.destino.nombre}</span></div>
+        <div className="row"><span className="bold">F. Viaje:</span><span>${fechaSalidaStr}</span></div>
+        <div className="row"><span className="bold">H. Viaje:</span><span>${horaSalidaStr}</span></div>
+        <div className="row"><span className="bold">Bus Placa:</span><span>${viajeObj.bus.placa}</span></div>
 
-        <div class="divider"></div>
+        <div className="divider"></div>
 
-        <div class="row" style="font-size: 12px;"><span class="bold">ASIENTO:</span><span class="bold">#${asientoObj.numero_asiento} (Piso ${asientoObj.piso})</span></div>
-        <div class="row" style="font-size: 12px;"><span class="bold">TOTAL PAGADO:</span><span class="bold">S/ ${parseFloat(precio).toFixed(2)}</span></div>
+        <div className="row" style="font-size: 12px;"><span className="bold">ASIENTO:</span><span className="bold">#${asientoObj.numero_asiento} (Piso ${asientoObj.piso})</span></div>
+        <div className="row" style="font-size: 12px;"><span className="bold">TOTAL PAGADO:</span><span className="bold">S/ ${parseFloat(precio).toFixed(2)}</span></div>
 
-        <div class="divider"></div>
+        <div className="divider"></div>
 
         ${qrBase64 ? `
-          <div class="qr-container">
+          <div className="qr-container">
             <img src="${qrBase64}" alt="Código QR" />
           </div>
         ` : ""}
 
-        <div class="text-center" style="font-size: 9px; margin-top: 2mm;">
+        <div className="text-center" style="font-size: 9px; margin-top: 2mm;">
           ¡GRACIAS POR SU PREFERENCIA!<br>
           Presentar este boleto 30 min antes<br>
           de la salida del bus.
@@ -288,7 +288,7 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
 
     // Generar botones de asiento en formato HTML
     const renderAsientoHTML = (seat: any) => {
-      if (!seat) return '<div class="w-18 h-18"></div>';
+      if (!seat) return '<div className="w-18 h-18"></div>';
       const isOcupado = seat.estado !== "disponible";
       const isSelected = selectedAsiento?.id === seat.id;
       
@@ -303,14 +303,14 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
       const clickHandler = isOcupado ? "" : `onclick="window.opener.seleccionarAsientoDesdeCliente('${seat.id}')"`;
 
       return `
-        <button ${disabledAttr} ${clickHandler} class="w-18 h-20 rounded-2xl flex items-center justify-center transition-all duration-200 ${colorClass}">
-          <svg class="w-full h-full p-1.5" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 22 42 H 28 V 22 C 28 14, 72 14, 72 22 V 42 H 78 C 83 42, 85 46, 85 50 V 78 C 85 86, 77 88, 70 88 H 30 C 23 88, 15 86, 15 78 V 50 C 15 46, 17 42, 22 42 Z" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M 28 42 V 66 C 28 74, 72 74, 72 66 V 42" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" />
+        <button ${disabledAttr} ${clickHandler} className="w-18 h-20 rounded-2xl flex items-center justify-center transition-all duration-200 ${colorClass}">
+          <svg className="w-full h-full p-1.5" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M 22 42 H 28 V 22 C 28 14, 72 14, 72 22 V 42 H 78 C 83 42, 85 46, 85 50 V 78 C 85 86, 77 88, 70 88 H 30 C 23 88, 15 86, 15 78 V 50 C 15 46, 17 42, 22 42 Z" stroke="currentColor" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M 28 42 V 66 C 28 74, 72 74, 72 66 V 42" stroke="currentColor" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
             ${isOcupado ? `
-              <path d="M 40 22 L 60 42 M 60 22 L 40 42" stroke="currentColor" stroke-width="7" stroke-linecap="round" />
+              <path d="M 40 22 L 60 42 M 60 22 L 40 42" stroke="currentColor" strokeWidth="7" strokeLinecap="round" />
             ` : `
-              <text x="50" y="34" text-anchor="middle" dominant-baseline="middle" class="font-extrabold text-[28px]" fill="currentColor">
+              <text x="50" y="34" text-anchor="middle" dominant-baseline="middle" className="font-extrabold text-[28px]" fill="currentColor">
                 ${seat.numero_asiento}
               </text>
             `}
@@ -328,17 +328,17 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
         { col1: 7, col2: 8, col4: 9 },
         { col1: 10, col2: 11, col4: 12 },
       ];
-      let html = '<div class="space-y-4">';
+      let html = '<div className="space-y-4">';
       filasPiso1.forEach(fila => {
         const seatCol1 = asientosPiso.find(s => s.numero_asiento === fila.col1);
         const seatCol2 = asientosPiso.find(s => s.numero_asiento === fila.col2);
         const seatCol4 = asientosPiso.find(s => s.numero_asiento === fila.col4);
         html += `
-          <div class="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             ${renderAsientoHTML(seatCol1)}
             ${renderAsientoHTML(seatCol2)}
-            <div class="w-14 flex items-center justify-center">
-              <svg class="w-6 h-6 text-slate-350" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="13" rx="2" /><path d="M8 3l4 4 4-4" /></svg>
+            <div className="w-14 flex items-center justify-center">
+              <svg className="w-6 h-6 text-slate-350" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="13" rx="2" /><path d="M8 3l4 4 4-4" /></svg>
             </div>
             ${renderAsientoHTML(seatCol4)}
           </div>
@@ -365,20 +365,20 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
         { col1: 53, col2: 54, col4: 55, col5: 56, escalera: false },
         { col1: 57, col2: 58, col4: 59, col5: 60, escalera: false },
       ];
-      let html = '<div class="space-y-4">';
+      let html = '<div className="space-y-4">';
       filasPiso2.forEach(fila => {
         const seatCol1 = asientosPiso.find(s => s.numero_asiento === fila.col1);
         const seatCol2 = asientosPiso.find(s => s.numero_asiento === fila.col2);
         const seatCol4 = fila.col4 !== null ? asientosPiso.find(s => s.numero_asiento === fila.col4) : null;
         const seatCol5 = fila.col5 !== null ? asientosPiso.find(s => s.numero_asiento === fila.col5) : null;
         html += `
-          <div class="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             ${renderAsientoHTML(seatCol1)}
             ${renderAsientoHTML(seatCol2)}
-            <div class="w-14 flex items-center justify-center"></div>
+            <div className="w-14 flex items-center justify-center"></div>
             ${fila.escalera ? `
-              <div class="w-40 h-20 flex items-center justify-center text-slate-300">
-                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h4v-5h4v-5h4v-5h6" /></svg>
+              <div className="w-40 h-20 flex items-center justify-center text-slate-300">
+                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 20h4v-5h4v-5h4v-5h6" /></svg>
               </div>
             ` : `
               ${renderAsientoHTML(seatCol4)}
@@ -397,13 +397,13 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
       for (let i = 0; i < asientosPiso.length; i += 4) {
         filas.push(asientosPiso.slice(i, i + 4));
       }
-      let html = '<div class="space-y-4">';
+      let html = '<div className="space-y-4">';
       filas.forEach(fila => {
         html += `
-          <div class="flex items-center gap-4">
+          <div className="flex items-center gap-4">
             ${renderAsientoHTML(fila[0])}
             ${renderAsientoHTML(fila[1])}
-            <div class="w-14 h-20"></div>
+            <div className="w-14 h-20"></div>
             ${renderAsientoHTML(fila[2])}
             ${renderAsientoHTML(fila[3])}
           </div>
@@ -434,53 +434,53 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
           }
         </style>
       </head>
-      <body class="min-h-screen flex flex-col p-6 md:p-8 select-none overflow-x-hidden">
+      <body className="min-h-screen flex flex-col p-6 md:p-8 select-none overflow-x-hidden">
         <!-- Cabecera -->
-        <div class="bg-white border border-slate-100 p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 shadow-md">
-          <div class="flex items-center gap-3.5">
-            <div class="w-12 h-12 bg-gradient-to-br from-[#f07639] to-[#d45a1f] rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 shrink-0">
-              <svg class="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+        <div className="bg-white border border-slate-100 p-5 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 shadow-md">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#f07639] to-[#d45a1f] rounded-xl flex items-center justify-center shadow-lg shadow-orange-500/20 shrink-0">
+              <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
             </div>
-            <div class="text-center sm:text-left">
-              <h1 class="text-xl md:text-2xl font-black text-slate-800 tracking-tight">📱 PANTALLA CLIENTE: Selecciona tu Asiento</h1>
-              <p class="text-xs text-slate-450 font-bold mt-0.5">
+            <div className="text-center sm:text-left">
+              <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">📱 PANTALLA CLIENTE: Selecciona tu Asiento</h1>
+              <p className="text-xs text-slate-450 font-bold mt-0.5">
                 Bus ${selectedViaje.bus.placa} • ${selectedViaje.ruta.origen.nombre} &rarr; ${selectedViaje.ruta.destino.nombre}
               </p>
             </div>
           </div>
-          <div class="flex items-center gap-3">
-            <div class="bg-[#f07639]/10 border border-[#f07639]/20 px-4 py-2 rounded-xl text-[#f07639] text-xs font-bold shadow-sm">
-              Tarifa: <span class="text-[#f07639] font-extrabold text-sm ml-1">S/ ${selectedViaje.ruta.precio_base}</span>
+          <div className="flex items-center gap-3">
+            <div className="bg-[#f07639]/10 border border-[#f07639]/20 px-4 py-2 rounded-xl text-[#f07639] text-xs font-bold shadow-sm">
+              Tarifa: <span className="text-[#f07639] font-extrabold text-sm ml-1">S/ ${selectedViaje.ruta.precio_base}</span>
             </div>
-            <button onclick="window.close()" class="bg-red-50 hover:bg-red-100 border border-red-200 text-red-650 px-4 py-2 rounded-xl text-xs font-black transition-all hover:scale-105 cursor-pointer flex items-center gap-1">
+            <button onclick="window.close()" className="bg-red-50 hover:bg-red-100 border border-red-200 text-red-650 px-4 py-2 rounded-xl text-xs font-black transition-all hover:scale-105 cursor-pointer flex items-center gap-1">
               &times; Cerrar
             </button>
           </div>
         </div>
 
         <!-- Cuerpo con mapa de asientos -->
-        <div class="flex-1 flex items-center justify-center py-4">
-          <div class="flex flex-col lg:flex-row gap-16 max-w-6xl items-center lg:items-start transition-all duration-300">
+        <div className="flex-1 flex items-center justify-center py-4">
+          <div className="flex flex-col lg:flex-row gap-16 max-w-6xl items-center lg:items-start transition-all duration-300">
             ${isBuscama ? `
               <!-- Piso 1 -->
-              <div class="flex flex-col items-center">
-                <div class="font-black text-xs uppercase tracking-[0.2em] px-4.5 py-2 bg-slate-50 border border-slate-200 text-slate-650 rounded-full mb-4 shadow-sm">1er Piso</div>
-                <div class="bus-chasis border-2 border-slate-200/80 bg-white rounded-[3.8rem] py-10 px-6 shadow-sm">
+              <div className="flex flex-col items-center">
+                <div className="font-black text-xs uppercase tracking-[0.2em] px-4.5 py-2 bg-slate-50 border border-slate-200 text-slate-650 rounded-full mb-4 shadow-sm">1er Piso</div>
+                <div className="bus-chasis border-2 border-slate-200/80 bg-white rounded-[3.8rem] py-10 px-6 shadow-sm">
                   ${renderPiso1HTML()}
                 </div>
               </div>
               <!-- Piso 2 -->
-              <div class="flex flex-col items-center">
-                <div class="font-black text-xs uppercase tracking-[0.2em] px-4.5 py-2 bg-slate-50 border border-slate-200 text-slate-650 rounded-full mb-4 shadow-sm">2do Piso</div>
-                <div class="bus-chasis border-2 border-slate-200/80 bg-white rounded-[3.8rem] py-10 px-6 shadow-sm">
+              <div className="flex flex-col items-center">
+                <div className="font-black text-xs uppercase tracking-[0.2em] px-4.5 py-2 bg-slate-50 border border-slate-200 text-slate-650 rounded-full mb-4 shadow-sm">2do Piso</div>
+                <div className="bus-chasis border-2 border-slate-200/80 bg-white rounded-[3.8rem] py-10 px-6 shadow-sm">
                   ${renderPiso2HTML()}
                 </div>
               </div>
             ` : `
               <!-- Regular 1 Piso -->
-              <div class="flex flex-col items-center">
-                <div class="font-black text-xs uppercase tracking-[0.2em] px-4.5 py-2 bg-slate-50 border border-slate-200 text-slate-650 rounded-full mb-4 shadow-sm">Croquis del Bus</div>
-                <div class="bus-chasis border-2 border-slate-200/80 bg-white rounded-[3.8rem] py-10 px-6 shadow-sm">
+              <div className="flex flex-col items-center">
+                <div className="font-black text-xs uppercase tracking-[0.2em] px-4.5 py-2 bg-slate-50 border border-slate-200 text-slate-650 rounded-full mb-4 shadow-sm">Croquis del Bus</div>
+                <div className="bus-chasis border-2 border-slate-200/80 bg-white rounded-[3.8rem] py-10 px-6 shadow-sm">
                   ${renderAsientosRegularesHTML()}
                 </div>
               </div>
@@ -489,16 +489,16 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
         </div>
 
         <!-- Leyendas -->
-        <div class="mt-8 border-t border-slate-200/80 pt-6 flex justify-center gap-10 text-xs font-bold text-slate-450">
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-[#f07639]/5 border border-[#f07639]/20 flex items-center justify-center text-orange-500">
-              <svg class="w-4.5 h-4.5" viewBox="0 0 100 100" fill="none"><path d="M 22 42 H 28 V 22 C 28 14, 72 14, 72 22 V 42 H 78 C 83 42, 85 46, 85 50 V 78 C 85 86, 77 88, 70 88 H 30 C 23 88, 15 86, 15 78 V 50 C 15 46, 17 42, 22 42 Z" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" /><path d="M 28 42 V 66 C 28 74, 72 74, 72 66 V 42" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        <div className="mt-8 border-t border-slate-200/80 pt-6 flex justify-center gap-10 text-xs font-bold text-slate-450">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-[#f07639]/5 border border-[#f07639]/20 flex items-center justify-center text-orange-500">
+              <svg className="w-4.5 h-4.5" viewBox="0 0 100 100" fill="none"><path d="M 22 42 H 28 V 22 C 28 14, 72 14, 72 22 V 42 H 78 C 83 42, 85 46, 85 50 V 78 C 85 86, 77 88, 70 88 H 30 C 23 88, 15 86, 15 78 V 50 C 15 46, 17 42, 22 42 Z" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" /><path d="M 28 42 V 66 C 28 74, 72 74, 72 66 V 42" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </div>
             <span>Disponible</span>
           </div>
-          <div class="flex items-center gap-2">
-            <div class="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 text-slate-300 flex items-center justify-center">
-              <svg class="w-4.5 h-4.5" viewBox="0 0 100 100" fill="none"><path d="M 22 42 H 28 V 22 C 28 14, 72 14, 72 22 V 42 H 78 C 83 42, 85 46, 85 50 V 78 C 85 86, 77 88, 70 88 H 30 C 23 88, 15 86, 15 78 V 50 C 15 46, 17 42, 22 42 Z" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" /><path d="M 28 42 V 66 C 28 74, 72 74, 72 66 V 42" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" /><path d="M 40 22 L 60 42 M 60 22 L 40 42" stroke="currentColor" stroke-width="6" stroke-linecap="round" /></svg>
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-100 text-slate-300 flex items-center justify-center">
+              <svg className="w-4.5 h-4.5" viewBox="0 0 100 100" fill="none"><path d="M 22 42 H 28 V 22 C 28 14, 72 14, 72 22 V 42 H 78 C 83 42, 85 46, 85 50 V 78 C 85 86, 77 88, 70 88 H 30 C 23 88, 15 86, 15 78 V 50 C 15 46, 17 42, 22 42 Z" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" /><path d="M 28 42 V 66 C 28 74, 72 74, 72 66 V 42" stroke="currentColor" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" /><path d="M 40 22 L 60 42 M 60 22 L 40 42" stroke="currentColor" strokeWidth="6" strokeLinecap="round" /></svg>
             </div>
             <span>Ocupado</span>
           </div>
@@ -934,7 +934,7 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
                                 </div>
                                 {piso === 1 && (
                                   <div className="text-slate-400 bg-white p-2 rounded-full shadow-sm border border-slate-200">
-                                    <svg className="w-5 h-5 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <svg className="w-5 h-5 opacity-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                       <circle cx="12" cy="12" r="10" />
                                       <circle cx="12" cy="12" r="3" />
                                       <path d="M12 15l-3.5 6" />
@@ -947,7 +947,7 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
                                 )}
                                 {piso === 2 && (
                                   <div className="text-slate-400 bg-white p-2 rounded-full shadow-sm border border-slate-200">
-                                    <svg className="w-5 h-5 opacity-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <svg className="w-5 h-5 opacity-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <path d="M3 21h18M3 17h14M3 13h10M3 9h6M3 5h2" strokeLinecap="round" />
                                     </svg>
                                   </div>
