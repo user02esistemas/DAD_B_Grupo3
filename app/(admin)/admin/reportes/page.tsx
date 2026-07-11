@@ -382,92 +382,78 @@ export default function ReportesPage() {
   };
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-[26px] font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-            <BarChart3 className="w-7 h-7 text-[#f07639]" />
-            Módulo de Reportes
-          </h2>
-          <p className="text-sm text-slate-400 font-medium">
-            Consulta estadísticas de caja, ventas de pasajes y encomiendas en tiempo real.
-          </p>
-        </div>
-
-        {data && (
+      <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2.5">
+              <span className="w-2.5 h-6 rounded-full bg-[#f07639] block" />
+              Reporte de Ventas Financieras
+            </h1>
+            <p className="text-xs text-slate-400 font-bold mt-1 uppercase tracking-wider">
+              Análisis detallado de recaudación por venta de pasajes y envíos de encomienda.
+            </p>
+          </div>
+          
           <button
             onClick={exportarPDF}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#f07639] to-[#d45a1f] text-white rounded-xl shadow-lg shadow-[#f07639]/20 hover:opacity-95 active:scale-98 transition-all font-bold text-xs cursor-pointer"
+            disabled={!data || loading}
+            className="flex items-center justify-center gap-2 bg-[#f07639] hover:bg-[#d85e25] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm shadow-orange-500/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowDownToLine className="w-4 h-4" />
-            Descargar PDF
+            Descargar PDF de Ventas
           </button>
-        )}
-      </div>
+        </div>
 
-      {/* Filtros */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm flex flex-col xl:flex-row xl:items-end gap-5">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5 w-full">
-          {/* Desde */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
-              <Calendar className="w-5 h-5 text-slate-500" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Desde</label>
+        {/* Panel de Filtros */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-slate-50">
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Desde</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-slate-300 pointer-events-none" />
               <input
                 type="date"
                 value={desde}
                 onChange={(e) => setDesde(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 focus:border-[#f07639] focus:bg-white rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition-colors"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-orange-500 focus:outline-none text-slate-600 font-semibold"
               />
             </div>
           </div>
 
-          {/* Hasta */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
-              <Calendar className="w-5 h-5 text-slate-500" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Hasta</label>
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Hasta</label>
+            <div className="relative">
+              <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-slate-300 pointer-events-none" />
               <input
                 type="date"
                 value={hasta}
                 onChange={(e) => setHasta(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 focus:border-[#f07639] focus:bg-white rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition-colors"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-orange-500 focus:outline-none text-slate-600 font-semibold"
               />
             </div>
           </div>
 
-          {/* Buscar DNI */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
-              <User className="w-5 h-5 text-slate-500" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Buscar DNI</label>
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Buscar Cliente (DNI)</label>
+            <div className="relative">
+              <User className="absolute left-3 top-2.5 w-4 h-4 text-slate-300 pointer-events-none" />
               <input
                 type="text"
                 placeholder="Ej: 45010001"
                 value={busquedaDni}
                 onChange={(e) => setBusquedaDni(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 focus:border-[#f07639] focus:bg-white rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition-colors"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-orange-500 focus:outline-none text-slate-600 font-bold placeholder-slate-300"
               />
             </div>
           </div>
 
-          {/* Filtrar Ruta */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-slate-50 flex items-center justify-center border border-slate-100 shrink-0">
-              <MapPin className="w-5 h-5 text-slate-500" />
-            </div>
-            <div className="flex-1">
-              <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Filtrar Ruta</label>
+          <div>
+            <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Filtrar por Ruta</label>
+            <div className="relative">
+              <MapPin className="absolute left-3 top-2.5 w-4 h-4 text-slate-300 pointer-events-none" />
               <select
                 value={filtroRuta}
                 onChange={(e) => setFiltroRuta(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 focus:border-[#f07639] focus:bg-white rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 outline-none transition-colors cursor-pointer"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-xl focus:border-orange-500 focus:outline-none text-slate-600 font-bold bg-white cursor-pointer appearance-none"
               >
                 <option value="">Todas las rutas</option>
                 {rutasUnicas.map((r: string) => (
@@ -477,14 +463,15 @@ export default function ReportesPage() {
             </div>
           </div>
         </div>
-
-        {loading && (
-          <div className="flex items-center gap-2 text-xs font-bold text-slate-400 shrink-0 mb-2 xl:mb-0">
-            <div className="w-4 h-4 border-2 border-[#f07639] border-t-transparent rounded-full animate-spin" />
-            Cargando...
-          </div>
-        )}
       </div>
+
+      {/* Mensajes de Carga o Error */}
+      {loading && (
+        <div className="bg-white rounded-2xl p-12 border border-slate-100 text-center shadow-sm mb-6">
+          <div className="w-10 h-10 border-4 border-[#f07639] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Cargando datos financieros...</p>
+        </div>
+      )}
 
       {error && (
         <div className="p-4 bg-red-50 text-red-600 rounded-2xl border border-red-100 text-xs font-bold">
