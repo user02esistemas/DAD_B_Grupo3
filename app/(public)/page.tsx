@@ -12,12 +12,9 @@ export default async function Home() {
   return (
     <div className="flex flex-col flex-1 bg-transparent relative overflow-hidden">
       {/* Círculos decorativos de fondo con desenfoque (Glow Effect) */}
-      <div className="absolute top-[50%] -left-36 w-[450px] h-[450px] bg-orange-200/20 rounded-full filter blur-3xl pointer-events-none z-0"></div>
-      <div className="absolute top-[70%] -right-36 w-[450px] h-[450px] bg-amber-100/25 rounded-full filter blur-3xl pointer-events-none z-0"></div>
-
       <div className="relative z-10 flex flex-col flex-1">
         {/* SECTION 1: BANNER PRINCIPAL Y SALUDO */}
-      <section className="relative w-full h-[300px] sm:h-[400px] lg:h-[450px]">
+      <section className="relative h-[340px] w-full sm:h-[420px] lg:h-[470px]">
         {/* Background Image */}
         <div className="absolute inset-0">
           <Image
@@ -29,21 +26,25 @@ export default async function Home() {
             className="object-cover"
           />
           {/* Overlay gradient to ensure text readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-10"></div>
+          <div className="absolute inset-0 z-10 bg-[linear-gradient(90deg,rgba(7,12,10,0.92)_0%,rgba(7,12,10,0.68)_46%,rgba(7,12,10,0.08)_78%)]"></div>
         </div>
 
         {/* Dynamic Greeting */}
-        <div className="relative z-20 h-full flex flex-col justify-center px-4 sm:px-6 lg:px-16 max-w-7xl mx-auto">
+        <div className="relative z-20 mx-auto flex h-full w-full max-w-7xl flex-col justify-center px-4 pb-8 sm:px-6 lg:px-8">
+          <div className="mb-4 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.18em] text-[#ffb088]">
+            <span className="h-px w-10 bg-[#f07639]" />
+            Pasajes y encomiendas
+          </div>
           {session ? (
-            <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight drop-shadow-md">
+            <h1 className="max-w-2xl text-4xl font-extrabold tracking-tight text-white drop-shadow-md md:text-6xl">
               Hola, <span className="text-[#f07639]">{session.user?.name}</span>
             </h1>
           ) : (
-            <h1 className="text-4xl md:text-6xl font-extrabold text-white tracking-tight drop-shadow-md">
+            <h1 className="max-w-2xl text-4xl font-extrabold tracking-tight text-white drop-shadow-md md:text-6xl">
               Hola <span className="text-[#f07639]">viajero</span>
             </h1>
           )}
-          <p className="mt-4 text-lg sm:text-xl text-gray-200 max-w-xl drop-shadow">
+          <p className="mt-4 max-w-xl text-base leading-7 text-[#eef2ef] drop-shadow sm:text-lg">
             Bienvenido a tu plataforma de transporte y encomiendas. Compra tus pasajes y rastrea tus envíos de manera rápida y segura.
           </p>
         </div>
@@ -53,29 +54,31 @@ export default async function Home() {
       <HomeBookingSearch />
 
       {/* SECTION 2: SPLIT LAYOUT (CARRUSEL + TARJETAS DE SERVICIOS) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
+      <section className="mx-auto w-full max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-18">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-start">
 
           {/* COLUMNA IZQUIERDA: Carrusel Vertical y Redes Sociales */}
           <div className="w-full order-1 flex flex-col">
-            <div className="mb-8">
-              <h2 className="text-3xl font-extrabold text-gray-900">
-                Empresa <span className="text-[#f07639]">Peruana</span>
+            <div className="mb-7">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--secondary)]">Conoce nuestra ruta</p>
+              <h2 className="text-3xl font-extrabold text-[var(--foreground)]">
+                Empresa <span className="text-[var(--primary-text)]">Peruana</span>
               </h2>
-              <div className="h-1.5 w-20 bg-[#f07639] rounded-full mt-4"></div>
+              <div className="mt-4 h-1 w-16 rounded-full bg-[var(--primary)]"></div>
             </div>
 
             <AdsCarousel />
 
             {/* Redes Sociales */}
-            <div className="mt-10 flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-              <span className="text-gray-700 font-medium text-lg">Contáctanos:</span>
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row lg:justify-start">
+              <span className="text-base font-semibold text-[var(--muted)]">Contáctanos:</span>
               <div className="flex space-x-4">
                 <a 
                   href="https://facebook.com/TransportesELCUMBE" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1"
+                  aria-label="Facebook de El Cumbe"
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] text-[#315f8f] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#315f8f] hover:bg-[#315f8f] hover:text-white hover:shadow-md"
                 >
                   <FaFacebook size={24} />
                 </a>
@@ -83,7 +86,8 @@ export default async function Home() {
                   href="https://www.instagram.com/elcumbesac/" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="w-12 h-12 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center hover:bg-gradient-to-tr hover:from-yellow-400 hover:via-pink-500 hover:to-purple-500 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1"
+                  aria-label="Instagram de El Cumbe"
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] text-[#b4466c] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#b4466c] hover:bg-[#b4466c] hover:text-white hover:shadow-md"
                 >
                   <FaInstagram size={24} />
                 </a>
@@ -91,7 +95,8 @@ export default async function Home() {
                   href="https://wa.me/51976202295" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="w-12 h-12 rounded-full bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-500 hover:text-white transition-colors shadow-sm hover:shadow-md hover:-translate-y-1"
+                  aria-label="WhatsApp de El Cumbe"
+                  className="flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] text-[#247a5a] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#247a5a] hover:bg-[#247a5a] hover:text-white hover:shadow-md"
                 >
                   <FaWhatsapp size={24} />
                 </a>
@@ -101,11 +106,12 @@ export default async function Home() {
 
           {/* COLUMNA DERECHA: Tarjetas de Servicios */}
           <div className="w-full order-2 flex flex-col">
-            <div className="mb-8">
-              <h2 className="text-3xl font-extrabold text-gray-900">
-                Nuestros <span className="text-[#f07639]">Servicios</span>
+            <div className="mb-7">
+              <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[var(--secondary)]">Lo que hacemos</p>
+              <h2 className="text-3xl font-extrabold text-[var(--foreground)]">
+                Nuestros <span className="text-[var(--primary-text)]">Servicios</span>
               </h2>
-              <div className="h-1.5 w-20 bg-[#f07639] rounded-full mt-4"></div>
+              <div className="mt-4 h-1 w-16 rounded-full bg-[var(--primary)]"></div>
             </div>
 
             <ServicesList />

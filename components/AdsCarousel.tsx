@@ -35,7 +35,7 @@ export default function AdsCarousel() {
   };
 
   return (
-    <div className="relative mx-auto w-full max-w-[375px] h-[500px] md:h-[600px] group overflow-hidden rounded-2xl shadow-xl border border-gray-100">
+    <div className="group relative mx-auto h-[500px] w-full max-w-[375px] overflow-hidden rounded-lg border border-[var(--card-border)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] transition-colors md:h-[600px]">
       {/* Slides */}
       <div
         className="w-full h-full flex transition-transform duration-700 ease-in-out"
@@ -56,12 +56,12 @@ export default function AdsCarousel() {
       </div>
 
       {/* Left Arrow */}
-      <div className="absolute top-[50%] -translate-y-1/2 left-4 text-2xl rounded-full p-2 bg-black/30 text-white cursor-pointer hover:bg-black/60 transition opacity-0 group-hover:opacity-100" onClick={goToPrevious}>
+      <div className="absolute top-[50%] -translate-y-1/2 left-4 text-2xl rounded-full p-2 bg-black/30 dark:bg-black/50 text-white cursor-pointer hover:bg-black/60 dark:hover:bg-black/70 transition opacity-0 group-hover:opacity-100" onClick={goToPrevious}>
         <ChevronLeft size={24} />
       </div>
 
       {/* Right Arrow */}
-      <div className="absolute top-[50%] -translate-y-1/2 right-4 text-2xl rounded-full p-2 bg-black/30 text-white cursor-pointer hover:bg-black/60 transition opacity-0 group-hover:opacity-100" onClick={goToNext}>
+      <div className="absolute top-[50%] -translate-y-1/2 right-4 text-2xl rounded-full p-2 bg-black/30 dark:bg-black/50 text-white cursor-pointer hover:bg-black/60 dark:hover:bg-black/70 transition opacity-0 group-hover:opacity-100" onClick={goToNext}>
         <ChevronRight size={24} />
       </div>
 
@@ -72,7 +72,7 @@ export default function AdsCarousel() {
             key={slideIndex}
             onClick={() => goToSlide(slideIndex)}
             className={`transition-all w-2.5 h-2.5 rounded-full cursor-pointer shadow-sm ${
-              currentIndex === slideIndex ? "bg-[#f07639] w-6" : "bg-gray-300 hover:bg-white"
+              currentIndex === slideIndex ? "bg-[#f07639] w-6" : "bg-gray-300 dark:bg-slate-500 hover:bg-white dark:hover:bg-slate-300"
             }`}
           ></div>
         ))}

@@ -101,9 +101,9 @@ export default async function OperarioDashboardPage() {
                     {/* Origen y Destino */}
                     <div className="flex items-center gap-3">
                       <div className="flex flex-col items-center">
-                        <div className="w-3 h-3 rounded-full border-2 border-[#f07639] bg-white z-10" />
-                        <div className="w-px h-8 bg-slate-200 my-1" />
-                        <div className="w-3 h-3 rounded-full border-2 border-slate-300 bg-white z-10" />
+                        <div className="w-3 h-3 rounded-full border-2 border-[#f07639] bg-white dark:bg-[#12131a] z-10" />
+                        <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 my-1" />
+                        <div className="w-3 h-3 rounded-full border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-[#12131a] z-10" />
                       </div>
                       <div className="flex flex-col justify-between h-[60px] text-sm">
                         <p className="font-extrabold text-slate-800 leading-none">{viaje.ruta.origen.nombre}</p>
@@ -130,7 +130,7 @@ export default async function OperarioDashboardPage() {
                         <span>Progreso de Abordaje</span>
                         <span>{viaje.total_abordados} / {viaje.total_pasajeros} pasajeros ({porcentaje}%)</span>
                       </div>
-                      <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div 
                           className="h-full bg-green-500 transition-all duration-500" 
                           style={{ width: `${porcentaje}%` }}

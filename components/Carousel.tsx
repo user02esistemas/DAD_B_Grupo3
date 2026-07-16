@@ -33,7 +33,7 @@ export default function Carousel() {
   };
 
   return (
-    <div className="relative w-full h-[300px] md:h-[450px] lg:h-[600px] group overflow-hidden bg-gray-100">
+    <div className="relative w-full h-[300px] md:h-[450px] lg:h-[600px] group overflow-hidden bg-gray-100 dark:bg-slate-800 transition-colors">
       {/* Slides */}
       <div
         className="w-full h-full flex transition-transform duration-700 ease-in-out"
@@ -50,12 +50,12 @@ export default function Carousel() {
       </div>
 
       {/* Left Arrow */}
-      <div className="absolute top-[50%] -translate-y-1/2 left-5 text-2xl rounded-full p-2 bg-black/20 text-white cursor-pointer hover:bg-black/50 transition opacity-0 group-hover:opacity-100" onClick={goToPrevious}>
+      <div className="absolute top-[50%] -translate-y-1/2 left-5 text-2xl rounded-full p-2 bg-black/20 dark:bg-black/40 text-white cursor-pointer hover:bg-black/50 dark:hover:bg-black/60 transition opacity-0 group-hover:opacity-100" onClick={goToPrevious}>
         <ChevronLeft size={30} />
       </div>
 
       {/* Right Arrow */}
-      <div className="absolute top-[50%] -translate-y-1/2 right-5 text-2xl rounded-full p-2 bg-black/20 text-white cursor-pointer hover:bg-black/50 transition opacity-0 group-hover:opacity-100" onClick={goToNext}>
+      <div className="absolute top-[50%] -translate-y-1/2 right-5 text-2xl rounded-full p-2 bg-black/20 dark:bg-black/40 text-white cursor-pointer hover:bg-black/50 dark:hover:bg-black/60 transition opacity-0 group-hover:opacity-100" onClick={goToNext}>
         <ChevronRight size={30} />
       </div>
 
@@ -65,7 +65,7 @@ export default function Carousel() {
           <div
             key={slideIndex}
             onClick={() => goToSlide(slideIndex)}
-            className={`transition-all w-3 h-3 rounded-full cursor-pointer ${currentIndex === slideIndex ? "bg-[#f07639] w-6" : "bg-white/50 hover:bg-white"
+            className={`transition-all w-3 h-3 rounded-full cursor-pointer ${currentIndex === slideIndex ? "bg-[#f07639] w-6" : "bg-white/50 hover:bg-white dark:bg-slate-400 dark:hover:bg-slate-300"
               }`}
           ></div>
         ))}

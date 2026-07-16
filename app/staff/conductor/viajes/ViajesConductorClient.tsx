@@ -47,13 +47,13 @@ export default function ViajesConductorClient({ initialViajes }: { initialViajes
       <div className="flex gap-2 mb-6">
         <button 
           onClick={() => setFilter("pendientes")}
-          className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${filter === "pendientes" ? "bg-[#f07639] text-white shadow-md shadow-[#f07639]/30" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"}`}
+          className={`px-4 py-2 rounded-full text-sm font-bold transition-all cursor-pointer ${filter === "pendientes" ? "bg-[#f07639] text-white shadow-md shadow-[#f07639]/30" : "bg-white dark:bg-[#12131a] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
         >
           Pendientes / En Curso
         </button>
         <button 
           onClick={() => setFilter("todos")}
-          className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${filter === "todos" ? "bg-[#f07639] text-white shadow-md shadow-[#f07639]/30" : "bg-white text-slate-500 border border-slate-200 hover:bg-slate-50"}`}
+          className={`px-4 py-2 rounded-full text-sm font-bold transition-all cursor-pointer ${filter === "todos" ? "bg-[#f07639] text-white shadow-md shadow-[#f07639]/30" : "bg-white dark:bg-[#12131a] text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"}`}
         >
           Historial Completo
         </button>
@@ -88,9 +88,9 @@ export default function ViajesConductorClient({ initialViajes }: { initialViajes
 
                 <div className="flex items-center gap-3 mb-5">
                   <div className="flex flex-col items-center">
-                    <div className="w-3 h-3 rounded-full border-2 border-[#f07639] bg-white z-10" />
-                    <div className="w-px h-8 bg-slate-200 my-1" />
-                    <div className="w-3 h-3 rounded-full border-2 border-slate-300 bg-white z-10" />
+                    <div className="w-3 h-3 rounded-full border-2 border-[#f07639] bg-white dark:bg-[#12131a] z-10" />
+                    <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 my-1" />
+                    <div className="w-3 h-3 rounded-full border-2 border-slate-300 dark:border-slate-700 bg-white dark:bg-[#12131a] z-10" />
                   </div>
                   <div className="flex flex-col justify-between h-[60px]">
                     <p className="font-extrabold text-slate-800 leading-none">{viaje.ruta.origen.nombre}</p>

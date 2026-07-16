@@ -151,3 +151,153 @@
 - **Problema:** El formulario de registro en el frontend (`app/(public)/registro/page.tsx`) enviaba un campo único `name` que el endpoint de la API (`app/api/auth/register/route.ts`) dividía mediante `.split(" ")` tomando la primera palabra como nombres y el resto como apellidos. Esto causaba un registro incorrecto en la tabla `Persona` para personas con múltiples nombres (ej. Juan Carlos).
 - **Solución:** Se reemplazó el campo único `name` en el formulario y en el estado de React del frontend por dos inputs y campos independientes: `nombres` y `apellidos`. Asimismo, se modificó la API de registro para recibir ambos parámetros y guardarlos directamente y sin divisiones en la base de datos.
 
+
+
+## 17. [2026-07-16] Mejora Integral del Sistema de Temas (Dark Mode y Light Mode)
+- **Problema:** El sistema de temas anterior tenía:
+  1. Paleta de colores poco refinada con bajo contraste en modo oscuro (especialmente para accesibilidad).
+  2. ThemeToggle con estilos genéricos sin efectos visuales premium.
+  3. Transiciones de tema abruptas sin suavidad.
+  4. Variables CSS limitadas y sin estandarización de sombras y colores de acentuación.
+  5. No detectaba cambios de preferencia del sistema operativo en tiempo real.
+  
+- **Solución Implementada:**
+  1. **Paleta de colores mejorada** en `app/globals.css`:
+     - Light Mode: Backgrounds en #ffffff y #f1f5f9 con bordes e inputs más claros y contrastados.
+     - Dark Mode: Backgrounds en #0a0c15 y #111827 con mejor contraste WCAG AA para legibilidad.
+     - Agregadas variables para sombras (`--shadow-sm`, `--shadow-md`, `--shadow-lg`), colores acentuados (blue, green, red, yellow).
+  
+  2. **ThemeProvider mejorado** en `components/ThemeProvider.tsx`:
+     - Implementación de `applyTheme()` con transiciones suaves (300ms).
+     - Sincronización con cambios de preferencia del SO via `window.matchMedia()`.
+     - Atributo `data-theme` agregado al html para mejor control de CSS.
+  
+  3. **ThemeToggle redeseñado** en `components/ThemeToggle.tsx`:
+     - Botón con animación de fondo gradiente en hover.
+     - Icono Sun/Moon con animación `spin-slow` al estar en modo oscuro.
+     - Mejor contraste y sombras con transiciones suaves.
+     - Tamaño aumentado a 10px (40px de alto/ancho).
+  
+  4. **Nuevas animaciones CSS**:
+     - `@keyframes spin-slow`: Rotación lenta para el icono del sol (3s).
+     - `@keyframes glow-pulse`: Efecto de resplandor pulsante para textos.
+     - `@keyframes fadeInDown`: Desvanecimiento hacia abajo.
+     - `@keyframes slideInRight`: Deslizamiento desde la derecha.
+  
+  5. **Clases CSS reutilizables**:
+     - `.glass-card` y `.glass-card-light`: Efectos glassmorphism mejorados.
+     - `.card-base`, `.card-hover`, `.card-focus`: Estilos estándar para tarjetas.
+     - `.btn-primary`, `.btn-secondary`: Botones con hover effects.
+     - `.text-gradient-orange`, `.text-gradient-blue`: Textos con gradientes.
+  
+  6. **Sobrescrituras de modo oscuro mejoradas**:
+     - Colores de texto, fondos y bordes completamente redefinidos para cada utilidad de Tailwind.
+     - Sombras ajustadas para modo oscuro con mayor profundidad visual.
+     - Hover states consistentes con la paleta de marca.
+  
+  7. **Scrollbars estilizados** con transiciones suaves y colores temáticos.
+  
+- **Archivos modificados:**
+  - `app/globals.css` (completamente reescrito con nueva paleta y animaciones)
+  - `components/ThemeProvider.tsx` (mejorada sincronización y transiciones)
+  - `components/ThemeToggle.tsx` (rediseño de UI/UX)
+
+
+
+## 18. [2026-07-16] Corrección Integral del Sistema de Temas (Dark/Light Mode)
+- **Problema**: Múltiples componentes permanecían con fondos blancos y colores hardcodeados en modo oscuro, creando una experiencia inconsistente. Elementos específicos identificados:
+  1. **FloatingTicketButton**: Fondo naranja sin variantes dark, borde blanco hardcodeado
+  2. **Services & ServicesList**: Cards con bg-white sin variante dark, textos sin adaptación
+  3. **Carousel & AdsCarousel**: Fondos grises y navegación sin respuesta al tema
+  4. **HomeBookingSearch**: Componente crítico completamente blanco en dark mode (dropdowns, inputs, contenedor principal)
+  5. **Páginas públicas** (Ayuda, Quienes Somos): Cards, acordeones y sucursales sin modo oscuro
+  6. Textos con color-gray-900, gray-600, gray-500 sin variantes dark
+  7. Bordes con border-gray-100 sin variantes dark
+  8. Fondos con bg-gray-50 sin variantes dark
+  9. Sombras sin adaptación para modo oscuro
+
+- **Solución Implementada**:
+  
+  **A. Componentes Básicos Corregidos:**
+  1. **FloatingTicketButton.tsx**:
+     - Añadido `dark:bg-orange-600 dark:hover:bg-orange-700`
+     - Sombra adaptada: `dark:shadow-orange-900/50`
+     - Borde dinámico: `border-white/20 dark:border-orange-700`
+  
+  2. **Services.tsx**:
+     - Cards: `bg-white dark:bg-[#111827]`
+     - Bordes: `border-gray-100 dark:border-slate-700`
+     - Textos: `text-gray-900 dark:text-slate-100`
+     - Iconos: `bg-orange-50 dark:bg-orange-950/30`
+  
+  3. **ServicesList.tsx**:
+     - Idéntica adaptación a Services.tsx
+     - Efectos hover adaptados al tema oscuro
+  
+  4. **Carousel.tsx & AdsCarousel.tsx**:
+     - Fondo: `bg-gray-100 dark:bg-slate-800`
+     - Controles: `bg-black/20 dark:bg-black/40`
+     - Dots: `bg-gray-300 dark:bg-slate-500`
+     - Bordes: `border-gray-100 dark:border-slate-700`
+  
+  **B. Componente Crítico HomeBookingSearch.tsx:**
+  - Contenedor principal: `bg-white dark:bg-[#111827]`
+  - Sombras: `shadow-2xl dark:shadow-black/20`
+  - Bordes: `border-white/50 dark:border-slate-700`
+  - Título: `text-gray-800 dark:text-slate-100`
+  - Inputs internos: `bg-white dark:bg-[#0f1219]`
+  - Dropdowns: `bg-white dark:bg-[#111827]`
+  - Labels: `text-gray-400 dark:text-slate-500`
+  - Opciones seleccionadas: `text-gray-900 dark:text-slate-100`
+  - Hover states: `hover:bg-orange-50/50 dark:hover:bg-orange-950/20`
+  - Items dropdown: `bg-orange-50 dark:bg-orange-950/30`
+  - Fecha input: `text-gray-900 dark:text-slate-100`
+  - Botón buscar: `dark:bg-orange-600 dark:hover:bg-orange-700`
+  
+  **C. Páginas Públicas:**
+  
+  1. **ayuda/page.tsx**:
+     - Cards FAQ: `bg-white dark:bg-[#111827]`
+     - Títulos: `text-gray-900 dark:text-slate-100`
+     - Contenido acordeón: `bg-orange-50/30 dark:bg-orange-950/20`
+     - Divisores: `divide-gray-100 dark:divide-slate-700`
+     - Banner contacto: `from-orange-50 dark:from-orange-950/20`
+     - Info boxes equipaje: `bg-gray-50 dark:bg-slate-800`
+  
+  2. **quienes-somos/page.tsx**:
+     - Cards Misión/Visión: `bg-white dark:bg-[#111827]`
+     - Título sección: `text-gray-900 dark:text-slate-100`
+     - Tarjetas sucursales: `bg-white dark:bg-[#111827]`
+     - Textos internos: `text-gray-900 dark:text-slate-100`
+     - Bordes: `border-gray-100 dark:border-slate-700`
+     - Sombras: `shadow-xl dark:shadow-black/20`
+  
+  **D. Patrón de Colores Estandarizado:**
+  - **Fondos principales**: `bg-white dark:bg-[#111827]`
+  - **Fondos secundarios**: `bg-gray-50 dark:bg-slate-800`
+  - **Superficies internas**: `bg-white dark:bg-[#0f1219]`
+  - **Texto primario**: `text-gray-900 dark:text-slate-100`
+  - **Texto secundario**: `text-gray-600 dark:text-slate-400`
+  - **Texto terciario**: `text-gray-500 dark:text-slate-500`
+  - **Bordes**: `border-gray-100 dark:border-slate-700`
+  - **Divisores**: `divide-gray-100 dark:divide-slate-700`
+  - **Sombras**: `shadow-xl dark:shadow-black/20`
+  - **Acentos naranjas**: `bg-orange-50 dark:bg-orange-950/30`
+  - **Botones primarios**: `bg-[#f07639] dark:bg-orange-600 hover:bg-orange-600 dark:hover:bg-orange-700`
+
+  **E. Transiciones Suaves:**
+  - Todos los cambios incluyen `transition-colors duration-300` o `transition-all duration-300`
+  - Asegura experiencia fluida al cambiar de tema
+  
+- **Archivos Modificados**:
+  1. `components/FloatingTicketButton.tsx` - Botón flotante adaptado
+  2. `components/Services.tsx` - Sección servicios homepage
+  3. `components/ServicesList.tsx` - Lista servicios sidebar
+  4. `components/Carousel.tsx` - Carrusel principal
+  5. `components/AdsCarousel.tsx` - Carrusel publicitario
+  6. `components/HomeBookingSearch.tsx` - Buscador principal (crítico)
+  7. `app/(public)/ayuda/page.tsx` - Centro de ayuda con FAQs
+  8. `app/(public)/quienes-somos/page.tsx` - Página institucional
+  
+- **Resultado**: Sistema de temas completamente consistente y profesional. Todos los componentes visibles en la captura del usuario ahora respetan correctamente el modo oscuro/claro sin elementos blancos inesperados.
+
