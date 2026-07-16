@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { getDashboardGerencialStats } from "@/app/(admin)/actions/estadisticas";
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer
 } from "recharts";
 import { Ticket, DollarSign, Map, Filter, RefreshCcw } from "lucide-react";
 
@@ -160,13 +160,20 @@ export default function DashboardGerente({ sucursales }: { sucursales: any[] }) 
           
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={data?.grafico || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 12 }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--card-border)" />
+              <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fill: 'var(--muted)', fontSize: 12 }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--muted)', fontSize: 12 }} />
               <RechartsTooltip 
-                cursor={{ fill: '#f8fafc' }}
-                contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)' }}
-                labelStyle={{ fontWeight: 'bold', color: '#1e293b' }}
+                cursor={{ fill: 'var(--surface)' }}
+                contentStyle={{
+                  backgroundColor: 'var(--dropdown-bg)',
+                  border: '1px solid var(--dropdown-border)',
+                  borderRadius: '8px',
+                  boxShadow: 'var(--shadow-md)',
+                  color: 'var(--foreground)'
+                }}
+                labelStyle={{ fontWeight: 'bold', color: 'var(--foreground)' }}
+                itemStyle={{ color: 'var(--foreground)' }}
               />
               <Bar 
                 dataKey="ventas" 

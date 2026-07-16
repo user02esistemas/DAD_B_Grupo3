@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import {
@@ -71,7 +72,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           group flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 relative
           ${isActive 
             ? "bg-[#f07639]/10 text-[#f07639] font-bold nav-active-bar" 
-            : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] font-medium"
+            : "text-[#aeb9b3] hover:text-white hover:bg-white/[0.05] font-medium"
           }
         `}
       >
@@ -79,7 +80,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           w-9 h-9 rounded-lg flex items-center justify-center mr-3 transition-all duration-200
           ${isActive 
             ? "bg-[#f07639] text-white shadow-lg shadow-[#f07639]/30" 
-            : "bg-white/[0.06] text-slate-400 group-hover:bg-white/[0.1] group-hover:text-slate-200"
+            : "bg-white/[0.06] text-[#aeb9b3] group-hover:bg-white/[0.1] group-hover:text-white"
           }
         `}>
           <item.icon className="w-[18px] h-[18px]" />
@@ -93,7 +94,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9fc] flex flex-col md:flex-row">
+    <div className="panel-shell flex min-h-screen flex-col bg-[var(--page-bg)] transition-colors duration-300 md:flex-row">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
@@ -104,11 +105,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* ========= SIDEBAR ========= */}
       <div className={`
-        fixed md:sticky top-0 left-0 z-50 h-screen w-[260px] flex flex-col shrink-0 transition-transform duration-300
+        fixed md:sticky top-0 left-0 z-50 h-screen w-[260px] flex flex-col shrink-0 border-r border-[#26362f] transition-transform duration-300
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
         {/* Sidebar background with gradient */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0d1220] via-[#0f1628] to-[#111a30]" />
+        <div className="absolute inset-0 bg-[#101814]" />
         {/* Subtle pattern overlay */}
         <div className="absolute inset-0 opacity-[0.02]" style={{backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px'}} />
         
@@ -132,7 +133,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="mb-6">
               <div className="flex items-center px-4 mb-3">
                 <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                <span className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Servicios</span>
+                <span className="px-3 text-[10px] font-black text-[#85958d] uppercase tracking-[0.2em]">Servicios</span>
                 <div className="h-px flex-1 bg-gradient-to-l from-white/10 to-transparent" />
               </div>
               <div className="space-y-1">
@@ -145,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="mb-6">
                 <div className="flex items-center px-4 mb-3">
                   <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                  <span className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Gestión</span>
+                  <span className="px-3 text-[10px] font-black text-[#85958d] uppercase tracking-[0.2em]">Gestión</span>
                   <div className="h-px flex-1 bg-gradient-to-l from-white/10 to-transparent" />
                 </div>
                 <div className="space-y-1">
@@ -159,7 +160,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <div className="mb-6">
                 <div className="flex items-center px-4 mb-3">
                   <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                  <span className="px-3 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Reportes</span>
+                  <span className="px-3 text-[10px] font-black text-[#85958d] uppercase tracking-[0.2em]">Reportes</span>
                   <div className="h-px flex-1 bg-gradient-to-l from-white/10 to-transparent" />
                 </div>
                 <div className="space-y-1">
@@ -173,7 +174,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="p-4 border-t border-white/[0.06]">
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="w-full flex items-center justify-center px-3 py-2.5 bg-white/[0.02] hover:bg-red-500/10 text-slate-400 hover:text-red-400 border border-white/[0.04] hover:border-red-500/25 rounded-xl transition-all duration-200 text-[12px] font-bold group"
+              className="w-full flex items-center justify-center px-3 py-2.5 bg-white/[0.02] hover:bg-red-500/10 text-[#aeb9b3] hover:text-red-300 border border-white/[0.06] hover:border-red-500/25 rounded-xl transition-all duration-200 text-[12px] font-bold group"
             >
               <LogOut className="w-3.5 h-3.5 mr-2 group-hover:-translate-x-0.5 transition-transform" />
               Cerrar Sesión
@@ -185,7 +186,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* ========= MAIN CONTENT ========= */}
       <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
         {/* Topbar */}
-        <header className="h-[64px] bg-white flex items-center justify-between px-6 z-30 sticky top-0 border-b border-slate-100 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <header className="sticky top-0 z-30 flex h-[64px] items-center justify-between border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] px-6 shadow-[var(--shadow-sm)] transition-colors duration-300">
           {/* Left side */}
           <div className="flex items-center gap-4">
             <button
@@ -195,10 +196,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Menu className="w-5 h-5" />
             </button>
             
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-              <span className="text-slate-400">Admin</span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-300" />
-              <span className="text-[#f07639] font-bold">{getPageTitle()}</span>
+            <div className="flex items-center gap-2 text-xs font-semibold text-[var(--muted)]">
+              <span className="text-[var(--muted)]">Admin</span>
+              <ChevronRight className="h-3.5 w-3.5 text-[var(--muted-light)]" />
+              <span className="font-bold text-[var(--primary-text)]">{getPageTitle()}</span>
             </div>
           </div>
 
@@ -207,10 +208,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             {/* Notificaciones */}
             <NotificacionesDropdown />
 
+            {/* Toggle Tema */}
+            <ThemeToggle />
+
             {/* Volver a la Web */}
             <Link
               href="/"
-              className="hidden md:flex items-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-orange-50 text-slate-500 hover:text-[#f07639] rounded-xl transition-colors border border-slate-100 font-bold text-[11px] shadow-sm"
+              className="hidden items-center gap-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--surface-secondary)] px-3 py-2 text-[11px] font-bold text-[var(--muted)] shadow-sm transition-colors hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)] md:flex"
               title="Ir a la Web Principal (Pública)"
             >
               <Globe className="w-3.5 h-3.5" />
@@ -221,11 +225,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="relative">
               <button 
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="hidden sm:flex items-center gap-3 pl-4 border-l border-slate-100 hover:opacity-85 transition-opacity outline-none text-left cursor-pointer"
+                className="hidden cursor-pointer items-center gap-3 border-l border-[var(--topbar-border)] pl-4 text-left outline-none transition-opacity hover:opacity-85 sm:flex"
               >
                 <div className="text-right">
-                  <p className="text-[13px] font-bold text-slate-800 leading-tight">{session?.user?.name}</p>
-                  <p className="text-[11px] text-slate-400 capitalize font-medium">{session?.user?.role}</p>
+                  <p className="text-[13px] font-bold leading-tight text-[var(--foreground)]">{session?.user?.name}</p>
+                  <p className="text-[11px] font-medium capitalize text-[var(--muted)]">{session?.user?.role}</p>
                 </div>
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#f07639] to-[#d45a1f] flex items-center justify-center text-white font-black text-sm shadow-sm transition-transform active:scale-95">
                   {session?.user?.name?.charAt(0) || "A"}
@@ -238,11 +242,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     className="fixed inset-0 z-40" 
                     onClick={() => setUserDropdownOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2.5 w-48 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  <div className="absolute right-0 z-50 mt-2.5 w-48 rounded-lg border border-[var(--dropdown-border)] bg-[var(--dropdown-bg)] py-2 shadow-[var(--shadow-lg)] animate-in fade-in slide-in-from-top-2 duration-150">
                     <Link 
                       href="/admin/perfil"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center px-4 py-2.5 text-[13px] font-semibold text-slate-600 hover:bg-[#f07639]/5 hover:text-[#f07639] transition-colors"
+                      className="flex items-center px-4 py-2.5 text-[13px] font-semibold text-[var(--muted)] transition-colors hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)]"
                     >
                       <User className="w-4 h-4 mr-2.5" />
                       Ver Perfil
@@ -250,7 +254,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <Link 
                       href="/"
                       onClick={() => setUserDropdownOpen(false)}
-                      className="flex items-center px-4 py-2.5 text-[13px] font-semibold text-slate-600 hover:bg-[#f07639]/5 hover:text-[#f07639] transition-colors border-t border-slate-50"
+                      className="flex items-center border-t border-[var(--dropdown-border)] px-4 py-2.5 text-[13px] font-semibold text-[var(--muted)] transition-colors hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)]"
                     >
                       <Globe className="w-4 h-4 mr-2.5" />
                       Ir a la Web
@@ -260,7 +264,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         setUserDropdownOpen(false);
                         signOut({ callbackUrl: "/login" });
                       }}
-                      className="w-full flex items-center px-4 py-2.5 text-[13px] font-semibold text-red-500 hover:bg-red-50 transition-colors border-t border-slate-50 cursor-pointer text-left"
+                      className="flex w-full cursor-pointer items-center border-t border-[var(--dropdown-border)] px-4 py-2.5 text-left text-[13px] font-semibold text-red-500 transition-colors hover:bg-red-50"
                     >
                       <LogOut className="w-4 h-4 mr-2.5" />
                       Cerrar Sesión
@@ -273,7 +277,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-5 sm:p-6 lg:p-8 min-h-[calc(100vh-72px)]">
+        <main className="min-h-[calc(100vh-72px)] flex-1 overflow-x-hidden overflow-y-auto bg-[var(--page-bg)] p-5 transition-colors duration-300 sm:p-6 lg:p-8">
           <div className="animate-fade-in-up">
             {children}
           </div>

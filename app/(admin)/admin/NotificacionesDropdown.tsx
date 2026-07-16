@@ -92,7 +92,7 @@ export default function NotificacionesDropdown() {
           setIsOpen(!isOpen);
           if (!isOpen) cargarNotificaciones();
         }}
-        className="relative w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-500 hover:text-slate-800 transition-all border border-slate-200/60 cursor-pointer"
+        className="relative flex h-9 w-9 cursor-pointer items-center justify-center rounded-lg border border-[var(--card-border)] bg-[var(--surface-secondary)] text-[var(--muted)] transition-all hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)]"
       >
         <Bell className="w-5 h-5" />
         {noLeidas > 0 && (
@@ -104,11 +104,11 @@ export default function NotificacionesDropdown() {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-[380px] bg-white rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.12)] border border-slate-100 z-50 overflow-hidden animate-fade-in-up">
+        <div className="absolute right-0 top-full z-50 mt-2 w-[min(380px,calc(100vw-2rem))] overflow-hidden rounded-lg border border-[var(--dropdown-border)] bg-[var(--dropdown-bg)] shadow-[var(--shadow-lg)] animate-fade-in-up">
           {/* Header */}
-          <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-[#f8f9fc]">
+          <div className="flex items-center justify-between border-b border-[var(--dropdown-border)] bg-[var(--surface-secondary)] px-5 py-3.5">
             <div className="flex items-center gap-2">
-              <h3 className="text-[14px] font-extrabold text-slate-800">Notificaciones</h3>
+              <h3 className="text-[14px] font-extrabold text-[var(--foreground)]">Notificaciones</h3>
               {noLeidas > 0 && (
                 <span className="bg-[#f07639] text-white text-[10px] font-black px-1.5 py-0.5 rounded-md">
                   {noLeidas}
@@ -160,7 +160,7 @@ export default function NotificacionesDropdown() {
                       }}
                       className={`
                         flex items-start gap-3 px-5 py-3.5 border-b border-slate-50 cursor-pointer transition-all duration-200 group
-                        ${esLeida ? "bg-white opacity-60" : "bg-white hover:bg-[#fff8f4]"}
+                        ${esLeida ? "bg-[var(--card-bg)] opacity-70" : "bg-[var(--card-bg)] hover:bg-[var(--primary-soft)]"}
                       `}
                     >
                       {getIcon(notif.tipo)}
@@ -194,7 +194,7 @@ export default function NotificacionesDropdown() {
 
           {/* Footer */}
           {notificaciones.length > 0 && (
-            <div className="px-5 py-3 border-t border-slate-100 bg-[#f8f9fc]">
+            <div className="border-t border-[var(--dropdown-border)] bg-[var(--surface-secondary)] px-5 py-3">
               <button
                 onClick={cargarNotificaciones}
                 className="text-[12px] font-bold text-[#f07639] hover:text-orange-700 transition-colors w-full text-center"
