@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAdminOrVendedor } from "./_auth";
 
 function serializeBigInt<T>(obj: T): any {
   return JSON.parse(
@@ -22,6 +23,7 @@ export type Notificacion = {
 
 export async function obtenerNotificaciones(): Promise<{ success: boolean; data: Notificacion[] }> {
   try {
+    await requireAdminOrVendedor();
     const ahora = new Date();
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);

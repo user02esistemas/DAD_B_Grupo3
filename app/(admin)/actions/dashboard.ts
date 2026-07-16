@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { requireAdminOrVendedor } from "./_auth";
 
 // Helper para convertir BigInt y Decimal de forma segura para el Cliente
 function serializeBigInt<T>(obj: T): any {
@@ -13,6 +14,7 @@ function serializeBigInt<T>(obj: T): any {
 
 export async function getDashboardStats() {
   try {
+    await requireAdminOrVendedor();
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const manana = new Date(hoy);
@@ -177,6 +179,7 @@ export async function getDashboardStats() {
 
 export async function getEncomiendasPorDestino() {
   try {
+    await requireAdminOrVendedor();
     const encomiendas = await prisma.encomienda.groupBy({
       by: ["destino_id"],
       _count: {
@@ -213,6 +216,7 @@ export async function getEncomiendasPorDestino() {
 
 export async function getViajesPorDestino() {
   try {
+    await requireAdminOrVendedor();
     // Para obtener viajes por destino, usamos las rutas
     const viajes = await prisma.viaje.findMany({
       select: {
@@ -249,6 +253,7 @@ export async function getViajesPorDestino() {
 
 export async function getDemandaAlertas() {
   try {
+    await requireAdminOrVendedor();
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const ayer = new Date(hoy);

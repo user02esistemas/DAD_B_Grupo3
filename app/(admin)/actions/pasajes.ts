@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
-import bcrypt from "bcrypt";
+import { requireAdminOrVendedor } from "./_auth";
 
 // Helper genérico para resolver BigInts
 function serializeBigInt<T>(obj: T): any {
@@ -16,6 +16,7 @@ function serializeBigInt<T>(obj: T): any {
 // 1. Buscar Viajes Disponibles
 export async function buscarViajes(origenId: string | number, destinoId: string | number, fechaStr: string) {
   try {
+    await requireAdminOrVendedor();
     const fechaInicio = new Date(`${fechaStr}T00:00:00.000Z`);
     const fechaFin = new Date(`${fechaStr}T23:59:59.999Z`);
 
@@ -56,6 +57,7 @@ export async function buscarViajes(origenId: string | number, destinoId: string 
 // 2. Obtener Asientos de un Viaje
 export async function obtenerAsientosPorViaje(viajeId: string | number) {
   try {
+    await requireAdminOrVendedor();
     const asientos = await prisma.asientoViaje.findMany({
       where: { viaje_id: BigInt(viajeId) },
       orderBy: { numero_asiento: "asc" },
@@ -78,6 +80,7 @@ export async function buscarPasajeroPorDni(dni: string) {
   if (!dni || dni.length < 5) return { success: false };
 
   try {
+    await requireAdminOrVendedor();
     const persona = await prisma.persona.findUnique({
       where: { dni: dni }
     });
@@ -104,6 +107,7 @@ export async function venderPasaje(data: {
   }
 }) {
   try {
+    await requireAdminOrVendedor();
     const vId = BigInt(data.viaje_id);
     const aId = BigInt(data.asiento_id);
 
@@ -176,6 +180,7 @@ export async function venderPasaje(data: {
 // 5. Buscar Pasajes Vendidos (Filtros)
 export async function buscarPasajesVendidos(filtros: { origenId?: string, destinoId?: string, fecha?: string, dni?: string }) {
   try {
+    await requireAdminOrVendedor();
     const whereClause: any = {};
 
     // Filtro por fecha (fecha de salida del viaje)
@@ -255,6 +260,7 @@ export async function editarPasaje(data: {
   precio: number;
 }) {
   try {
+    await requireAdminOrVendedor();
     const pId = BigInt(data.pasaje_id);
 
     const resultado = await prisma.$transaction(async (tx) => {

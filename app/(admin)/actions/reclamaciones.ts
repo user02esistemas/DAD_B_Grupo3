@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireAdmin } from "./_auth";
 
 // Helper for BigInt serialization
 function serializeBigInt<T>(obj: T): any {
@@ -14,6 +15,7 @@ function serializeBigInt<T>(obj: T): any {
 
 export async function getReclamaciones() {
   try {
+    await requireAdmin();
     const reclamos = await prisma.reclamo.findMany({
       include: {
         persona: {
@@ -41,6 +43,7 @@ export async function updateReclamoEstado(
   respuestaAdmin: string
 ) {
   try {
+    await requireAdmin();
     await prisma.reclamo.update({
       where: { id: BigInt(id) },
       data: {

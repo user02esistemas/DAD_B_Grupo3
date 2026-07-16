@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireAdminOrVendedor } from "./_auth";
 
 // Función auxiliar para parsear y validar ID numéricos / BigInt
 function parseId(id: string | number | bigint): bigint {
@@ -19,6 +20,7 @@ function serializeBigInt<T>(obj: T): any {
 
 export async function obtenerEncomiendas() {
   try {
+    await requireAdminOrVendedor();
     const encomiendas = await prisma.encomienda.findMany({
       include: {
         origen: { select: { nombre: true } },
@@ -57,6 +59,7 @@ export async function actualizarEstadoEncomienda(
   viaje_id?: string | number | null
 ) {
   try {
+    await requireAdminOrVendedor();
     const encomiendaId = parseId(id);
     
     let updateData: any = { estado: nuevoEstado };
@@ -87,6 +90,7 @@ export async function registrarEncomienda(data: {
   paquete: { origen_id: string; destino_id: string; peso_kg: string; precio: string; descripcion: string };
 }) {
   try {
+    await requireAdminOrVendedor();
     const resultado = await prisma.$transaction(async (tx) => {
       // 1. Upsert Remitente
       const remitente = await tx.persona.upsert({

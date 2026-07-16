@@ -434,7 +434,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
   }, [currentCoords, googleMapsLoaded, isOffline]);
 
   // Iniciar el rastreo por GPS
-  const startGpsTracking = () => {
+  function startGpsTracking() {
     if (typeof window === "undefined" || !navigator.geolocation) return;
     
     stopGpsTracking(); // Limpiar previo si existe
@@ -453,15 +453,15 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
       },
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
     );
-  };
+  }
 
   // Detener el rastreo GPS
-  const stopGpsTracking = () => {
+  function stopGpsTracking() {
     if (watchIdRef.current !== null && navigator.geolocation) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
-  };
+  }
 
   // Evaluar cercanía a las paradas y auto-marcar (con lógica de cascada)
   const checkProximity = (currentLat: number, currentLng: number) => {
@@ -507,7 +507,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
   };
 
   // Sincronizar cola local con el servidor al volver a estar "En Línea"
-  const handleSyncData = async (gastosToSync: any[], novedadesToSync: any[]) => {
+  async function handleSyncData(gastosToSync: any[], novedadesToSync: any[]) {
     setIsUpdating(true);
     let successCount = 0;
 
@@ -551,7 +551,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
     } finally {
       setIsUpdating(false);
     }
-  };
+  }
 
   // Alternar modo de simulación offline
   const toggleOfflineMode = async () => {
@@ -1321,7 +1321,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
                     </div>
                     <p className="text-sm font-medium text-slate-700">{n.descripcion}</p>
                     <div className="text-[10px] text-slate-400 font-bold space-y-0.5">
-                      <p>Reportado: {new Date(n.created_at || Date.now()).toLocaleString()}</p>
+                      <p>Reportado: {n.created_at ? new Date(n.created_at).toLocaleString() : "Fecha no disponible"}</p>
                       {n.solucionado && n.fecha_solucion && (
                         <p className="text-emerald-600">Solucionado: {new Date(n.fecha_solucion).toLocaleString()}</p>
                       )}

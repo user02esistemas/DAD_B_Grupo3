@@ -2,9 +2,21 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { requireConductorOwner } from "./_auth";
+
+async function requireTripAccess(viajeId: number | bigint) {
+  const viaje = await prisma.viaje.findUnique({
+    where: { id: BigInt(viajeId) },
+    select: { conductor_id: true },
+  });
+  if (!viaje?.conductor_id) throw new Error("Viaje no encontrado o sin conductor asignado.");
+  await requireConductorOwner(Number(viaje.conductor_id));
+  return viaje;
+}
 
 export async function getViajesConductor(personaId: number) {
   try {
+    await requireConductorOwner(personaId);
     const viajes = await prisma.viaje.findMany({
       where: {
         conductor_id: personaId,
@@ -42,6 +54,7 @@ export async function getViajesConductor(personaId: number) {
 
 export async function updateEstadoViaje(viajeId: number, estado: string) {
   try {
+    await requireTripAccess(viajeId);
     await prisma.viaje.update({
       where: { id: viajeId },
       data: { estado }
@@ -56,6 +69,8 @@ export async function updateEstadoViaje(viajeId: number, estado: string) {
 
 export async function registrarGasto(data: { viaje_id: number, conductor_id: number, concepto: string, monto: number }) {
   try {
+    await requireTripAccess(data.viaje_id);
+    await requireConductorOwner(data.conductor_id);
     await prisma.gastoRuta.create({
       data: {
         viaje_id: data.viaje_id,
@@ -74,6 +89,8 @@ export async function registrarGasto(data: { viaje_id: number, conductor_id: num
 
 export async function reportarNovedad(data: { viaje_id: number, bus_id: number, conductor_id: number, categoria: string, descripcion: string }) {
   try {
+    await requireTripAccess(data.viaje_id);
+    await requireConductorOwner(data.conductor_id);
     await prisma.novedadMecanica.create({
       data: {
         viaje_id: data.viaje_id,
@@ -93,6 +110,9 @@ export async function reportarNovedad(data: { viaje_id: number, bus_id: number, 
 
 export async function getAlertasCentral(viajeIds: number[]) {
   try {
+    for (const viajeId of viajeIds) {
+      await requireTripAccess(viajeId);
+    }
     const alertas = await prisma.alertaCentral.findMany({
       where: {
         viaje_id: { in: viajeIds },
@@ -111,6 +131,12 @@ export async function getAlertasCentral(viajeIds: number[]) {
 
 export async function marcarAlertaLeida(alertaId: number) {
   try {
+    const alerta = await prisma.alertaCentral.findUnique({
+      where: { id: BigInt(alertaId) },
+      select: { viaje_id: true },
+    });
+    if (!alerta) throw new Error("Alerta no encontrada.");
+    await requireTripAccess(alerta.viaje_id);
     await prisma.alertaCentral.update({
       where: { id: alertaId },
       data: { leido: true }
@@ -125,6 +151,7 @@ export async function marcarAlertaLeida(alertaId: number) {
 
 export async function obtenerNovedadesConductor(conductorId: number) {
   try {
+    await requireConductorOwner(conductorId);
     const novedades = await prisma.novedadMecanica.findMany({
       where: {
         conductor_id: conductorId,
@@ -147,6 +174,7 @@ export async function obtenerNovedadesConductor(conductorId: number) {
 
 export async function obtenerBusesAsignados(conductorId: number) {
   try {
+    await requireConductorOwner(conductorId);
     // Buscar los viajes del conductor (activos o futuros)
     const viajes = await prisma.viaje.findMany({
       where: {
@@ -186,6 +214,7 @@ export async function obtenerBusesAsignados(conductorId: number) {
 
 export async function reportarFallaMecanicaDirecta(data: { conductor_id: number, bus_id: number, categoria: string, descripcion: string }) {
   try {
+    await requireConductorOwner(data.conductor_id);
     // Buscar el último viaje de este conductor en este bus para cumplir con la restricción del viaje_id requerido
     const ultimoViaje = await prisma.viaje.findFirst({
       where: {
@@ -219,6 +248,8 @@ export async function reportarFallaMecanicaDirecta(data: { conductor_id: number,
 
 export async function registrarOcurrenciaRuta(data: { viaje_id: number, conductor_id: number, tipo: string, gravedad: string, descripcion: string, retraso_minutos: number }) {
   try {
+    await requireTripAccess(data.viaje_id);
+    await requireConductorOwner(data.conductor_id);
     // 1. Crear registro de BitacoraViaje
     await prisma.bitacoraViaje.create({
       data: {
@@ -256,6 +287,7 @@ export async function registrarOcurrenciaRuta(data: { viaje_id: number, conducto
 
 export async function getBitacorasViaje(viajeId: number) {
   try {
+    await requireTripAccess(viajeId);
     const bitacoras = await prisma.bitacoraViaje.findMany({
       where: { viaje_id: viajeId },
       orderBy: { created_at: "desc" }
@@ -271,6 +303,7 @@ export async function getBitacorasViaje(viajeId: number) {
 
 export async function getAlertasConductor(conductorId: number) {
   try {
+    await requireConductorOwner(conductorId);
     const alertas = await prisma.alertaCentral.findMany({
       where: {
         viaje: {
@@ -306,6 +339,7 @@ export async function eliminarGasto(gastoId: number) {
       where: { id: gastoId }
     });
     if (!gasto) return { success: false, error: "Gasto no encontrado" };
+    await requireConductorOwner(Number(gasto.conductor_id));
     await prisma.gastoRuta.delete({
       where: { id: gastoId }
     });
@@ -323,6 +357,7 @@ export async function eliminarBitacora(bitacoraId: number) {
       where: { id: bitacoraId }
     });
     if (!bitacora) return { success: false, error: "Registro no encontrado" };
+    await requireConductorOwner(Number(bitacora.conductor_id));
     await prisma.bitacoraViaje.delete({
       where: { id: bitacoraId }
     });
@@ -340,6 +375,7 @@ export async function resolverIncidente(bitacoraId: number) {
       where: { id: BigInt(bitacoraId) }
     });
     if (!bitacora) return { success: false, error: "Registro no encontrado" };
+    await requireConductorOwner(Number(bitacora.conductor_id));
 
     const fechaCreacion = bitacora.created_at ? new Date(bitacora.created_at) : new Date();
     const fechaSolucion = new Date();
