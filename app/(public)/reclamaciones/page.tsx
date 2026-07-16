@@ -168,12 +168,12 @@ export default function LibroReclamacionesPage() {
   return (
     <div className="flex flex-col min-h-screen bg-transparent relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute top-[30%] -left-36 w-[400px] h-[400px] bg-orange-200/10 rounded-full filter blur-3xl pointer-events-none z-0"></div>
-      <div className="absolute bottom-[30%] -right-36 w-[400px] h-[400px] bg-amber-100/10 rounded-full filter blur-3xl pointer-events-none z-0"></div>
+      <div className="absolute top-[30%] -left-36 w-[500px] h-[500px] bg-orange-200/10 rounded-full filter blur-3xl pointer-events-none z-0"></div>
+      <div className="absolute bottom-[30%] -right-36 w-[500px] h-[500px] bg-blue-100/10 rounded-full filter blur-3xl pointer-events-none z-0"></div>
 
       <div className="relative z-10 flex flex-col flex-1">
         {/* Cabecera / Hero */}
-        <section className="w-full bg-gradient-to-tr from-[#f07639] via-[#e66c2f] to-[#c8561d] py-16 md:py-20 relative overflow-hidden">
+        <section className="w-full bg-gradient-to-tr from-[#f07639] via-[#e66c2f] to-[#c8561d] py-16 md:py-24 relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 pointer-events-none">
             <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
               <rect width="100%" height="100%" fill="none" />
@@ -181,23 +181,24 @@ export default function LibroReclamacionesPage() {
           </div>
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-            <div className="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-4 backdrop-blur-sm border border-white/20">
-              <Book className="w-10 h-10 text-white" />
-            </div>
-            <h1 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight drop-shadow-sm">
-              Libro de Reclamaciones
+            <span className="inline-flex items-center gap-1.5 px-4.5 py-2 rounded-full text-xs font-black bg-white/10 text-white border border-white/20 backdrop-blur-sm mb-6 uppercase tracking-widest shadow-sm">
+              <Book className="w-4 h-4 text-orange-200" />
+              Libro de Reclamaciones Virtual
+            </span>
+            <h1 className="text-4xl md:text-6xl font-black text-white tracking-tight drop-shadow-sm leading-tight">
+              ¿Tienes algún inconveniente?
             </h1>
-            <p className="mt-3 text-orange-50/90 text-sm md:text-base max-w-xl mx-auto font-medium">
-              Conforme a las leyes vigentes, ponemos a tu disposición nuestro Libro de Reclamaciones Virtual para registrar tus quejas o reclamos.
+            <p className="mt-4 text-orange-50/90 text-sm md:text-lg max-w-2xl mx-auto font-semibold leading-relaxed">
+              Estamos aquí para escucharte y ayudarte. Registra tu queja o reclamo conforme a las disposiciones del Código de Protección y Defensa del Consumidor.
             </p>
           </div>
         </section>
 
         {/* Formulario */}
-        <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full flex-1">
+        <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full flex-1">
           <form 
             onSubmit={handleSubmit}
-            className="bg-white rounded-3xl p-6 md:p-10 shadow-xl shadow-gray-100/50 border border-gray-100/80 space-y-8"
+            className="bg-white rounded-[2rem] p-6 md:p-10 shadow-2xl shadow-gray-100/50 border border-gray-100/80 space-y-10"
           >
             {error && (
               <div className="p-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl text-sm flex items-center gap-2">
@@ -207,12 +208,15 @@ export default function LibroReclamacionesPage() {
             )}
 
             {/* Bloque 1: Consumidor */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">1. Identificación del Consumidor</h2>
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                <span className="w-8 h-8 rounded-xl bg-orange-100 text-[#f07639] font-black text-xs flex items-center justify-center">1</span>
+                <h2 className="text-lg font-extrabold text-gray-900">Identificación del Consumidor</h2>
+              </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">DNI <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">DNI <span className="text-red-500">*</span></label>
                   <div className="relative">
                     <input
                       type="text"
@@ -223,7 +227,7 @@ export default function LibroReclamacionesPage() {
                       placeholder="8 dígitos"
                       value={formData.dni}
                       onChange={handleChange}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm"
+                      className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-gray-50/50 focus:bg-white"
                     />
                     {isSearchingDni && (
                       <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -232,13 +236,13 @@ export default function LibroReclamacionesPage() {
                     )}
                   </div>
                   {isSearchingDni && (
-                    <p className="text-[10px] text-[#f07639] font-bold mt-1 animate-pulse">
+                    <p className="text-[10px] text-[#f07639] font-bold mt-1.5 animate-pulse">
                       Buscando datos del DNI...
                     </p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Correo Electrónico <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Correo Electrónico <span className="text-red-500">*</span></label>
                   <input
                     type="email"
                     name="correo"
@@ -246,14 +250,14 @@ export default function LibroReclamacionesPage() {
                     placeholder="ejemplo@correo.com"
                     value={formData.correo}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-gray-50/50 focus:bg-white"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Nombres <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Nombres <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     name="nombres"
@@ -261,11 +265,11 @@ export default function LibroReclamacionesPage() {
                     placeholder="Tus nombres"
                     value={formData.nombres}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-gray-50/50 focus:bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Apellidos <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Apellidos <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     name="apellidos"
@@ -273,81 +277,87 @@ export default function LibroReclamacionesPage() {
                     placeholder="Tus apellidos"
                     value={formData.apellidos}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-gray-50/50 focus:bg-white"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Teléfono o Celular</label>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Teléfono o Celular</label>
                 <input
                   type="text"
                   name="telefono"
                   placeholder="Opcional"
                   value={formData.telefono}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm max-w-xs"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-gray-50/50 focus:bg-white max-w-xs"
                 />
               </div>
             </div>
 
             {/* Bloque 2: Detalle del Reclamo */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">2. Detalle del Bien o Servicio Contratado</h2>
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                <span className="w-8 h-8 rounded-xl bg-orange-100 text-[#f07639] font-black text-xs flex items-center justify-center">2</span>
+                <h2 className="text-lg font-extrabold text-gray-900">Detalle del Bien o Servicio</h2>
+              </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Tipo de Incidencia <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Tipo de Incidencia <span className="text-red-500">*</span></label>
                   <select
                     name="tipo"
                     value={formData.tipo}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-white"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-gray-50/50 focus:bg-white cursor-pointer"
                   >
                     <option value="reclamo">Reclamo (Disconformidad con el servicio)</option>
                     <option value="queja">Queja (Disconformidad con la atención o trato)</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-600 mb-1">Fecha del Incidente <span className="text-red-500">*</span></label>
+                  <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Fecha del Incidente <span className="text-red-500">*</span></label>
                   <input
                     type="date"
                     name="fecha_incidente"
                     required
                     value={formData.fecha_incidente}
                     onChange={handleChange}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-white"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-gray-50/50 focus:bg-white cursor-pointer"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">Detalle del Incidente <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">Detalle del Incidente <span className="text-red-500">*</span></label>
                 <textarea
                   name="detalle_incidente"
                   required
-                  rows={4}
+                  rows={5}
                   placeholder="Describe detalladamente lo que ocurrió..."
                   value={formData.detalle_incidente}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-gray-50/50 focus:bg-white"
                 />
               </div>
             </div>
 
             {/* Bloque 3: Pedido */}
-            <div className="space-y-4">
-              <h2 className="text-lg font-bold text-gray-900 border-b border-gray-100 pb-2">3. Pedido del Consumidor</h2>
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 border-b border-gray-100 pb-3">
+                <span className="w-8 h-8 rounded-xl bg-orange-100 text-[#f07639] font-black text-xs flex items-center justify-center">3</span>
+                <h2 className="text-lg font-extrabold text-gray-900">Pedido del Consumidor</h2>
+              </div>
               <div>
-                <label className="block text-xs font-semibold text-gray-600 mb-1">¿Qué es lo que solicitas como solución? <span className="text-red-500">*</span></label>
+                <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wider">¿Qué solicitas como solución? <span className="text-red-500">*</span></label>
                 <textarea
                   name="pedido_cliente"
                   required
                   rows={3}
-                  placeholder="Indica qué solución o acción esperas de parte de la empresa..."
+                  placeholder="Indica qué solución o acción concreta esperas de parte de la empresa..."
                   value={formData.pedido_cliente}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm"
+                  className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all text-sm bg-gray-50/50 focus:bg-white"
                 />
               </div>
             </div>
@@ -357,10 +367,13 @@ export default function LibroReclamacionesPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 bg-[#f07639] hover:bg-orange-600 text-white font-bold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 bg-[#f07639] hover:bg-orange-600 text-white font-extrabold rounded-2xl shadow-lg shadow-orange-500/20 hover:shadow-orange-600/30 transition-all flex items-center justify-center gap-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isLoading ? (
-                  <span>Registrando...</span>
+                  <span className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Registrando...
+                  </span>
                 ) : (
                   <>
                     <Send className="w-4 h-4" />
