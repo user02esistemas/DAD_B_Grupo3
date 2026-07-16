@@ -14,6 +14,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (!nombres.trim() || !apellidos.trim()) {
+      return NextResponse.json(
+        { message: "Los nombres y apellidos no pueden estar vacíos" },
+        { status: 400 }
+      );
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return NextResponse.json(
+        { message: "Formato de correo electrónico inválido" },
+        { status: 400 }
+      );
+    }
+
+    if (password.length < 6) {
+      return NextResponse.json(
+        { message: "La contraseña debe tener al menos 6 caracteres" },
+        { status: 400 }
+      );
+    }
+
+    if (!/^\d{8}$/.test(dni)) {
+      return NextResponse.json(
+        { message: "DNI inválido (debe tener exactamente 8 dígitos numéricos)" },
+        { status: 400 }
+      );
+    }
+
+    if (!/^\d{9}$/.test(phone)) {
+      return NextResponse.json(
+        { message: "Teléfono inválido (debe tener exactamente 9 dígitos numéricos)" },
+        { status: 400 }
+      );
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+
     const birthDateObj = new Date(birth_date);
     const today = new Date();
     let age = today.getFullYear() - birthDateObj.getFullYear();
@@ -31,7 +68,7 @@ export async function POST(req: NextRequest) {
 
     // Verificar si el correo ya está en uso por otro Usuario
     const existingUser = await prisma.usuario.findUnique({
-      where: { correo: email },
+      where: { correo: normalizedEmail },
     });
 
     if (existingUser) {
@@ -73,7 +110,7 @@ export async function POST(req: NextRequest) {
       const newUser = await tx.usuario.create({
         data: {
           persona_id: persona.id,
-          correo: email,
+          correo: normalizedEmail,
           contrasena: hashedPassword,
           rol: "cliente",
         },

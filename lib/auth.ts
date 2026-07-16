@@ -15,9 +15,10 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Faltan credenciales");
         }
+        const email = credentials.email.trim().toLowerCase();
 
         const user = await prisma.usuario.findUnique({
-          where: { correo: credentials.email },
+          where: { correo: email },
           include: { persona: true }
         });
 
@@ -52,7 +53,7 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.dni = user.dni;
-        token.persona_id = (user as any).persona_id;
+        token.persona_id = user.persona_id;
       }
       return token;
     },
@@ -61,7 +62,7 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
         session.user.dni = token.dni as string;
-        (session.user as any).persona_id = token.persona_id as string;
+        session.user.persona_id = token.persona_id as string;
       }
       return session;
     }
