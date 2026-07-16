@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { serializeBigInt } from "@/lib/utils";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 // import { Resend } from "resend";
 
 // const resend = new Resend(process.env.RESEND_API_KEY);
@@ -42,6 +44,18 @@ const checkoutSchema = z.array(z.object({
   pasajeroData: pasajeroSchema
 }));
 
+export async function getCurrentUser() {
+  const session = await getServerSession(authOptions);
+  if (!session || !session.user?.email) {
+    return null;
+  }
+  const user = await prisma.usuario.findUnique({
+    where: { correo: session.user.email },
+    include: { persona: true }
+  });
+  return user;
+}
+
 // Función auxiliar para liberar asientos bloqueados que ya excedieron los 8 minutos
 export async function limpiarBloqueosExpirados() {
   try {
@@ -68,9 +82,23 @@ export async function limpiarBloqueosExpirados() {
 // 1. buscarEncomiendasPorDNI
 export async function buscarEncomiendasPorDNI(dni: string) {
   try {
+    // 1. Obtener la sesión del usuario actual
+    const sessionUser = await getCurrentUser().catch(() => null);
+    if (!sessionUser) {
+      throw new Error("No autorizado. Inicie sesión para realizar la búsqueda.");
+    }
+
+    // 2. Validar propiedad o rol de staff (admin, vendedor, conductor, operario)
+    const isOwner = sessionUser.persona?.dni === dni.trim();
+    const isStaff = ["admin", "vendedor", "conductor", "operario"].includes(sessionUser.rol);
+
+    if (!isOwner && !isStaff) {
+      throw new Error("No autorizado para consultar encomiendas de otro DNI.");
+    }
+
     const encomiendas = await prisma.encomienda.findMany({
       where: {
-        remitente: { dni: dni },
+        remitente: { dni: dni.trim() },
       },
       include: {
         origen: true,
@@ -267,68 +295,8 @@ export async function getTripSeats(tripId: string) {
 }
 
 // 5. simularPagoYCrearTicket
-export async function simularPagoYCrearTicket(
-  tripSeatId: string, 
-  price: string,
-  pasajeroData: { nombres: string; apellidos: string; dni: string; telefono?: string },
-  email?: string
-) {
-  try {
-    let userId: bigint | null = null;
-    
-    // Si proveen email (tienen sesión activa o intentaron vincular), buscamos el cliente
-    if (email) {
-      const user = await prisma.usuario.findUnique({ where: { correo: email } });
-      if (user) {
-        userId = user.id;
-      }
-    }
-
-    const result = await prisma.$transaction(async (tx) => {
-      const seat = await tx.asientoViaje.findUnique({
-        where: { id: BigInt(tripSeatId) },
-      });
-
-      if (!seat || seat.estado !== "disponible") {
-        throw new Error("Asiento ya no disponible.");
-      }
-
-      await tx.asientoViaje.update({
-        where: { id: BigInt(tripSeatId) },
-        data: { estado: "vendido", bloqueado_por_usuario_id: userId },
-      });
-
-      const persona = await tx.persona.upsert({
-        where: { dni: pasajeroData.dni },
-        create: {
-          nombres: pasajeroData.nombres.toUpperCase(),
-          apellidos: pasajeroData.apellidos.toUpperCase(),
-          dni: pasajeroData.dni,
-          telefono: pasajeroData.telefono || null,
-        },
-        update: {
-          telefono: pasajeroData.telefono || undefined,
-        }
-      });
-
-      const ticket = await tx.pasaje.create({
-        data: {
-          asiento_viaje_id: BigInt(tripSeatId),
-          persona_id: persona.id,
-          comprador_id: userId,
-          precio: parseFloat(price),
-          codigo_qr: `QR-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Date.now()}`,
-        },
-      });
-
-      return ticket;
-    });
-
-    return serializeBigInt(result);
-  } catch (error: any) {
-    console.error("Error procesando pago:", error);
-    throw new Error(error.message || "Error al procesar el pago");
-  }
+export async function simularPagoYCrearTicket() {
+  throw new Error("Acción deshabilitada por motivos de seguridad.");
 }
 
 // 6. getClienteProfile
@@ -1207,11 +1175,33 @@ export async function updateViaje(id: string, data: { ruta_id: string; bus_id: s
   }
 }
 
-export async function crearOrdenCulqi(amount: number, email: string, firstName: string, lastName: string, phone: string) {
+export async function crearOrdenCulqi(
+  amount: number, 
+  email: string, 
+  firstName: string, 
+  lastName: string, 
+  phone: string,
+  seatIds?: string[]
+) {
   try {
     const SECRET_KEY = process.env.CULQI_SECRET_KEY;
     if (!SECRET_KEY) {
       throw new Error("CULQI_SECRET_KEY no está configurada en las variables de entorno.");
+    }
+
+    // Validar monto contra precios en base de datos si se proveen seatIds
+    if (seatIds && Array.isArray(seatIds) && seatIds.length > 0) {
+      const asientos = await prisma.asientoViaje.findMany({
+        where: { id: { in: seatIds.map(id => BigInt(id)) } },
+        include: { viaje: { include: { ruta: true } } }
+      });
+      if (asientos.length === 0) {
+        throw new Error("Los asientos seleccionados no existen.");
+      }
+      const totalEsperado = asientos.reduce((acc, a) => acc + Number(a.viaje.ruta.precio_base), 0);
+      if (Math.abs(totalEsperado - amount) > 0.01) {
+        throw new Error("El monto de pago no coincide con el precio de los asientos en el sistema.");
+      }
     }
 
     const response = await fetch("https://api.culqi.com/v2/orders", {
@@ -1248,11 +1238,26 @@ export async function crearOrdenCulqi(amount: number, email: string, firstName: 
   }
 }
 
-export async function crearCargoCulqi(tokenId: string, email: string, amount: number) {
+export async function crearCargoCulqi(tokenId: string, email: string, amount: number, seatIds?: string[]) {
   try {
     const SECRET_KEY = process.env.CULQI_SECRET_KEY;
     if (!SECRET_KEY) {
       throw new Error("CULQI_SECRET_KEY no está configurada en las variables de entorno.");
+    }
+
+    // Validar monto contra precios en base de datos si se proveen seatIds
+    if (seatIds && Array.isArray(seatIds) && seatIds.length > 0) {
+      const asientos = await prisma.asientoViaje.findMany({
+        where: { id: { in: seatIds.map(id => BigInt(id)) } },
+        include: { viaje: { include: { ruta: true } } }
+      });
+      if (asientos.length === 0) {
+        throw new Error("Los asientos seleccionados no existen.");
+      }
+      const totalEsperado = asientos.reduce((acc, a) => acc + Number(a.viaje.ruta.precio_base), 0);
+      if (Math.abs(totalEsperado - amount) > 0.01) {
+        throw new Error("El monto de pago no coincide con el precio de los asientos en el sistema.");
+      }
     }
 
     const response = await fetch("https://api.culqi.com/v2/charges", {
@@ -1289,7 +1294,8 @@ export async function procesarPagoMultiplesAsientosCulqi(
   }[],
   amount: number,
   chargeId: string,
-  email?: string
+  email?: string,
+  guestToken?: string
 ) {
   try {
     // Validación de seguridad estricta en el servidor con Zod
@@ -1326,6 +1332,19 @@ export async function procesarPagoMultiplesAsientosCulqi(
           throw new Error(`El asiento número ${asientoActual.numero_asiento} ya no está reservado (estado actual: ${asientoActual.estado}). Su tiempo de reserva de 8 minutos pudo haber expirado.`);
         }
 
+        // Validar propiedad de la reserva del asiento
+        if (userId) {
+          if (asientoActual.bloqueado_por_usuario_id !== userId) {
+            throw new Error(`El asiento número ${asientoActual.numero_asiento} no está reservado por su usuario.`);
+          }
+        } else if (guestToken) {
+          if (asientoActual.bloqueado_por_token !== guestToken) {
+            throw new Error(`El asiento número ${asientoActual.numero_asiento} no está reservado con su sesión de invitado.`);
+          }
+        } else {
+          throw new Error(`No autorizado para adquirir el asiento número ${asientoActual.numero_asiento}.`);
+        }
+
         // 1. Registrar el pago proporcional por cada asiento para mantener consistencia contable
         await tx.pago.create({
           data: {
@@ -1337,12 +1356,13 @@ export async function procesarPagoMultiplesAsientosCulqi(
           },
         });
 
-        // 2. Actualizar el asiento a vendido
+        // 2. Actualizar el asiento a vendido y limpiar el token de invitado
         await tx.asientoViaje.update({
           where: { id: BigInt(item.seatId) },
           data: {
             estado: "vendido",
             bloqueado_por_usuario_id: userId,
+            bloqueado_por_token: null,
           },
         });
 
@@ -1577,6 +1597,32 @@ export async function registrarReclamo(data: {
       return { success: false, error: "Todos los campos obligatorios deben ser completados." };
     }
 
+    // Validaciones en servidor
+    if (!nombres.trim() || !apellidos.trim()) {
+      return { success: false, error: "Los nombres y apellidos no pueden estar vacíos." };
+    }
+
+    if (!/^\d{8}$/.test(dni)) {
+      return { success: false, error: "DNI inválido (debe tener 8 dígitos numéricos)." };
+    }
+
+    if (telefono && !/^\d{9}$/.test(telefono)) {
+      return { success: false, error: "Teléfono inválido (debe tener 9 dígitos numéricos)." };
+    }
+
+    if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+      return { success: false, error: "Formato de correo electrónico inválido." };
+    }
+
+    if (tipo !== "reclamo" && tipo !== "queja") {
+      return { success: false, error: "Tipo de incidente no permitido (debe ser reclamo o queja)." };
+    }
+
+    const fecha = new Date(fecha_incidente);
+    if (isNaN(fecha.getTime())) {
+      return { success: false, error: "La fecha del incidente no es válida." };
+    }
+
     // 1. Buscar o crear la Persona a partir del DNI
     const persona = await prisma.persona.upsert({
       where: { dni },
@@ -1645,18 +1691,70 @@ export async function buscarPersonaPorDNI(dni: string) {
       return { success: false, error: "Persona no encontrada" };
     }
 
+    // Obtener sesión del usuario actual
+    const sessionUser = await getCurrentUser().catch(() => null);
+    const isOwner = sessionUser && (
+      sessionUser.correo.toLowerCase() === persona.usuario?.correo?.toLowerCase() ||
+      sessionUser.persona?.dni === persona.dni
+    );
+    const isAdmin = sessionUser && (sessionUser.rol === "admin" || sessionUser.rol === "vendedor");
+
     return {
       success: true,
       data: {
         nombres: persona.nombres,
         apellidos: persona.apellidos,
-        telefono: persona.telefono || "",
-        correo: persona.usuario?.correo || ""
+        // Solo devolvemos teléfono y correo si el solicitante es el dueño de los datos o un administrador
+        telefono: (isOwner || isAdmin) ? (persona.telefono || "") : "",
+        correo: (isOwner || isAdmin) ? (persona.usuario?.correo || "") : ""
       }
     };
   } catch (error: any) {
     console.error("Error al buscar persona por DNI:", error);
     return { success: false, error: error.message || "Error al buscar persona" };
+  }
+}
+
+export async function buscarEncomiendaPorCodigo(codigo: string) {
+  try {
+    if (!codigo || codigo.trim().length === 0) {
+      return { success: false, error: "Debe ingresar un código de seguimiento válido." };
+    }
+
+    const enc = await prisma.encomienda.findUnique({
+      where: { codigo_seguimiento: codigo.trim().toUpperCase() },
+      include: {
+        origen: true,
+        destino: true,
+        viaje: true,
+        destinatario: true,
+        remitente: true
+      }
+    });
+
+    if (!enc) {
+      return { success: false, error: "Encomienda no encontrada." };
+    }
+
+    // Ofuscar datos sensibles
+    const ofuscarDni = (d: string) => d.slice(0, 4) + "****";
+    const ofuscarTelefono = (t: string | null) => t ? t.slice(0, 4) + "****" : "";
+
+    const encMapeada = {
+      ...enc,
+      remitente_nombre: `${enc.remitente.nombres} ${enc.remitente.apellidos}`,
+      destinatario_nombre: `${enc.destinatario.nombres} ${enc.destinatario.apellidos}`,
+      // Reemplazar campos de datos sensibles para invitados
+      remitente_dni: ofuscarDni(enc.remitente.dni),
+      destinatario_dni: ofuscarDni(enc.destinatario.dni),
+      remitente_telefono: ofuscarTelefono(enc.remitente.telefono),
+      destinatario_telefono: ofuscarTelefono(enc.destinatario.telefono),
+    };
+
+    return { success: true, data: serializeBigInt(encMapeada) };
+  } catch (error: any) {
+    console.error("Error buscando encomienda por código:", error);
+    return { success: false, error: error.message || "Error al buscar la encomienda." };
   }
 }
 

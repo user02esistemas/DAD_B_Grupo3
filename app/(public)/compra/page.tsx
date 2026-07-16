@@ -291,7 +291,7 @@ function CompraContent() {
     setLoading(false);
   };
 
-  const getGuestToken = () => {
+  function getGuestToken() {
     if (typeof window !== "undefined") {
       let token = localStorage.getItem("guestToken");
       if (!token) {
@@ -301,7 +301,7 @@ function CompraContent() {
       return token;
     }
     return "gt_fallback";
-  };
+  }
 
   const goToStep4 = async () => {
     if (selectedSeats.length === 0) return;
@@ -417,7 +417,8 @@ function CompraContent() {
         email, 
         primerPasajero.nombres, 
         primerPasajero.apellidos, 
-        primerPasajero.telefono || ""
+        primerPasajero.telefono || "",
+        selectedSeats.map(s => s.id)
       );
 
       if (!orderRes.success || !orderRes.orderId) {
@@ -463,7 +464,12 @@ function CompraContent() {
           
           try {
             // a. Crear el cargo en nuestro backend
-            const chargeRes = await crearCargoCulqi(token, email, totalAmount);
+            const chargeRes = await crearCargoCulqi(
+              token, 
+              email, 
+              totalAmount, 
+              selectedSeats.map(s => s.id)
+            );
             
             if (!chargeRes.success) {
                setPaymentError(chargeRes.error || "Error al procesar el pago");
@@ -483,7 +489,8 @@ function CompraContent() {
               asientosPasajeros,
               totalAmount,
               chargeRes.chargeId,
-              session?.user?.email || undefined
+              email,
+              getGuestToken()
             );
 
             if (res.success) {
