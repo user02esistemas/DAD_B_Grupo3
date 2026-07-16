@@ -126,6 +126,7 @@ model AsientoViaje {
   piso                     Int       @default(1)
   estado                   String    @default("disponible")
   bloqueado_por_usuario_id BigInt?   
+  bloqueado_por_token      String?
   bloqueado_en             DateTime? 
   created_at               DateTime? @default(now()) 
   updated_at               DateTime? @default(now()) 

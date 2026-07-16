@@ -170,17 +170,18 @@ async function main() {
   }
 
   console.log("\n--- CREANDO ENCOMIENDAS PARA HOY ---");
-  // Queremos poblar las encomiendas hoy para diferentes destinos:
-  // - Trujillo (ID 3): 6 encomiendas
-  // - Chiclayo (ID 2): 4 encomiendas
-  // - Jaén (ID 1): 3 encomiendas
-  // - Cajamarca (ID 4): 2 encomiendas
-  const distribucionEncomiendas = [
-    { destinoId: 3, cantidad: 6, destinoNombre: "Trujillo" },
-    { destinoId: 2, cantidad: 4, destinoNombre: "Chiclayo" },
-    { destinoId: 1, cantidad: 3, destinoNombre: "Jaén" },
-    { destinoId: 4, cantidad: 2, destinoNombre: "Cajamarca" },
-  ];
+  // Consultar todas las sucursales reales de la base de datos para evitar IDs inexistentes
+  const sucursalesDb = await prisma.sucursal.findMany();
+  
+  const distribucionEncomiendas = sucursalesDb.map((s, idx) => {
+    const cantidades = [6, 4, 2];
+    const cantidad = cantidades[idx % cantidades.length];
+    return {
+      destinoId: Number(s.id),
+      cantidad: cantidad,
+      destinoNombre: s.nombre
+    };
+  });
 
   let encomiendasCreadasCount = 0;
 

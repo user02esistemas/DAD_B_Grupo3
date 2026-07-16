@@ -7,7 +7,7 @@ Bienvenido al repositorio oficial del proyecto web de la Empresa de Transportes 
 Para probar y ejecutar este proyecto localmente, asegúrate de tener instalado:
 
 - [Node.js](https://nodejs.org/es/) (v18.x o superior)
-- [MySQL](https://dev.mysql.com/downloads/installer/) (XAMPP, WAMP o instalación limpia)
+- [PostgreSQL](https://www.postgresql.org/) local o una cuenta activa en [Supabase](https://supabase.com/)
 - Git
 
 ## 🛠️ Instalación y Configuración
@@ -27,16 +27,27 @@ npm install
 ```
 
 ### 3. Configurar la Base de Datos
-1. Abre tu gestor de base de datos MySQL (ej. phpMyAdmin, DBeaver o MySQL Workbench).
-2. Crea una base de datos llamada `cumbe_db`.
-3. Importa el archivo SQL proporcionado en el proyecto: `cumbe_db_actualizado.sql`. Este archivo contiene la estructura de las tablas (usuarios, buses, viajes, asientos, pagos, etc.) y los datos iniciales necesarios para probar.
+Este proyecto utiliza **PostgreSQL** mediante Prisma ORM. Tienes dos opciones para la base de datos:
+* **Opción A (Recomendada):** Crear un proyecto gratuito en **Supabase** y obtener las URLs de conexión (Connection Strings) para Modo Pooler (Transaction) y Conexión Directa.
+* **Opción B:** Crear una base de datos local en PostgreSQL llamada `cumbe_db`.
+
+Una vez configuradas las variables de entorno en el paso siguiente, podrás crear las tablas y esquemas automáticamente ejecutando:
+```bash
+npx prisma db push
+```
+
+Para cargar la base de datos con los datos iniciales de prueba (buses, usuarios como administradores, operarios, conductores y rutas de viaje), ejecuta:
+```bash
+npx tsx scripts/seed-initial.ts
+```
 
 ### 4. Configurar Variables de Entorno
-Crea un archivo `.env` en la raíz del proyecto basándote en un entorno de desarrollo. Deberás incluir al menos:
+Crea un archivo `.env` en la raíz del proyecto y añade las siguientes variables con tus credenciales:
 
 ```env
-# URL de conexión a tu base de datos MySQL local
-DATABASE_URL="mysql://usuario:contrasena@localhost:3306/cumbe_db"
+# URL de conexión a PostgreSQL (con soporte para pooler de Supabase)
+DATABASE_URL="postgresql://postgres.xxx:password@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.xxx:password@aws-0-us-east-1.pooler.supabase.com:5432/postgres"
 
 # NextAuth Configuración
 NEXTAUTH_URL="http://localhost:3000"
@@ -44,17 +55,20 @@ NEXTAUTH_SECRET="tu_secreto_super_seguro_aqui"
 
 # Resend (Para envío de correos, opcional para probar el flujo principal)
 RESEND_API_KEY="tu_api_key_de_resend"
+
+# Supabase Keys (Opcional, para integraciones del SDK si aplica)
+NEXT_PUBLIC_SUPABASE_URL="https://xxx.supabase.co"
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="sb_publishable_xxx"
 ```
-*(Reemplaza `usuario` y `contrasena` con tus credenciales locales de MySQL).*
 
 ### 5. Sincronizar Prisma
-Sincroniza el ORM de Prisma con la base de datos para generar el cliente tipado:
+Sincroniza y genera el cliente tipado de Prisma localmente:
 ```bash
 npx prisma generate
 ```
 
 ### 6. Iniciar el Servidor de Desarrollo
-Finalmente, levanta el proyecto:
+Finalmente, levanta el proyecto en modo desarrollo:
 ```bash
 npm run dev
 ```
