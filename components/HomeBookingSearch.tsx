@@ -103,18 +103,18 @@ export default function HomeBookingSearch() {
   const selectedDestination = locations.find(loc => loc.id.toString() === destinationId)?.nombre || "Seleccionar Destino";
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 -mt-16 sm:-mt-24 relative z-20">
-      <div className="bg-white rounded-[2rem] shadow-2xl shadow-black/5 p-4 md:p-6 backdrop-blur-md border border-white/50">
+    <div className="relative z-20 mx-auto -mt-14 w-full max-w-6xl px-4 sm:-mt-20">
+      <div className="rounded-2xl border border-[var(--card-border)] bg-[var(--card-bg)] p-4 shadow-[var(--shadow-lg)] transition-colors duration-300 md:p-6">
         <form onSubmit={handleSearch} className="flex flex-col gap-4">
-          <div className="flex items-center justify-between px-4">
-            <h3 className="text-lg md:text-xl font-extrabold text-gray-800 tracking-tight flex items-center">
-              <span className="w-2 h-6 bg-[#f07639] rounded-full mr-3 shadow-sm"></span>
+          <div className="flex flex-wrap items-center justify-between gap-3 px-2 md:px-3">
+            <h3 className="flex items-center text-lg font-extrabold tracking-tight text-[var(--foreground)] transition-colors md:text-xl">
+              <span className="mr-3 h-5 w-1.5 rounded-full bg-[var(--primary)]"></span>
               ¿A dónde quieres viajar hoy?
             </h3>
             
             <div className="flex items-center gap-3">
               {error && (
-                <span className="text-xs font-bold text-red-600 bg-red-50 px-4 py-2 rounded-full border border-red-100 shadow-sm animate-pulse">
+                <span className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition-colors dark:border-red-900/80 dark:bg-red-950/30 dark:text-red-300">
                   {error}
                 </span>
               )}
@@ -122,7 +122,7 @@ export default function HomeBookingSearch() {
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="text-xs font-bold text-[#f07639] hover:text-[#d8662d] transition-all duration-200 flex items-center gap-1.5 bg-orange-50 hover:bg-orange-100 px-3.5 py-2 rounded-full border border-orange-100 hover:border-orange-200 shadow-sm animate-in fade-in zoom-in duration-200"
+                  className="flex items-center gap-1.5 rounded-lg border border-[var(--card-border)] bg-[var(--surface-secondary)] px-3 py-2 text-xs font-bold text-[var(--primary-text)] transition-all duration-200 hover:border-[var(--primary)] hover:bg-[var(--primary-soft)]"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   Limpiar búsqueda
@@ -131,32 +131,32 @@ export default function HomeBookingSearch() {
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center border border-gray-100 rounded-3xl bg-white shadow-sm hover:shadow-md transition-shadow duration-300 divide-y md:divide-y-0 md:divide-x divide-gray-100 p-2 gap-2 md:gap-0">
+          <div className="flex flex-col items-center gap-1 rounded-xl border border-[var(--card-border)] bg-[var(--surface-secondary)] p-2 shadow-sm transition-shadow duration-300 hover:shadow-md md:flex-row md:divide-x md:divide-[var(--card-border)]">
             
             {/* ORIGEN */}
             <div 
-              className="flex-1 w-full px-4 md:px-6 py-3 relative group rounded-2xl hover:bg-orange-50/50 transition-colors cursor-pointer" 
+              className="group relative w-full flex-1 cursor-pointer rounded-lg px-4 py-3 transition-colors hover:bg-[var(--primary-soft)] md:px-5"
               ref={originRef}
               onClick={() => {
                 setIsOriginOpen(!isOriginOpen);
                 setIsDestinationOpen(false);
               }}
             >
-              <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1 block">Origen</label>
+              <label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--muted)] transition-colors">Origen</label>
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center w-full min-w-0">
                   <MapPin className="h-5 w-5 text-[#f07639] mr-2 md:mr-3 flex-shrink-0" />
-                  <span className={`text-sm md:text-base font-bold truncate ${originId ? "text-gray-900" : "text-gray-400"}`}>
+                  <span className={`truncate text-sm font-bold transition-colors md:text-base ${originId ? "text-[var(--foreground)]" : "text-[var(--input-placeholder)]"}`}>
                     {selectedOrigin}
                   </span>
                 </div>
-                <ChevronDown className={`h-4 w-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isOriginOpen ? "rotate-180 text-[#f07639]" : ""}`} />
+                <ChevronDown className={`h-4 w-4 flex-shrink-0 text-[var(--muted)] transition-transform duration-200 ${isOriginOpen ? "rotate-180 !text-[var(--primary-text)]" : ""}`} />
               </div>
 
               {/* Lista Desplegable Personalizada */}
               {isOriginOpen && (
-                <div className="absolute left-0 right-0 mt-3 bg-white border border-gray-100 rounded-2xl shadow-2xl py-2 z-50 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-3 py-1 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-50 mb-1">
+                <div className="absolute left-0 right-0 z-50 mt-3 max-h-60 overflow-y-auto rounded-xl border border-[var(--dropdown-border)] bg-[var(--dropdown-bg)] py-2 shadow-[var(--shadow-lg)] transition-colors animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-3 py-1 text-[10px] font-extrabold text-gray-400 dark:text-slate-500 uppercase tracking-widest border-b border-gray-50 dark:border-slate-700 mb-1 transition-colors">
                     Selecciona Ciudad de Origen
                   </div>
                   {locations.map((loc) => (
@@ -165,8 +165,8 @@ export default function HomeBookingSearch() {
                       type="button"
                       className={`w-full text-left px-4 py-3 text-sm font-semibold flex items-center gap-2.5 transition-colors ${
                         loc.id.toString() === originId
-                          ? "bg-orange-50 text-[#f07639]"
-                          : "text-gray-700 hover:bg-gray-50"
+                          ? "bg-orange-50 dark:bg-orange-950/30 text-[#f07639] dark:text-orange-400"
+                          : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
                       }`}
                       onClick={() => handleOriginChange(loc.id.toString())}
                     >
@@ -180,28 +180,28 @@ export default function HomeBookingSearch() {
 
             {/* DESTINO */}
             <div 
-              className="flex-1 w-full px-4 md:px-6 py-3 relative group rounded-2xl hover:bg-orange-50/50 transition-colors cursor-pointer" 
+              className="group relative w-full flex-1 cursor-pointer rounded-lg px-4 py-3 transition-colors hover:bg-[var(--primary-soft)] md:px-5"
               ref={destinationRef}
               onClick={() => {
                 setIsDestinationOpen(!isDestinationOpen);
                 setIsOriginOpen(false);
               }}
             >
-              <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1 block">Destino</label>
+              <label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--muted)] transition-colors">Destino</label>
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center w-full min-w-0">
                   <MapPin className="h-5 w-5 text-[#f07639] mr-2 md:mr-3 flex-shrink-0" />
-                  <span className={`text-sm md:text-base font-bold truncate ${destinationId ? "text-gray-900" : "text-gray-400"}`}>
+                  <span className={`truncate text-sm font-bold transition-colors md:text-base ${destinationId ? "text-[var(--foreground)]" : "text-[var(--input-placeholder)]"}`}>
                     {selectedDestination}
                   </span>
                 </div>
-                <ChevronDown className={`h-4 w-4 text-gray-400 flex-shrink-0 transition-transform duration-200 ${isDestinationOpen ? "rotate-180 text-[#f07639]" : ""}`} />
+                <ChevronDown className={`h-4 w-4 flex-shrink-0 text-[var(--muted)] transition-transform duration-200 ${isDestinationOpen ? "rotate-180 !text-[var(--primary-text)]" : ""}`} />
               </div>
 
               {/* Lista Desplegable Personalizada */}
               {isDestinationOpen && (
-                <div className="absolute left-0 right-0 mt-3 bg-white border border-gray-100 rounded-2xl shadow-2xl py-2 z-50 max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200">
-                  <div className="px-3 py-1 text-[10px] font-extrabold text-gray-400 uppercase tracking-widest border-b border-gray-50 mb-1">
+                <div className="absolute left-0 right-0 z-50 mt-3 max-h-60 overflow-y-auto rounded-xl border border-[var(--dropdown-border)] bg-[var(--dropdown-bg)] py-2 shadow-[var(--shadow-lg)] transition-colors animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="px-3 py-1 text-[10px] font-extrabold text-gray-400 dark:text-slate-500 uppercase tracking-widest border-b border-gray-50 dark:border-slate-700 mb-1 transition-colors">
                     Selecciona Ciudad Destino
                   </div>
                   {locations
@@ -212,8 +212,8 @@ export default function HomeBookingSearch() {
                         type="button"
                         className={`w-full text-left px-4 py-3 text-sm font-semibold flex items-center gap-2.5 transition-colors ${
                           loc.id.toString() === destinationId
-                            ? "bg-orange-50 text-[#f07639]"
-                            : "text-gray-700 hover:bg-gray-50"
+                            ? "bg-orange-50 dark:bg-orange-950/30 text-[#f07639] dark:text-orange-400"
+                            : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800"
                         }`}
                         onClick={() => handleDestinationChange(loc.id.toString())}
                       >
@@ -226,17 +226,24 @@ export default function HomeBookingSearch() {
             </div>
 
             {/* FECHA */}
-            <div className="flex-1 w-full px-4 md:px-6 py-3 relative group rounded-2xl hover:bg-orange-50/50 transition-colors cursor-pointer">
-              <label className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest mb-1 block">Fecha de Viaje</label>
+            <div className="group relative w-full flex-1 cursor-pointer rounded-lg px-4 py-3 transition-colors hover:bg-[var(--primary-soft)] md:px-5">
+              <label className="mb-1 block text-[10px] font-extrabold uppercase tracking-[0.14em] text-[var(--muted)] transition-colors">Fecha de Viaje</label>
               <div className="flex items-center justify-between">
                 <div className="flex items-center w-full">
                   <CalendarIcon className="h-5 w-5 text-[#f07639] mr-3 flex-shrink-0" />
                   <input
                     type="date"
                     min={peruDate}
-                    className="w-full bg-transparent text-gray-900 text-sm md:text-base font-bold focus:outline-none cursor-pointer tracking-wide"
+                    className="w-full cursor-pointer bg-transparent text-sm font-bold text-[var(--foreground)] transition-colors focus:outline-none md:text-base"
                     value={date}
-                    onChange={(e) => setDate(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val && val < peruDate) {
+                        setDate(peruDate);
+                      } else {
+                        setDate(val);
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -247,7 +254,7 @@ export default function HomeBookingSearch() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full md:w-auto bg-[#f07639] hover:bg-[#d8662d] text-white text-sm font-extrabold rounded-2xl md:rounded-full px-8 py-4 flex items-center justify-center transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:hover:shadow-none"
+                className="flex w-full items-center justify-center rounded-lg bg-[var(--primary)] px-7 py-4 text-sm font-extrabold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-[var(--primary-dark)] hover:shadow-md disabled:cursor-not-allowed disabled:transform-none disabled:opacity-50 disabled:hover:shadow-none md:w-auto"
               >
                 {loading ? (
                   <>

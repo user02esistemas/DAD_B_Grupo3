@@ -23,11 +23,15 @@ import {
   Clock, 
   CheckCircle, 
   BusFront, 
-  Search 
+  Search,
+  ArrowLeftRight,
+  Route,
+  ShieldCheck
 } from "lucide-react";
 import Link from "next/link";
 import Script from "next/script";
 import { generateBoletoPDF } from "@/lib/pdfUtils";
+import RouteLocationPicker from "./components/RouteLocationPicker";
 
 function CompraContent() {
   const { data: session, status } = useSession();
@@ -76,6 +80,22 @@ function CompraContent() {
     }
     setDestinationId(val);
   };
+
+  const handleSwapLocations = () => {
+    setOriginId(destinationId);
+    setDestinationId(originId);
+    setErrorStep1("");
+  };
+
+  const selectedOriginName = locations.find((location) => location.id.toString() === originId)?.nombre || "Origen";
+  const selectedDestinationName = locations.find((location) => location.id.toString() === destinationId)?.nombre || "Destino";
+  const formattedTravelDate = date
+    ? new Date(`${date}T12:00:00`).toLocaleDateString("es-PE", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+      })
+    : "Fecha pendiente";
 
   // Step 2: Viajes
   const [trips, setTrips] = useState<any[]>([]);
@@ -789,98 +809,116 @@ function CompraContent() {
   }
 
   return (
-    <div className="bg-transparent py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden min-h-[85vh]">
-      {/* Círculos decorativos de fondo con desenfoque (Glow Effect) */}
-      <div className="absolute top-[10%] -left-36 w-96 h-96 bg-orange-200/20 rounded-full filter blur-3xl pointer-events-none z-0"></div>
-      <div className="absolute bottom-[20%] -right-36 w-96 h-96 bg-amber-100/20 rounded-full filter blur-3xl pointer-events-none z-0"></div>
-
-      <div className="max-w-4xl mx-auto relative z-10">
+    <div className="relative min-h-[60vh] bg-transparent px-0 py-3 sm:px-6 sm:py-4 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-6xl">
         {!paymentSuccess && renderStepper()}
 
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+        <div className="border-y border-[var(--card-border)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] sm:rounded-xl sm:border">
           
           {/* STEP 1: Búsqueda */}
           {step === 1 && (
-            <div className="p-8 md:p-12">
-              <h2 className="text-3xl font-extrabold text-gray-900 mb-8 text-center">¿A dónde quieres viajar hoy?</h2>
-              
-              {errorStep1 && (
-                <div className="mb-6 bg-red-50 text-red-700 p-4 rounded-xl text-sm font-medium text-center border border-red-100">
-                  {errorStep1}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-4 sm:p-5 md:p-6">
+              <div className="flex flex-col gap-4 border-b border-[var(--card-border)] pb-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Origen</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <select
-                      className="block w-full pl-10 py-4 text-base border-gray-300 focus:outline-none focus:ring-[#f07639] focus:border-[#f07639] sm:text-sm rounded-xl bg-gray-50 bg-none cursor-pointer text-gray-900"
-                      value={originId}
-                      onChange={(e) => handleOriginChange(e.target.value)}
-                    >
-                      <option value="">Selecciona Origen</option>
-                      {locations.map((loc) => (
-                        <option key={loc.id} value={loc.id}>
-                          {loc.nombre}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="mb-1 flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--primary-text)]">
+                    <Route className="h-4 w-4" />
+                    Planifica tu viaje
                   </div>
+                  <h2 className="text-xl font-black text-[var(--foreground)] sm:text-2xl">Define tu ruta</h2>
+                  <p className="mt-1 max-w-xl text-xs font-semibold leading-5 text-[var(--muted)]">
+                    Consulta las salidas de El Cumbe y elige la terminal que mejor se adapte a tu recorrido.
+                  </p>
                 </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Destino</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <select
-                      className="block w-full pl-10 py-4 text-base border-gray-300 focus:outline-none focus:ring-[#f07639] focus:border-[#f07639] sm:text-sm rounded-xl bg-gray-50 bg-none cursor-pointer text-gray-900"
-                      value={destinationId}
-                      onChange={(e) => handleDestinationChange(e.target.value)}
-                    >
-                      <option value="">Selecciona Destino</option>
-                      {locations
-                        .filter((loc) => loc.id.toString() !== originId.toString())
-                        .map((loc) => (
-                          <option key={loc.id} value={loc.id}>
-                            {loc.nombre}
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Viaje</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <CalendarIcon className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="date"
-                      min={peruDate}
-                      className="block w-full pl-10 py-4 text-base border-gray-300 focus:outline-none focus:ring-[#f07639] focus:border-[#f07639] sm:text-sm rounded-xl bg-gray-50 text-gray-900"
-                      value={date}
-                      onChange={(e) => setDate(e.target.value)}
-                    />
+                <div className="hidden items-center gap-3 border-l border-[var(--card-border)] pl-5 sm:flex">
+                  <ShieldCheck className="h-6 w-6 text-[var(--secondary)]" />
+                  <div>
+                    <p className="text-xs font-extrabold text-[var(--foreground)]">Compra protegida</p>
+                    <p className="mt-0.5 text-[11px] font-medium text-[var(--muted)]">Reserva y pago seguro</p>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-10 text-center">
+              {errorStep1 && (
+                <div className="mt-4 rounded-lg border border-red-300/50 bg-red-500/10 px-4 py-3 text-sm font-bold text-red-600 dark:text-red-300" role="alert">
+                  {errorStep1}
+                </div>
+              )}
+
+              <div className="mt-6 grid grid-cols-1 items-start gap-3 md:grid-cols-[minmax(0,1fr)_44px_minmax(0,1fr)]">
+                <RouteLocationPicker
+                  id="purchase-origin"
+                  label="Origen"
+                  helper="Terminal de salida"
+                  placeholder="Selecciona tu origen"
+                  locations={locations}
+                  value={originId}
+                  onChange={handleOriginChange}
+                />
+
+                <button
+                  type="button"
+                  onClick={handleSwapLocations}
+                  className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg border border-[var(--card-border)] bg-[var(--surface-secondary)] text-[var(--muted)] transition-all hover:border-[var(--primary)] hover:bg-[var(--primary-soft)] hover:text-[var(--primary-text)] md:mt-[38px]"
+                  aria-label="Intercambiar origen y destino"
+                  title="Intercambiar origen y destino"
+                >
+                  <ArrowLeftRight className="h-5 w-5 md:rotate-0" />
+                </button>
+
+                <RouteLocationPicker
+                  id="purchase-destination"
+                  label="Destino"
+                  helper="Terminal de llegada"
+                  placeholder="Selecciona tu destino"
+                  locations={locations.filter((location) => location.id.toString() !== originId)}
+                  value={destinationId}
+                  onChange={handleDestinationChange}
+                />
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
+                <div>
+                  <label htmlFor="purchase-date" className="mb-2 block text-[11px] font-extrabold uppercase tracking-[0.14em] text-[var(--muted)]">Fecha de viaje</label>
+                  <div className="flex min-h-16 items-center gap-3 rounded-lg border border-[var(--input-border)] bg-[var(--input-bg)] px-4 transition-colors focus-within:border-[var(--primary)]">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--surface-secondary)] text-[var(--secondary)]">
+                      <CalendarIcon className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--muted)]">Salida</span>
+                      <input
+                        id="purchase-date"
+                        type="date"
+                        min={peruDate}
+                        className="mt-0.5 w-full cursor-pointer border-0 bg-transparent p-0 text-sm font-extrabold text-[var(--foreground)] shadow-none focus:ring-0"
+                        value={date}
+                        onChange={(event) => {
+                          const val = event.target.value;
+                          if (val && val < peruDate) {
+                            setDate(peruDate);
+                          } else {
+                            setDate(val);
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
                 <button
                   onClick={handleSearchTrips}
                   disabled={loading}
-                  className="inline-flex items-center px-10 py-4 border border-transparent text-lg font-bold rounded-xl shadow-sm text-white bg-[#f07639] hover:bg-[#d8662d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f07639] transition-all disabled:opacity-50"
+                  className="mt-auto inline-flex min-h-16 w-full items-center justify-center rounded-lg bg-[var(--primary)] px-8 text-base font-extrabold text-white shadow-[0_10px_22px_rgba(223,92,36,0.2)] transition-all hover:-translate-y-0.5 hover:bg-[var(--primary-dark)] disabled:cursor-not-allowed disabled:transform-none disabled:opacity-50 md:w-auto"
                 >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <Search className="w-5 h-5 mr-2" />}
+                  {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Search className="mr-2 h-5 w-5" />}
                   Buscar Viajes
                 </button>
+              </div>
+
+              <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 border-l-2 border-[var(--primary)] pl-3 text-xs font-semibold text-[var(--muted)]">
+                <span className="text-[var(--foreground)]">{selectedOriginName}</span>
+                <ArrowRight className="h-3.5 w-3.5 text-[var(--primary-text)]" />
+                <span className="text-[var(--foreground)]">{selectedDestinationName}</span>
+                <span aria-hidden="true">·</span>
+                <span className="capitalize">{formattedTravelDate}</span>
               </div>
             </div>
           )}
