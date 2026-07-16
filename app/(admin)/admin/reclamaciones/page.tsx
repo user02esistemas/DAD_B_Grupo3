@@ -7,6 +7,8 @@ export const metadata = {
   description: "Administración de reclamos y quejas",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function ReclamacionesPage() {
   const reclamaciones = await getReclamaciones();
 

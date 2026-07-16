@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { buscarEncomiendasPorDNI } from "@/app/actions";
+import { buscarEncomiendasPorDNI, buscarEncomiendaPorCodigo } from "@/app/actions";
 import { Search, Package, MapPin, Calendar, CheckCircle, Clock, Truck, Loader2, ArrowRight } from "lucide-react";
 
 export default function SeguimientoPage() {
@@ -12,6 +12,7 @@ export default function SeguimientoPage() {
   const [loading, setLoading] = useState(false);
   const [encomiendas, setEncomiendas] = useState<any[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"en_curso" | "historial">("en_curso");
   useEffect(() => {
     const userDni = (session?.user as any)?.dni;
@@ -44,17 +45,39 @@ export default function SeguimientoPage() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!dni || dni.length < 8) return;
-    
-    setLoading(true);
-    setHasSearched(true);
-    try {
-      const resultados = await buscarEncomiendasPorDNI(dni);
-      setEncomiendas(resultados);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+    if (!session) {
+      if (!dni || dni.trim().length < 5) return;
+      setLoading(true);
+      setHasSearched(true);
+      setError(null);
+      try {
+        const res = await buscarEncomiendaPorCodigo(dni);
+        if (res.success && res.data) {
+          setEncomiendas([res.data]);
+        } else {
+          setEncomiendas([]);
+          setError(res.error || "Encomienda no encontrada.");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Ocurrió un error al buscar la encomienda.");
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      if (!dni || dni.length < 8) return;
+      setLoading(true);
+      setHasSearched(true);
+      setError(null);
+      try {
+        const resultados = await buscarEncomiendasPorDNI(dni);
+        setEncomiendas(resultados);
+      } catch (err) {
+        console.error(err);
+        setError("Ocurrió un error al buscar las encomiendas.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -163,7 +186,9 @@ export default function SeguimientoPage() {
           </span>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-2">Rastrear Encomienda</h1>
           <p className="text-sm sm:text-base text-gray-500 max-w-md mx-auto">
-            Ingresa el DNI del remitente para consultar el estado actualizado de tu envío en tiempo real.
+            {session 
+              ? "Ingresa tu DNI para consultar el estado de tus envíos asociados en tiempo real."
+              : "Ingresa el código único de seguimiento de tu encomienda para ver su estado."}
           </p>
         </div>
 
@@ -177,12 +202,12 @@ export default function SeguimientoPage() {
                 </div>
                 <input
                   type="text"
-                  maxLength={8}
+                  maxLength={session ? 8 : 30}
                   className="focus:ring-2 focus:ring-[#f07639]/20 focus:border-[#f07639] block w-full pl-11 text-base border-gray-200 rounded-2xl py-3.5 border bg-gray-50 text-gray-900 transition-all placeholder-gray-400 outline-none"
-                  placeholder="Número de DNI del remitente..."
+                  placeholder={session ? "Número de DNI del remitente..." : "Código de seguimiento (ej. ENC-12345)..."}
                   value={dni}
                   onChange={(e) => {
-                     setDni(e.target.value.replace(/\D/g, ""));
+                     setDni(session ? e.target.value.replace(/\D/g, "") : e.target.value.toUpperCase());
                      if (useRegisteredDni) setUseRegisteredDni(false);
                   }}
                   disabled={loading}
@@ -191,7 +216,7 @@ export default function SeguimientoPage() {
               </div>
               <button
                 type="submit"
-                disabled={loading || dni.length < 8}
+                disabled={loading || (session ? dni.length < 8 : dni.length < 5)}
                 className="inline-flex justify-center items-center py-3.5 px-8 border border-transparent rounded-2xl shadow-sm text-base font-bold text-white bg-[#f07639] hover:bg-[#d8662d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#f07639] disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Buscar Encomienda"}
@@ -218,45 +243,57 @@ export default function SeguimientoPage() {
           </form>
         </div>
 
+        {/* Error Message */}
+        {error && !loading && (
+          <div className="bg-red-50 border border-red-100 text-red-700 p-5 rounded-3xl mb-8 text-sm font-bold flex items-center gap-3">
+            <span className="text-lg">⚠</span>
+            <p>{error}</p>
+          </div>
+        )}
+
         {/* Results Area */}
-        {hasSearched && !loading && (
+        {hasSearched && !loading && !error && (
           <div className="space-y-6">
-            {/* Tabs */}
-            <div className="flex justify-center">
-              <div className="bg-gray-100 p-1 rounded-2xl inline-flex space-x-1 border border-gray-200/50">
-                <button
-                  onClick={() => setActiveTab("en_curso")}
-                  className={`whitespace-nowrap py-2 px-5 rounded-xl font-bold text-sm flex items-center transition-all duration-300 cursor-pointer ${
-                    activeTab === "en_curso"
-                      ? "bg-white text-[#f07639] shadow-sm"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
-                >
-                  <Package className="w-4 h-4 mr-2" />
-                  En Curso ({enCurso.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab("historial")}
-                  className={`whitespace-nowrap py-2 px-5 rounded-xl font-bold text-sm flex items-center transition-all duration-300 cursor-pointer ${
-                    activeTab === "historial"
-                      ? "bg-white text-[#f07639] shadow-sm"
-                      : "text-gray-500 hover:text-gray-900"
-                  }`}
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  Historial ({historial.length})
-                </button>
+            {/* Tabs (Solo si hay sesión, ya que muestra el listado completo del DNI) */}
+            {session && (
+              <div className="flex justify-center">
+                <div className="bg-gray-100 p-1 rounded-2xl inline-flex space-x-1 border border-gray-200/50">
+                  <button
+                    onClick={() => setActiveTab("en_curso")}
+                    className={`whitespace-nowrap py-2 px-5 rounded-xl font-bold text-sm flex items-center transition-all duration-300 cursor-pointer ${
+                      activeTab === "en_curso"
+                        ? "bg-white text-[#f07639] shadow-sm"
+                        : "text-gray-500 hover:text-gray-900"
+                    }`}
+                  >
+                    <Package className="w-4 h-4 mr-2" />
+                    En Curso ({enCurso.length})
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("historial")}
+                    className={`whitespace-nowrap py-2 px-5 rounded-xl font-bold text-sm flex items-center transition-all duration-300 cursor-pointer ${
+                      activeTab === "historial"
+                        ? "bg-white text-[#f07639] shadow-sm"
+                        : "text-gray-500 hover:text-gray-900"
+                    }`}
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    Historial ({historial.length})
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {currentList.length === 0 ? (
               <div className="text-center py-16 bg-white rounded-3xl shadow-xl shadow-gray-100/50 border border-gray-100/80">
                 <Package className="mx-auto h-14 w-14 text-gray-300 mb-3" />
                 <h3 className="text-lg font-bold text-gray-800">No hay encomiendas</h3>
                 <p className="mt-1 text-sm text-gray-500 max-w-sm mx-auto">
-                  {activeTab === "en_curso"
-                    ? "No hemos encontrado encomiendas activas asociadas a este DNI."
-                    : "No hay registros de encomiendas entregadas en tu historial."}
+                  {session
+                    ? (activeTab === "en_curso"
+                        ? "No hemos encontrado encomiendas activas asociadas a este DNI."
+                        : "No hay registros de encomiendas entregadas en tu historial.")
+                    : "No se encontró ninguna encomienda activa o entregada con el código provisto."}
                 </p>
               </div>
             ) : (
