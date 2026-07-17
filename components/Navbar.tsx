@@ -124,7 +124,7 @@ export default function Navbar() {
                   {session.user?.role === "operario" && (
                     <Link href="/staff/operario" className="block px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-700 hover:text-[#f07639] transition-colors" onClick={() => setIsDropdownOpen(false)}>Panel de Operario</Link>
                   )}
-                  {(session.user?.role === "admin" || session.user?.role === "gerente") && (
+                  {(session.user?.role === "admin" || session.user?.role === "gerente" || session.user?.role === "vendedor") && (
                     <Link href="/admin" className="block px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-700 hover:text-[#f07639] transition-colors" onClick={() => setIsDropdownOpen(false)}>Panel Admin</Link>
                   )}
                   <Link href="/perfil" className="block px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-slate-700 hover:text-[#f07639] transition-colors" onClick={() => setIsDropdownOpen(false)}>Mi Perfil</Link>

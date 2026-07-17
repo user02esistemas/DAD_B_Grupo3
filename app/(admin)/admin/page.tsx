@@ -195,7 +195,7 @@ export default async function AdminDashboardPage() {
                 <AlertCircle className="w-4 h-4 mr-3 text-emerald-500 flex-shrink-0" />
                 <div>
                   <p className="text-[13px] font-bold text-emerald-900">Todo en orden</p>
-                  <p className="text-xs text-slate-500 mt-0.5 font-medium">
+                  <p className="text-xs text-emerald-700 mt-0.5 font-medium">
                     No se han detectado variaciones importantes en la demanda.
                   </p>
                 </div>

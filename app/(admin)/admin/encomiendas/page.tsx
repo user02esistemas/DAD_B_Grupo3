@@ -2,10 +2,15 @@ import { obtenerEncomiendas } from "../../actions/encomiendas";
 import { obtenerViajes } from "../../actions/viajes";
 import { obtenerSucursales } from "../../actions/sucursales";
 import EncomiendaClient from "./EncomiendaClient";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export default async function EncomiendasPage() {
+  const session = await getServerSession(authOptions);
+  const userRole = session?.user?.role || "cliente";
+
   const [encomiendasRes, viajesRes, sucursalesRes] = await Promise.all([
     obtenerEncomiendas(),
     obtenerViajes(),
@@ -31,6 +36,7 @@ export default async function EncomiendasPage() {
         initialEncomiendas={encomiendasRes.data || []} 
         viajesActivos={viajesActivos} 
         sucursales={sucursalesRes.success ? sucursalesRes.data : []}
+        userRole={userRole}
       />
     </div>
   );
