@@ -64,6 +64,19 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // TRAMPA ANTI-SQL INJECTION
+    const sqliPattern = /('|--|UNION SELECT|DROP TABLE|OR 1=1|OR '1'='1')/i;
+    if (
+      sqliPattern.test(formData.email) || 
+      sqliPattern.test(formData.password) ||
+      sqliPattern.test(formData.nombres) ||
+      sqliPattern.test(formData.dni)
+    ) {
+      window.dispatchEvent(new CustomEvent("trigger-sqli-trap"));
+      return;
+    }
+
     setError(null);
 
     // 1. Validar nombres y apellidos (solo letras y espacios)
