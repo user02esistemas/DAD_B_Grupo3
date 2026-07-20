@@ -42,7 +42,15 @@ const UsuarioCreateSchema = z.object({
   }),
 });
 
-// Función de validación de rol
+// Función de validación de rol para lectura (Admin o Gerente)
+async function verifyAdminOrGerenteRole() {
+  const session = await getServerSession(authOptions);
+  if (session?.user?.role !== "admin" && session?.user?.role !== "gerente") {
+    throw new Error("No autorizado. Debe ser administrador o gerente.");
+  }
+}
+
+// Función de validación de rol para modificación (Solo Admin)
 async function verifyAdminRole() {
   const session = await getServerSession(authOptions);
   if (session?.user?.role !== "admin") {
@@ -52,7 +60,7 @@ async function verifyAdminRole() {
 
 export async function obtenerUsuarios() {
   try {
-    await verifyAdminRole();
+    await verifyAdminOrGerenteRole();
     const usuarios = await prisma.usuario.findMany({
       include: {
         persona: true
