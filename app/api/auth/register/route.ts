@@ -28,9 +28,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8) {
       return NextResponse.json(
-        { message: "La contraseña debe tener al menos 6 caracteres" },
+        { message: "La contraseña debe tener al menos 8 caracteres" },
         { status: 400 }
       );
     }
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 3. Hashear password y crear el Usuario
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 12);
 
       const newUser = await tx.usuario.create({
         data: {

@@ -3,26 +3,27 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
-import { 
-  getLocations, 
-  searchTrips, 
-  getTripSeats, 
-  marcarAsientosPendientes, 
-  liberarAsientos, 
+import { parseBusImages } from "@/lib/bus-images";
+import {
+  getLocations,
+  searchTrips,
+  getTripSeats,
+  marcarAsientosPendientes,
+  liberarAsientos,
   crearOrdenCulqi,
-  crearCargoCulqi, 
+  crearCargoCulqi,
   procesarPagoMultiplesAsientosCulqi,
   getClienteProfile,
   enviarTicketEmail
 } from "@/app/actions";
-import { 
-  Loader2, 
-  ArrowRight, 
-  MapPin, 
-  Calendar as CalendarIcon, 
-  Clock, 
-  CheckCircle, 
-  BusFront, 
+import {
+  Loader2,
+  ArrowRight,
+  MapPin,
+  Calendar as CalendarIcon,
+  Clock,
+  CheckCircle,
+  BusFront,
   Search,
   ArrowLeftRight,
   Route,
@@ -39,10 +40,10 @@ function CompraContent() {
   const originParam = searchParams.get("origin") || "";
   const destinationParam = searchParams.get("destination") || "";
   const dateParam = searchParams.get("date") || "";
-  
+
   // Stepper state
   const [step, setStep] = useState(1);
-  
+
   // Global loading state for actions
   const [loading, setLoading] = useState(false);
 
@@ -116,7 +117,7 @@ function CompraContent() {
   // Mantener referencia de los asientos seleccionados para liberarlos al desmontar
   const selectedSeatsRef = useRef(selectedSeats);
   const stepRef = useRef(step);
-  
+
   useEffect(() => {
     selectedSeatsRef.current = selectedSeats;
     stepRef.current = step;
@@ -129,13 +130,13 @@ function CompraContent() {
       const currentStep = stepRef.current;
       if (seats.length > 0 && currentStep >= 3 && currentStep !== 5) {
         const ids = seats.map(s => s.id);
-        const data = JSON.stringify({ seatIds: ids });
+        const data = JSON.stringify({ seatIds: ids, guestToken: getGuestToken() });
         navigator.sendBeacon('/api/release-seats', new Blob([data], { type: 'application/json' }));
       }
     };
 
     window.addEventListener('beforeunload', releaseMySeats);
-    
+
     return () => {
       releaseMySeats();
     };
@@ -146,7 +147,7 @@ function CompraContent() {
     if (selectedSeatsRef.current.length > 0) {
       setLoading(true);
       const ids = selectedSeatsRef.current.map(s => s.id);
-      await liberarAsientos(ids);
+      await liberarAsientos(ids, getGuestToken());
       alert("Tu tiempo de reserva para completar el pago ha expirado. Por favor, selecciona nuevamente.");
       setSelectedSeats([]);
       if (selectedTrip) {
@@ -179,7 +180,7 @@ function CompraContent() {
   const handleDownloadPDF = async (ticket: any) => {
     const seatId = ticket.asiento_viaje_id;
     const seat = selectedTrip?.asientos?.find((a: any) => a.id === seatId || a.id === String(seatId) || BigInt(a.id) === seatId);
-    
+
     const dateObj = selectedTrip ? new Date(selectedTrip.fecha_salida || selectedTrip.departure_time) : new Date();
     const dateStr = dateObj.toLocaleDateString();
     const timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -245,7 +246,7 @@ function CompraContent() {
         setOriginId(originParam);
         setDestinationId(destinationParam);
         setDate(dateParam);
-        
+
         setStep(2);
         setLoading(true);
         const results = await searchTrips(originParam, destinationParam, dateParam);
@@ -264,7 +265,7 @@ function CompraContent() {
         if (selectedSeats.length > 0) {
           setLoading(true);
           const ids = selectedSeats.map(s => s.id);
-          await liberarAsientos(ids);
+          await liberarAsientos(ids, getGuestToken());
           alert("Pago fallido");
           setPaymentError("El proceso de pago fue cancelado o cerrado.");
           setStep(3);
@@ -278,7 +279,7 @@ function CompraContent() {
         }
       }
     };
-    
+
     window.addEventListener("message", handleCulqiMessage);
     return () => {
       window.removeEventListener("message", handleCulqiMessage);
@@ -315,7 +316,7 @@ function CompraContent() {
     if (typeof window !== "undefined") {
       let token = localStorage.getItem("guestToken");
       if (!token) {
-        token = "gt_" + Math.random().toString(36).substring(2, 15) + Date.now();
+        token = "gt_" + crypto.randomUUID();
         localStorage.setItem("guestToken", token);
       }
       return token;
@@ -433,10 +434,10 @@ function CompraContent() {
 
       // 1.5 Crear Orden en el backend para poder usar Yape/PagoEfectivo
       const orderRes = await crearOrdenCulqi(
-        totalAmount, 
-        email, 
-        primerPasajero.nombres, 
-        primerPasajero.apellidos, 
+        totalAmount,
+        email,
+        primerPasajero.nombres,
+        primerPasajero.apellidos,
         primerPasajero.telefono || "",
         selectedSeats.map(s => s.id)
       );
@@ -481,16 +482,16 @@ function CompraContent() {
       (window as any).culqi = async () => {
         if (Culqi.token) {
           const token = Culqi.token.id;
-          
+
           try {
             // a. Crear el cargo en nuestro backend
             const chargeRes = await crearCargoCulqi(
-              token, 
-              email, 
-              totalAmount, 
+              token,
+              email,
+              totalAmount,
               selectedSeats.map(s => s.id)
             );
-            
+
             if (!chargeRes.success) {
                setPaymentError(chargeRes.error || "Error al procesar el pago");
                setLoading(false);
@@ -516,10 +517,10 @@ function CompraContent() {
             if (res.success) {
               setPaymentSuccess(true);
               setTicketResult(res.tickets);
-              
+
               // Enviar correo de forma asíncrona (sin bloquear UI)
               enviarTicketEmail(email, res.tickets, selectedTrip).catch(console.error);
-              
+
               Culqi.close();
             } else {
               setPaymentError(res.error || "Error al emitir boletos en la base de datos.");
@@ -528,7 +529,7 @@ function CompraContent() {
           } catch (e) {
             console.error("Error procesando pago en callback:", e);
             const ids = selectedSeats.map(s => s.id);
-            await liberarAsientos(ids);
+            await liberarAsientos(ids, getGuestToken());
             alert("Ocurrió un error inesperado al procesar el pago.");
             Culqi.close();
           } finally {
@@ -540,7 +541,7 @@ function CompraContent() {
         } else {
           console.error("Error de tokenización:", Culqi.error);
           const ids = selectedSeats.map(s => s.id);
-          await liberarAsientos(ids);
+          await liberarAsientos(ids, getGuestToken());
           alert("Pago fallido");
           setPaymentError(Culqi.error?.user_message || "Pago fallido");
           setStep(3);
@@ -777,8 +778,8 @@ function CompraContent() {
     <div className="mb-8">
       <div className="flex items-center justify-between relative">
         <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-full h-1 bg-gray-200 z-0"></div>
-        <div 
-          className="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-[#f07639] z-0 transition-all duration-500 ease-in-out" 
+        <div
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 h-1 bg-[#f07639] z-0 transition-all duration-500 ease-in-out"
           style={{ width: `${((step - 1) / 3) * 100}%` }}
         ></div>
         {[1, 2, 3, 4].map((s) => (
@@ -814,7 +815,7 @@ function CompraContent() {
         {!paymentSuccess && renderStepper()}
 
         <div className="border-y border-[var(--card-border)] bg-[var(--card-bg)] shadow-[var(--shadow-md)] sm:rounded-xl sm:border">
-          
+
           {/* STEP 1: Búsqueda */}
           {step === 1 && (
             <div className="p-4 sm:p-5 md:p-6">
@@ -972,30 +973,34 @@ function CompraContent() {
                         </div>
                       </div>
                       <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-0 w-full sm:w-auto">
-                        {trip.bus?.imagenes && trip.bus.imagenes.trim() !== "" && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              let imgs: string[] = [];
-                              try {
-                                const parsed = JSON.parse(trip.bus.imagenes);
-                                if (Array.isArray(parsed)) imgs = parsed;
-                                else imgs = [trip.bus.imagenes];
-                              } catch (e) {
-                                imgs = trip.bus.imagenes.split(",");
-                              }
-                              imgs = imgs.map((i: string) => i.trim()).filter((i: string) => i !== "").map((i: string) => i.startsWith("http") || i.startsWith("/") || i.startsWith("data:") ? i : `/${i}`);
-                              if (imgs.length > 0) {
-                                setBusImages(imgs);
+                        {(() => {
+                          let imgs: string[] = [];
+                          if (trip.bus?.imagenes && trip.bus.imagenes.trim() !== "") {
+                            try {
+                              const parsed = JSON.parse(trip.bus.imagenes);
+                              if (Array.isArray(parsed)) imgs = parsed;
+                              else imgs = [trip.bus.imagenes];
+                            } catch (e) {
+                              imgs = trip.bus.imagenes.split(",");
+                            }
+                            imgs = imgs.map((i: string) => i.trim()).filter((i: string) => i !== "").map((i: string) => i.startsWith("http") || i.startsWith("/") || i.startsWith("data:") ? i : `/${i}`);
+                          }
+                          const finalImgs = imgs.length > 0 ? imgs : ["/bus_1.jpg", "/bus_2.jpg", "/bus_3.jpg"];
+                          
+                          return (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setBusImages(finalImgs);
                                 setCurrentImageIndex(0);
                                 setIsImagesModalOpen(true);
-                              }
-                            }}
-                            className="w-full sm:w-auto px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors"
-                          >
-                            Ver Bus
-                          </button>
-                        )}
+                              }}
+                              className="w-full sm:w-auto px-6 py-3 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                            >
+                              <span>Ver Bus</span>
+                            </button>
+                          );
+                        })()}
                         <button className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-900 font-bold rounded-xl hover:bg-[#f07639] hover:text-white transition-colors">
                           Seleccionar
                         </button>
@@ -1092,17 +1097,17 @@ function CompraContent() {
             <div className="p-6 md:p-10">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-2xl font-extrabold text-gray-900">Resumen de Compra</h2>
-                <button 
+                <button
                   onClick={async () => {
                     if (selectedSeats.length > 0) {
                       setLoading(true);
                       const ids = selectedSeats.map(s => s.id);
-                      await liberarAsientos(ids);
+                      await liberarAsientos(ids, getGuestToken());
                       setSelectedSeats([]);
                       setLoading(false);
                     }
                     setStep(3);
-                  }} 
+                  }}
                   className="text-sm text-[#f07639] hover:underline font-medium"
                   disabled={loading}
                 >
@@ -1112,7 +1117,7 @@ function CompraContent() {
 
               {/* Layout de dos columnas para optimizar espacio */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                
+
                 {/* Lado izquierdo (Datos y Botón de Pago) - 2/3 en pantallas medianas y grandes */}
                 <div className="md:col-span-2 space-y-6">
                   {/* Formularios de los Pasajeros */}
@@ -1132,8 +1137,8 @@ function CompraContent() {
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">Nombres *</label>
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 value={p.nombres}
                                 onChange={(e) => setPasajeros({...pasajeros, [seat.id]: {...p, nombres: e.target.value.toUpperCase()}})}
                                 className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#f07639] outline-none text-gray-900 bg-white text-sm"
@@ -1142,8 +1147,8 @@ function CompraContent() {
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">Apellidos *</label>
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 value={p.apellidos}
                                 onChange={(e) => setPasajeros({...pasajeros, [seat.id]: {...p, apellidos: e.target.value.toUpperCase()}})}
                                 className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#f07639] outline-none text-gray-900 bg-white text-sm"
@@ -1152,8 +1157,8 @@ function CompraContent() {
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">DNI *</label>
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 maxLength={8}
                                 value={p.dni}
                                 onChange={(e) => setPasajeros({...pasajeros, [seat.id]: {...p, dni: e.target.value.replace(/\D/g, "")}})}
@@ -1163,8 +1168,8 @@ function CompraContent() {
                             </div>
                             <div>
                               <label className="block text-sm font-medium text-gray-700 mb-1">Celular *</label>
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 maxLength={9}
                                 value={p.telefono}
                                 onChange={(e) => setPasajeros({...pasajeros, [seat.id]: {...p, telefono: e.target.value.replace(/\D/g, "")}})}
@@ -1175,8 +1180,8 @@ function CompraContent() {
                             {index === 0 && (
                               <div className="sm:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico *</label>
-                                <input 
-                                  type="email" 
+                                <input
+                                  type="email"
                                   value={p.email || ""}
                                   onChange={(e) => setPasajeros({...pasajeros, [seat.id]: {...p, email: e.target.value}})}
                                   placeholder="ejemplo@correo.com"
@@ -1214,9 +1219,9 @@ function CompraContent() {
                     ) : (
                       <div className="flex items-center justify-center space-x-3">
                         <span>Pagar con</span>
-                        <img 
-                          src="/culqilogo.png" 
-                          alt="Culqi" 
+                        <img
+                          src="/culqilogo.png"
+                          alt="Culqi"
                           className="h-7 object-contain bg-white px-2 py-0.5 rounded shadow-sm"
                         />
                       </div>
@@ -1276,11 +1281,11 @@ function CompraContent() {
               <p className="text-sm text-gray-600 max-w-md mx-auto mb-3">
                 Tu pasaje está confirmado. Presenta el código de abordaje al subir al bus.
               </p>
-              
+
               <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-green-50 border border-green-200 text-xs font-semibold text-green-700 mb-6">
                 ✓ Se ha enviado una copia a tu correo electrónico
               </div>
-              
+
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 text-left mb-6">
                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 border-b border-gray-200 pb-1.5">Boletos Emitidos</p>
                 <div className="space-y-2.5">
@@ -1296,7 +1301,7 @@ function CompraContent() {
                           <p className="text-sm font-mono font-bold text-[#f07639]">{ticket.codigo_qr}</p>
                         </div>
                         <div className="flex gap-2">
-                          <button 
+                          <button
                             onClick={() => handleDownloadPDF(ticket)}
                             className="bg-[#f07639] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#e06528] transition-all shadow-sm whitespace-nowrap"
                             title="Descargar PDF"
@@ -1309,7 +1314,7 @@ function CompraContent() {
                   ))}
                 </div>
               </div>
-              
+
               <Link href="/" className="inline-flex justify-center items-center py-2.5 px-6 border border-gray-300 rounded-xl shadow-sm text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 transition-all">
                 Volver al Inicio
               </Link>
@@ -1320,11 +1325,11 @@ function CompraContent() {
 
         {/* MODAL IMÁGENES DEL BUS */}
         {isImagesModalOpen && busImages.length > 0 && (
-          <div 
+          <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md p-6"
             onClick={() => setIsImagesModalOpen(false)}
           >
-            <div 
+            <div
               className="bg-white rounded-3xl overflow-hidden w-full max-w-2xl flex flex-col max-h-[80vh] shadow-2xl border border-gray-100 relative"
               onClick={(e) => e.stopPropagation()}
             >
@@ -1334,8 +1339,8 @@ function CompraContent() {
                   <span className="w-2 h-2 rounded-full bg-[#f07639]"></span>
                   Fotos del Bus
                 </h3>
-                <button 
-                  onClick={() => setIsImagesModalOpen(false)} 
+                <button
+                  onClick={() => setIsImagesModalOpen(false)}
                   className="text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg"
                 >
                   &times;
@@ -1344,22 +1349,22 @@ function CompraContent() {
 
               {/* Contenedor de la Imagen */}
               <div className="relative flex-1 bg-gray-950 flex items-center justify-center min-h-[300px] overflow-hidden">
-                <img 
-                  src={busImages[currentImageIndex]} 
-                  alt="Bus" 
+                <img
+                  src={busImages[currentImageIndex]}
+                  alt="Bus"
                   className="max-w-full max-h-[45vh] object-contain transition-all duration-300"
                 />
-                
+
                 {/* Controles de Navegación Lateral */}
                 {busImages.length > 1 && (
                   <>
-                    <button 
+                    <button
                       onClick={() => setCurrentImageIndex(prev => prev === 0 ? busImages.length - 1 : prev - 1)}
                       className="absolute left-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 backdrop-blur-md transition-colors"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7"></path></svg>
                     </button>
-                    <button 
+                    <button
                       onClick={() => setCurrentImageIndex(prev => prev === busImages.length - 1 ? 0 : prev + 1)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full p-2 backdrop-blur-md transition-colors"
                     >
@@ -1373,8 +1378,8 @@ function CompraContent() {
               {busImages.length > 1 && (
                 <div className="p-3 bg-gray-50 border-t border-gray-100 flex justify-center gap-2 overflow-x-auto">
                   {busImages.map((img, idx) => (
-                    <button 
-                      key={idx} 
+                    <button
+                      key={idx}
                       onClick={() => setCurrentImageIndex(idx)}
                       className={`w-14 h-10 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${idx === currentImageIndex ? 'border-[#f07639] scale-105 shadow-sm' : 'border-transparent opacity-60 hover:opacity-100'}`}
                     >

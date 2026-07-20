@@ -1,243 +1,961 @@
 {
-  "openapi": "3.0.0",
-  "info": {
-    "title": "Empresa de Transportes El Cumbe - API RESTful",
-    "version": "1.0.0",
-    "description": "Especificación oficial de servicios RESTful y API Móvil para la plataforma de transporte interprovincial El Cumbe. Incluye servicios de autenticación JWT, búsqueda de salidas, reserva de asientos, pasarela de pagos Culqi y gestión de encomiendas."
-  },
-  "servers": [
-    {
-      "url": "http://localhost:3000",
-      "description": "Servidor Local de Desarrollo"
-    }
-  ],
-  "components": {
-    "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT",
-        "description": "Ingrese el token JWT obtenido en la API de Login Móvil (/api/movil/login)"
-      }
-    },
-    "schemas": {
-      "LoginRequest": {
-        "type": "object",
-        "required": ["correo", "contrasena"],
-        "properties": {
-          "correo": { "type": "string", "format": "email", "example": "cliente@cumbe.com" },
-          "contrasena": { "type": "string", "example": "123456" }
-        }
-      },
-      "LoginResponse": {
-        "type": "object",
-        "properties": {
-          "success": { "type": "boolean", "example": true },
-          "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
-          "user": {
-            "type": "object",
-            "properties": {
-              "id": { "type": "string", "example": "1" },
-              "nombres": { "type": "string", "example": "Carlos Mendoza" },
-              "correo": { "type": "string", "example": "conductor@cumbe.com" },
-              "rol": { "type": "string", "example": "conductor" },
-              "dni": { "type": "string", "example": "12345678" }
-            }
-          }
-        }
-      },
-      "RegistroRequest": {
-        "type": "object",
-        "required": ["nombres", "apellidos", "correo", "contrasena", "dni"],
-        "properties": {
-          "nombres": { "type": "string", "example": "Juan Carlos" },
-          "apellidos": { "type": "string", "example": "Pérez Quispe" },
-          "correo": { "type": "string", "format": "email", "example": "juan.perez@gmail.com" },
-          "contrasena": { "type": "string", "example": "123456" },
-          "dni": { "type": "string", "example": "74829104" },
-          "telefono": { "type": "string", "example": "918273645" }
-        }
-      },
-      "BloqueoAsientosRequest": {
-        "type": "object",
-        "required": ["seatIds"],
-        "properties": {
-          "seatIds": {
-            "type": "array",
-            "items": { "type": "string" },
-            "example": ["101", "102"]
-          },
-          "email": { "type": "string", "example": "cliente@cumbe.com" },
-          "guestToken": { "type": "string", "example": "guest_token_123" }
-        }
-      },
-      "CompraPasajesRequest": {
-        "type": "object",
-        "required": ["tokenId", "viajeId", "asientosPasajeros", "amount"],
-        "properties": {
-          "tokenId": { "type": "string", "example": "tkn_live_xxxxxxxx" },
-          "viajeId": { "type": "string", "example": "10" },
-          "amount": { "type": "number", "example": 90.00 },
-          "asientosPasajeros": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "seatId": { "type": "string", "example": "101" },
-                "pasajeroData": {
-                  "type": "object",
-                  "properties": {
-                    "nombres": { "type": "string", "example": "Juan Carlos" },
-                    "apellidos": { "type": "string", "example": "Pérez Quispe" },
-                    "dni": { "type": "string", "example": "74829104" }
-                  }
-                }
+    "openapi":  "3.0.0",
+    "info":  {
+                 "title":  "Empresa de Transportes El Cumbe - API RESTful",
+                 "version":  "1.0.0",
+                 "description":  "EspecificaciÃ³n oficial de servicios RESTful y API MÃ³vil para la plataforma de transporte interprovincial El Cumbe. Incluye servicios de autenticaciÃ³n JWT, bÃºsqueda de salidas, reserva de asientos, pasarela de pagos Culqi y gestiÃ³n de encomiendas."
+             },
+    "servers":  [
+                    {
+                        "url":  "http://localhost:3000",
+                        "description":  "Servidor Local de Desarrollo"
+                    }
+                ],
+    "components":  {
+                       "securitySchemes":  {
+                                               "bearerAuth":  {
+                                                                  "type":  "http",
+                                                                  "scheme":  "bearer",
+                                                                  "bearerFormat":  "JWT",
+                                                                  "description":  "Ingrese el token JWT obtenido en la API de Login MÃ³vil (/api/movil/login)"
+                                                              }
+                                           },
+                       "schemas":  {
+                                       "LoginRequest":  {
+                                                            "type":  "object",
+                                                            "required":  [
+                                                                             "correo",
+                                                                             "contrasena"
+                                                                         ],
+                                                            "properties":  {
+                                                                               "correo":  {
+                                                                                              "type":  "string",
+                                                                                              "format":  "email",
+                                                                                              "example":  "cliente@cumbe.com"
+                                                                                          },
+                                                                               "contrasena":  {
+                                                                                                  "type":  "string",
+                                                                                                  "example":  "123456"
+                                                                                              }
+                                                                           }
+                                                        },
+                                       "LoginResponse":  {
+                                                             "type":  "object",
+                                                             "properties":  {
+                                                                                "success":  {
+                                                                                                "type":  "boolean",
+                                                                                                "example":  true
+                                                                                            },
+                                                                                "token":  {
+                                                                                              "type":  "string",
+                                                                                              "example":  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                                                                                          },
+                                                                                "user":  {
+                                                                                             "type":  "object",
+                                                                                             "properties":  {
+                                                                                                                "id":  {
+                                                                                                                           "type":  "string",
+                                                                                                                           "example":  "1"
+                                                                                                                       },
+                                                                                                                "nombres":  {
+                                                                                                                                "type":  "string",
+                                                                                                                                "example":  "Carlos Mendoza"
+                                                                                                                            },
+                                                                                                                "correo":  {
+                                                                                                                               "type":  "string",
+                                                                                                                               "example":  "conductor@cumbe.com"
+                                                                                                                           },
+                                                                                                                "rol":  {
+                                                                                                                            "type":  "string",
+                                                                                                                            "example":  "conductor"
+                                                                                                                        },
+                                                                                                                "dni":  {
+                                                                                                                            "type":  "string",
+                                                                                                                            "example":  "12345678"
+                                                                                                                        }
+                                                                                                            }
+                                                                                         }
+                                                                            }
+                                                         },
+                                       "RegistroRequest":  {
+                                                               "type":  "object",
+                                                               "required":  [
+                                                                                "nombres",
+                                                                                "apellidos",
+                                                                                "correo",
+                                                                                "contrasena",
+                                                                                "dni"
+                                                                            ],
+                                                               "properties":  {
+                                                                                  "nombres":  {
+                                                                                                  "type":  "string",
+                                                                                                  "example":  "Juan Carlos"
+                                                                                              },
+                                                                                  "apellidos":  {
+                                                                                                    "type":  "string",
+                                                                                                    "example":  "PÃ©rez Quispe"
+                                                                                                },
+                                                                                  "correo":  {
+                                                                                                 "type":  "string",
+                                                                                                 "format":  "email",
+                                                                                                 "example":  "juan.perez@gmail.com"
+                                                                                             },
+                                                                                  "contrasena":  {
+                                                                                                     "type":  "string",
+                                                                                                     "example":  "123456"
+                                                                                                 },
+                                                                                  "dni":  {
+                                                                                              "type":  "string",
+                                                                                              "example":  "74829104"
+                                                                                          },
+                                                                                  "telefono":  {
+                                                                                                   "type":  "string",
+                                                                                                   "example":  "918273645"
+                                                                                               }
+                                                                              }
+                                                           },
+                                       "BloqueoAsientosRequest":  {
+                                                                      "type":  "object",
+                                                                      "required":  [
+                                                                                       "seatIds"
+                                                                                   ],
+                                                                      "properties":  {
+                                                                                         "seatIds":  {
+                                                                                                         "type":  "array",
+                                                                                                         "items":  {
+                                                                                                                       "type":  "string"
+                                                                                                                   },
+                                                                                                         "example":  [
+                                                                                                                         "101",
+                                                                                                                         "102"
+                                                                                                                     ]
+                                                                                                     },
+                                                                                         "email":  {
+                                                                                                       "type":  "string",
+                                                                                                       "example":  "cliente@cumbe.com"
+                                                                                                   },
+                                                                                         "guestToken":  {
+                                                                                                            "type":  "string",
+                                                                                                            "example":  "guest_token_123"
+                                                                                                        }
+                                                                                     }
+                                                                  },
+                                       "CompraPasajesRequest":  {
+                                                                    "type":  "object",
+                                                                    "required":  [
+                                                                                     "tokenId",
+                                                                                     "viajeId",
+                                                                                     "asientosPasajeros",
+                                                                                     "amount"
+                                                                                 ],
+                                                                    "properties":  {
+                                                                                       "tokenId":  {
+                                                                                                       "type":  "string",
+                                                                                                       "example":  "tkn_live_xxxxxxxx"
+                                                                                                   },
+                                                                                       "viajeId":  {
+                                                                                                       "type":  "string",
+                                                                                                       "example":  "10"
+                                                                                                   },
+                                                                                       "amount":  {
+                                                                                                      "type":  "number",
+                                                                                                      "example":  90.00
+                                                                                                  },
+                                                                                       "asientosPasajeros":  {
+                                                                                                                 "type":  "array",
+                                                                                                                 "items":  {
+                                                                                                                               "type":  "object",
+                                                                                                                               "properties":  {
+                                                                                                                                                  "seatId":  {
+                                                                                                                                                                 "type":  "string",
+                                                                                                                                                                 "example":  "101"
+                                                                                                                                                             },
+                                                                                                                                                  "pasajeroData":  {
+                                                                                                                                                                       "type":  "object",
+                                                                                                                                                                       "properties":  {
+                                                                                                                                                                                          "nombres":  {
+                                                                                                                                                                                                          "type":  "string",
+                                                                                                                                                                                                          "example":  "Juan Carlos"
+                                                                                                                                                                                                      },
+                                                                                                                                                                                          "apellidos":  {
+                                                                                                                                                                                                            "type":  "string",
+                                                                                                                                                                                                            "example":  "PÃ©rez Quispe"
+                                                                                                                                                                                                        },
+                                                                                                                                                                                          "dni":  {
+                                                                                                                                                                                                      "type":  "string",
+                                                                                                                                                                                                      "example":  "74829104"
+                                                                                                                                                                                                  }
+                                                                                                                                                                                      }
+                                                                                                                                                                   }
+                                                                                                                                              }
+                                                                                                                           }
+                                                                                                             }
+                                                                                   }
+                                                                }
+                                   }
+                   },
+    "paths":  {
+                  "/api/movil/login":  {
+                                           "post":  {
+                                                        "summary":  "AutenticaciÃ³n de Usuarios (MÃ³vil)",
+                                                        "description":  "Autentica clientes, conductores y operarios, retornando un token Bearer JWT vÃ¡lido por 30 dÃ­as.",
+                                                        "requestBody":  {
+                                                                            "required":  true,
+                                                                            "content":  {
+                                                                                            "application/json":  {
+                                                                                                                     "schema":  {
+                                                                                                                                    "$ref":  "#/components/schemas/LoginRequest"
+                                                                                                                                }
+                                                                                                                 }
+                                                                                        }
+                                                                        },
+                                                        "responses":  {
+                                                                          "200":  {
+                                                                                      "description":  "AutenticaciÃ³n exitosa",
+                                                                                      "content":  {
+                                                                                                      "application/json":  {
+                                                                                                                               "schema":  {
+                                                                                                                                              "$ref":  "#/components/schemas/LoginResponse"
+                                                                                                                                          }
+                                                                                                                           }
+                                                                                                  }
+                                                                                  },
+                                                                          "401":  {
+                                                                                      "description":  "Credenciales invÃ¡lidas"
+                                                                                  }
+                                                                      }
+                                                    }
+                                       },
+                  "/api/movil/registro":  {
+                                              "post":  {
+                                                           "summary":  "Registro de Clientes (MÃ³vil)",
+                                                           "description":  "Crea una cuenta de usuario con rol \u0027cliente\u0027 e inserta sus datos en la entidad Persona con validaciÃ³n de DNI Ãºnico.",
+                                                           "requestBody":  {
+                                                                               "required":  true,
+                                                                               "content":  {
+                                                                                               "application/json":  {
+                                                                                                                        "schema":  {
+                                                                                                                                       "$ref":  "#/components/schemas/RegistroRequest"
+                                                                                                                                   }
+                                                                                                                    }
+                                                                                           }
+                                                                           },
+                                                           "responses":  {
+                                                                             "200":  {
+                                                                                         "description":  "Registro exitoso"
+                                                                                     },
+                                                                             "400":  {
+                                                                                         "description":  "Error de validaciÃ³n o usuario existente"
+                                                                                     }
+                                                                         }
+                                                       }
+                                          },
+                  "/api/movil/viajes":  {
+                                            "get":  {
+                                                        "summary":  "BÃºsqueda de Salidas y Sucursales",
+                                                        "description":  "Obtiene la lista de terminales/sucursales o realiza la bÃºsqueda de viajes activos por origen, destino y fecha.",
+                                                        "parameters":  [
+                                                                           {
+                                                                               "name":  "type",
+                                                                               "in":  "query",
+                                                                               "schema":  {
+                                                                                              "type":  "string",
+                                                                                              "example":  "locations"
+                                                                                          }
+                                                                           },
+                                                                           {
+                                                                               "name":  "originId",
+                                                                               "in":  "query",
+                                                                               "schema":  {
+                                                                                              "type":  "string",
+                                                                                              "example":  "1"
+                                                                                          }
+                                                                           },
+                                                                           {
+                                                                               "name":  "destinationId",
+                                                                               "in":  "query",
+                                                                               "schema":  {
+                                                                                              "type":  "string",
+                                                                                              "example":  "2"
+                                                                                          }
+                                                                           },
+                                                                           {
+                                                                               "name":  "date",
+                                                                               "in":  "query",
+                                                                               "schema":  {
+                                                                                              "type":  "string",
+                                                                                              "example":  "2026-07-20"
+                                                                                          }
+                                                                           }
+                                                                       ],
+                                                        "responses":  {
+                                                                          "200":  {
+                                                                                      "description":  "Lista de viajes o sucursales obtenida exitosamente"
+                                                                                  }
+                                                                      }
+                                                    }
+                                        },
+                  "/api/movil/viajes/asientos":  {
+                                                     "get":  {
+                                                                 "summary":  "Obtener Croquis y Estado de Asientos",
+                                                                 "description":  "Devuelve la distribuciÃ³n de asientos de un viaje especÃ­fico con su estado (disponible, pendiente o vendido).",
+                                                                 "parameters":  [
+                                                                                    {
+                                                                                        "name":  "tripId",
+                                                                                        "in":  "query",
+                                                                                        "required":  true,
+                                                                                        "schema":  {
+                                                                                                       "type":  "string",
+                                                                                                       "example":  "1"
+                                                                                                   }
+                                                                                    }
+                                                                                ],
+                                                                 "responses":  {
+                                                                                   "200":  {
+                                                                                               "description":  "Croquis de asientos obtenido exitosamente"
+                                                                                           }
+                                                                               }
+                                                             },
+                                                     "post":  {
+                                                                  "summary":  "Bloquear Asientos Temporalmente",
+                                                                  "security":  [
+                                                                                   {
+                                                                                       "bearerAuth":  [
+
+                                                                                                      ]
+                                                                                   }
+                                                                               ],
+                                                                  "description":  "Bloquea asientos por 8 minutos para evitar concurrencia y sobreventa.",
+                                                                  "requestBody":  {
+                                                                                      "required":  true,
+                                                                                      "content":  {
+                                                                                                      "application/json":  {
+                                                                                                                               "schema":  {
+                                                                                                                                              "$ref":  "#/components/schemas/BloqueoAsientosRequest"
+                                                                                                                                          }
+                                                                                                                           }
+                                                                                                  }
+                                                                                  },
+                                                                  "responses":  {
+                                                                                    "200":  {
+                                                                                                "description":  "Asientos bloqueados exitosamente"
+                                                                                            },
+                                                                                    "401":  {
+                                                                                                "description":  "No autorizado (Falta JWT)"
+                                                                                            }
+                                                                                }
+                                                              },
+                                                     "delete":  {
+                                                                    "summary":  "Liberar Asientos Bloqueados",
+                                                                    "security":  [
+                                                                                     {
+                                                                                         "bearerAuth":  [
+
+                                                                                                        ]
+                                                                                     }
+                                                                                 ],
+                                                                    "description":  "Libera manualmente los asientos bloqueados.",
+                                                                    "requestBody":  {
+                                                                                        "required":  true,
+                                                                                        "content":  {
+                                                                                                        "application/json":  {
+                                                                                                                                 "schema":  {
+                                                                                                                                                "type":  "object",
+                                                                                                                                                "properties":  {
+                                                                                                                                                                   "seatIds":  {
+                                                                                                                                                                                   "type":  "array",
+                                                                                                                                                                                   "items":  {
+                                                                                                                                                                                                 "type":  "string"
+                                                                                                                                                                                             }
+                                                                                                                                                                               }
+                                                                                                                                                               }
+                                                                                                                                            }
+                                                                                                                             }
+                                                                                                    }
+                                                                                    },
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Asientos liberados exitosamente"
+                                                                                              }
+                                                                                  }
+                                                                }
+                                                 },
+                  "/api/movil/compras":  {
+                                             "post":  {
+                                                          "summary":  "Procesar Compra de Boletos con Culqi",
+                                                          "security":  [
+                                                                           {
+                                                                               "bearerAuth":  [
+
+                                                                                              ]
+                                                                           }
+                                                                       ],
+                                                          "description":  "Procesa el cobro seguro con el token de tarjeta Culqi y emite los pasajes generando cÃ³digos QR.",
+                                                          "requestBody":  {
+                                                                              "required":  true,
+                                                                              "content":  {
+                                                                                              "application/json":  {
+                                                                                                                       "schema":  {
+                                                                                                                                      "$ref":  "#/components/schemas/CompraPasajesRequest"
+                                                                                                                                  }
+                                                                                                                   }
+                                                                                          }
+                                                                          },
+                                                          "responses":  {
+                                                                            "200":  {
+                                                                                        "description":  "Compra realizada y boletos emitidos exitosamente"
+                                                                                    },
+                                                                            "401":  {
+                                                                                        "description":  "No autorizado (Falta JWT)"
+                                                                                    }
+                                                                        }
+                                                      },
+                                             "get":  {
+                                                         "summary":  "Obtener Boletos e Historial de Encomiendas del Cliente",
+                                                         "security":  [
+                                                                          {
+                                                                              "bearerAuth":  [
+
+                                                                                             ]
+                                                                          }
+                                                                      ],
+                                                         "description":  "Retorna los pasajes emitidos (con QR) y el historial de encomiendas enviadas o recibidas por el cliente.",
+                                                         "parameters":  [
+                                                                            {
+                                                                                "name":  "email",
+                                                                                "in":  "query",
+                                                                                "required":  true,
+                                                                                "schema":  {
+                                                                                               "type":  "string",
+                                                                                               "example":  "cliente@cumbe.com"
+                                                                                           }
+                                                                            }
+                                                                        ],
+                                                         "responses":  {
+                                                                           "200":  {
+                                                                                       "description":  "Historial obtenido exitosamente"
+                                                                                   },
+                                                                           "401":  {
+                                                                                       "description":  "No autorizado (Falta JWT)"
+                                                                                   }
+                                                                       }
+                                                     }
+                                         },
+                  "/api/movil/conductor/viajes":  {
+                                                      "get":  {
+                                                                  "tags":  [
+                                                                               "Conductor"
+                                                                           ],
+                                                                  "summary":  "Listar viajes del conductor autenticado",
+                                                                  "security":  [
+                                                                                   {
+                                                                                       "bearerAuth":  [
+
+                                                                                                      ]
+                                                                                   }
+                                                                               ],
+                                                                  "responses":  {
+                                                                                    "200":  {
+                                                                                                "description":  "Operación exitosa"
+                                                                                            },
+                                                                                    "400":  {
+                                                                                                "description":  "Solicitud inválida"
+                                                                                            },
+                                                                                    "401":  {
+                                                                                                "description":  "Token ausente o inválido"
+                                                                                            },
+                                                                                    "403":  {
+                                                                                                "description":  "Rol o recurso no autorizado"
+                                                                                            },
+                                                                                    "500":  {
+                                                                                                "description":  "Error interno"
+                                                                                            }
+                                                                                }
+                                                              },
+                                                      "put":  {
+                                                                  "tags":  [
+                                                                               "Conductor"
+                                                                           ],
+                                                                  "summary":  "Actualizar un viaje propio",
+                                                                  "security":  [
+                                                                                   {
+                                                                                       "bearerAuth":  [
+
+                                                                                                      ]
+                                                                                   }
+                                                                               ],
+                                                                  "responses":  {
+                                                                                    "200":  {
+                                                                                                "description":  "Operación exitosa"
+                                                                                            },
+                                                                                    "400":  {
+                                                                                                "description":  "Solicitud inválida"
+                                                                                            },
+                                                                                    "401":  {
+                                                                                                "description":  "Token ausente o inválido"
+                                                                                            },
+                                                                                    "403":  {
+                                                                                                "description":  "Rol o recurso no autorizado"
+                                                                                            },
+                                                                                    "500":  {
+                                                                                                "description":  "Error interno"
+                                                                                            }
+                                                                                },
+                                                                  "requestBody":  {
+                                                                                      "content":  {
+                                                                                                      "application/json":  {
+                                                                                                                               "schema":  {
+                                                                                                                                              "type":  "object"
+                                                                                                                                          }
+                                                                                                                           }
+                                                                                                  },
+                                                                                      "required":  true
+                                                                                  }
+                                                              }
+                                                  },
+                  "/api/movil/conductor/alertas":  {
+                                                       "get":  {
+                                                                   "tags":  [
+                                                                                "Conductor"
+                                                                            ],
+                                                                   "summary":  "Listar alertas propias",
+                                                                   "security":  [
+                                                                                    {
+                                                                                        "bearerAuth":  [
+
+                                                                                                       ]
+                                                                                    }
+                                                                                ],
+                                                                   "responses":  {
+                                                                                     "200":  {
+                                                                                                 "description":  "Operación exitosa"
+                                                                                             },
+                                                                                     "400":  {
+                                                                                                 "description":  "Solicitud inválida"
+                                                                                             },
+                                                                                     "401":  {
+                                                                                                 "description":  "Token ausente o inválido"
+                                                                                             },
+                                                                                     "403":  {
+                                                                                                 "description":  "Rol o recurso no autorizado"
+                                                                                             },
+                                                                                     "500":  {
+                                                                                                 "description":  "Error interno"
+                                                                                             }
+                                                                                 }
+                                                               },
+                                                       "post":  {
+                                                                    "tags":  [
+                                                                                 "Conductor"
+                                                                             ],
+                                                                    "summary":  "Marcar una alerta propia como leída",
+                                                                    "security":  [
+                                                                                     {
+                                                                                         "bearerAuth":  [
+
+                                                                                                        ]
+                                                                                     }
+                                                                                 ],
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Operación exitosa"
+                                                                                              },
+                                                                                      "400":  {
+                                                                                                  "description":  "Solicitud inválida"
+                                                                                              },
+                                                                                      "401":  {
+                                                                                                  "description":  "Token ausente o inválido"
+                                                                                              },
+                                                                                      "403":  {
+                                                                                                  "description":  "Rol o recurso no autorizado"
+                                                                                              },
+                                                                                      "500":  {
+                                                                                                  "description":  "Error interno"
+                                                                                              }
+                                                                                  },
+                                                                    "requestBody":  {
+                                                                                        "content":  {
+                                                                                                        "application/json":  {
+                                                                                                                                 "schema":  {
+                                                                                                                                                "type":  "object"
+                                                                                                                                            }
+                                                                                                                             }
+                                                                                                    },
+                                                                                        "required":  true
+                                                                                    }
+                                                                }
+                                                   },
+                  "/api/movil/conductor/bitacora":  {
+                                                        "post":  {
+                                                                     "tags":  [
+                                                                                  "Conductor"
+                                                                              ],
+                                                                     "summary":  "Registrar una ocurrencia en un viaje propio",
+                                                                     "security":  [
+                                                                                      {
+                                                                                          "bearerAuth":  [
+
+                                                                                                         ]
+                                                                                      }
+                                                                                  ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Operación exitosa"
+                                                                                               },
+                                                                                       "400":  {
+                                                                                                   "description":  "Solicitud inválida"
+                                                                                               },
+                                                                                       "401":  {
+                                                                                                   "description":  "Token ausente o inválido"
+                                                                                               },
+                                                                                       "403":  {
+                                                                                                   "description":  "Rol o recurso no autorizado"
+                                                                                               },
+                                                                                       "500":  {
+                                                                                                   "description":  "Error interno"
+                                                                                               }
+                                                                                   },
+                                                                     "requestBody":  {
+                                                                                         "content":  {
+                                                                                                         "application/json":  {
+                                                                                                                                  "schema":  {
+                                                                                                                                                 "type":  "object"
+                                                                                                                                             }
+                                                                                                                              }
+                                                                                                     },
+                                                                                         "required":  true
+                                                                                     }
+                                                                 },
+                                                        "put":  {
+                                                                    "tags":  [
+                                                                                 "Conductor"
+                                                                             ],
+                                                                    "summary":  "Resolver una ocurrencia propia",
+                                                                    "security":  [
+                                                                                     {
+                                                                                         "bearerAuth":  [
+
+                                                                                                        ]
+                                                                                     }
+                                                                                 ],
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Operación exitosa"
+                                                                                              },
+                                                                                      "400":  {
+                                                                                                  "description":  "Solicitud inválida"
+                                                                                              },
+                                                                                      "401":  {
+                                                                                                  "description":  "Token ausente o inválido"
+                                                                                              },
+                                                                                      "403":  {
+                                                                                                  "description":  "Rol o recurso no autorizado"
+                                                                                              },
+                                                                                      "500":  {
+                                                                                                  "description":  "Error interno"
+                                                                                              }
+                                                                                  },
+                                                                    "requestBody":  {
+                                                                                        "content":  {
+                                                                                                        "application/json":  {
+                                                                                                                                 "schema":  {
+                                                                                                                                                "type":  "object"
+                                                                                                                                            }
+                                                                                                                             }
+                                                                                                    },
+                                                                                        "required":  true
+                                                                                    }
+                                                                }
+                                                    },
+                  "/api/movil/conductor/gastos":  {
+                                                      "post":  {
+                                                                   "tags":  [
+                                                                                "Conductor"
+                                                                            ],
+                                                                   "summary":  "Registrar un gasto en un viaje propio",
+                                                                   "security":  [
+                                                                                    {
+                                                                                        "bearerAuth":  [
+
+                                                                                                       ]
+                                                                                    }
+                                                                                ],
+                                                                   "responses":  {
+                                                                                     "200":  {
+                                                                                                 "description":  "Operación exitosa"
+                                                                                             },
+                                                                                     "400":  {
+                                                                                                 "description":  "Solicitud inválida"
+                                                                                             },
+                                                                                     "401":  {
+                                                                                                 "description":  "Token ausente o inválido"
+                                                                                             },
+                                                                                     "403":  {
+                                                                                                 "description":  "Rol o recurso no autorizado"
+                                                                                             },
+                                                                                     "500":  {
+                                                                                                 "description":  "Error interno"
+                                                                                             }
+                                                                                 },
+                                                                   "requestBody":  {
+                                                                                       "content":  {
+                                                                                                       "application/json":  {
+                                                                                                                                "schema":  {
+                                                                                                                                               "type":  "object"
+                                                                                                                                           }
+                                                                                                                            }
+                                                                                                   },
+                                                                                       "required":  true
+                                                                                   }
+                                                               },
+                                                      "delete":  {
+                                                                     "tags":  [
+                                                                                  "Conductor"
+                                                                              ],
+                                                                     "summary":  "Eliminar un gasto propio",
+                                                                     "security":  [
+                                                                                      {
+                                                                                          "bearerAuth":  [
+
+                                                                                                         ]
+                                                                                      }
+                                                                                  ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Operación exitosa"
+                                                                                               },
+                                                                                       "400":  {
+                                                                                                   "description":  "Solicitud inválida"
+                                                                                               },
+                                                                                       "401":  {
+                                                                                                   "description":  "Token ausente o inválido"
+                                                                                               },
+                                                                                       "403":  {
+                                                                                                   "description":  "Rol o recurso no autorizado"
+                                                                                               },
+                                                                                       "500":  {
+                                                                                                   "description":  "Error interno"
+                                                                                               }
+                                                                                   }
+                                                                 }
+                                                  },
+                  "/api/movil/conductor/novedades":  {
+                                                         "get":  {
+                                                                     "tags":  [
+                                                                                  "Conductor"
+                                                                              ],
+                                                                     "summary":  "Listar novedades propias",
+                                                                     "security":  [
+                                                                                      {
+                                                                                          "bearerAuth":  [
+
+                                                                                                         ]
+                                                                                      }
+                                                                                  ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Operación exitosa"
+                                                                                               },
+                                                                                       "400":  {
+                                                                                                   "description":  "Solicitud inválida"
+                                                                                               },
+                                                                                       "401":  {
+                                                                                                   "description":  "Token ausente o inválido"
+                                                                                               },
+                                                                                       "403":  {
+                                                                                                   "description":  "Rol o recurso no autorizado"
+                                                                                               },
+                                                                                       "500":  {
+                                                                                                   "description":  "Error interno"
+                                                                                               }
+                                                                                   }
+                                                                 },
+                                                         "post":  {
+                                                                      "tags":  [
+                                                                                   "Conductor"
+                                                                               ],
+                                                                      "summary":  "Registrar una novedad propia",
+                                                                      "security":  [
+                                                                                       {
+                                                                                           "bearerAuth":  [
+
+                                                                                                          ]
+                                                                                       }
+                                                                                   ],
+                                                                      "responses":  {
+                                                                                        "200":  {
+                                                                                                    "description":  "Operación exitosa"
+                                                                                                },
+                                                                                        "400":  {
+                                                                                                    "description":  "Solicitud inválida"
+                                                                                                },
+                                                                                        "401":  {
+                                                                                                    "description":  "Token ausente o inválido"
+                                                                                                },
+                                                                                        "403":  {
+                                                                                                    "description":  "Rol o recurso no autorizado"
+                                                                                                },
+                                                                                        "500":  {
+                                                                                                    "description":  "Error interno"
+                                                                                                }
+                                                                                    },
+                                                                      "requestBody":  {
+                                                                                          "content":  {
+                                                                                                          "application/json":  {
+                                                                                                                                   "schema":  {
+                                                                                                                                                  "type":  "object"
+                                                                                                                                              }
+                                                                                                                               }
+                                                                                                      },
+                                                                                          "required":  true
+                                                                                      }
+                                                                  }
+                                                     },
+                  "/api/movil/operario/viajes":  {
+                                                     "get":  {
+                                                                 "tags":  [
+                                                                              "Operario"
+                                                                          ],
+                                                                 "summary":  "Listar viajes para operación",
+                                                                 "security":  [
+                                                                                  {
+                                                                                      "bearerAuth":  [
+
+                                                                                                     ]
+                                                                                  }
+                                                                              ],
+                                                                 "responses":  {
+                                                                                   "200":  {
+                                                                                               "description":  "Operación exitosa"
+                                                                                           },
+                                                                                   "400":  {
+                                                                                               "description":  "Solicitud inválida"
+                                                                                           },
+                                                                                   "401":  {
+                                                                                               "description":  "Token ausente o inválido"
+                                                                                           },
+                                                                                   "403":  {
+                                                                                               "description":  "Rol o recurso no autorizado"
+                                                                                           },
+                                                                                   "500":  {
+                                                                                               "description":  "Error interno"
+                                                                                           }
+                                                                               }
+                                                             }
+                                                 },
+                  "/api/movil/operario/pasajeros":  {
+                                                        "get":  {
+                                                                    "tags":  [
+                                                                                 "Operario"
+                                                                             ],
+                                                                    "summary":  "Consultar manifiesto de pasajeros",
+                                                                    "security":  [
+                                                                                     {
+                                                                                         "bearerAuth":  [
+
+                                                                                                        ]
+                                                                                     }
+                                                                                 ],
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Operación exitosa"
+                                                                                              },
+                                                                                      "400":  {
+                                                                                                  "description":  "Solicitud inválida"
+                                                                                              },
+                                                                                      "401":  {
+                                                                                                  "description":  "Token ausente o inválido"
+                                                                                              },
+                                                                                      "403":  {
+                                                                                                  "description":  "Rol o recurso no autorizado"
+                                                                                              },
+                                                                                      "500":  {
+                                                                                                  "description":  "Error interno"
+                                                                                              }
+                                                                                  }
+                                                                },
+                                                        "put":  {
+                                                                    "tags":  [
+                                                                                 "Operario"
+                                                                             ],
+                                                                    "summary":  "Actualizar estado de abordaje",
+                                                                    "security":  [
+                                                                                     {
+                                                                                         "bearerAuth":  [
+
+                                                                                                        ]
+                                                                                     }
+                                                                                 ],
+                                                                    "responses":  {
+                                                                                      "200":  {
+                                                                                                  "description":  "Operación exitosa"
+                                                                                              },
+                                                                                      "400":  {
+                                                                                                  "description":  "Solicitud inválida"
+                                                                                              },
+                                                                                      "401":  {
+                                                                                                  "description":  "Token ausente o inválido"
+                                                                                              },
+                                                                                      "403":  {
+                                                                                                  "description":  "Rol o recurso no autorizado"
+                                                                                              },
+                                                                                      "500":  {
+                                                                                                  "description":  "Error interno"
+                                                                                              }
+                                                                                  },
+                                                                    "requestBody":  {
+                                                                                        "content":  {
+                                                                                                        "application/json":  {
+                                                                                                                                 "schema":  {
+                                                                                                                                                "type":  "object"
+                                                                                                                                            }
+                                                                                                                             }
+                                                                                                    },
+                                                                                        "required":  true
+                                                                                    }
+                                                                }
+                                                    },
+                  "/api/movil/pasajes/validar-qr":  {
+                                                        "post":  {
+                                                                     "tags":  [
+                                                                                  "Operario"
+                                                                              ],
+                                                                     "summary":  "Validar QR y registrar abordaje de forma atómica",
+                                                                     "security":  [
+                                                                                      {
+                                                                                          "bearerAuth":  [
+
+                                                                                                         ]
+                                                                                      }
+                                                                                  ],
+                                                                     "responses":  {
+                                                                                       "200":  {
+                                                                                                   "description":  "Operación exitosa"
+                                                                                               },
+                                                                                       "400":  {
+                                                                                                   "description":  "Solicitud inválida"
+                                                                                               },
+                                                                                       "401":  {
+                                                                                                   "description":  "Token ausente o inválido"
+                                                                                               },
+                                                                                       "403":  {
+                                                                                                   "description":  "Rol o recurso no autorizado"
+                                                                                               },
+                                                                                       "500":  {
+                                                                                                   "description":  "Error interno"
+                                                                                               }
+                                                                                   },
+                                                                     "requestBody":  {
+                                                                                         "content":  {
+                                                                                                         "application/json":  {
+                                                                                                                                  "schema":  {
+                                                                                                                                                 "type":  "object"
+                                                                                                                                             }
+                                                                                                                              }
+                                                                                                     },
+                                                                                         "required":  true
+                                                                                     }
+                                                                 }
+                                                    }
               }
-            }
-          }
-        }
-      }
-    }
-  },
-  "paths": {
-    "/api/movil/login": {
-      "post": {
-        "summary": "Autenticación de Usuarios (Móvil)",
-        "description": "Autentica clientes, conductores y operarios, retornando un token Bearer JWT válido por 30 días.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/LoginRequest" }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Autenticación exitosa",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/LoginResponse" }
-              }
-            }
-          },
-          "401": { "description": "Credenciales inválidas" }
-        }
-      }
-    },
-    "/api/movil/registro": {
-      "post": {
-        "summary": "Registro de Clientes (Móvil)",
-        "description": "Crea una cuenta de usuario con rol 'cliente' e inserta sus datos en la entidad Persona con validación de DNI único.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/RegistroRequest" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Registro exitoso" },
-          "400": { "description": "Error de validación o usuario existente" }
-        }
-      }
-    },
-    "/api/movil/viajes": {
-      "get": {
-        "summary": "Búsqueda de Salidas y Sucursales",
-        "description": "Obtiene la lista de terminales/sucursales o realiza la búsqueda de viajes activos por origen, destino y fecha.",
-        "parameters": [
-          { "name": "type", "in": "query", "schema": { "type": "string", "example": "locations" } },
-          { "name": "originId", "in": "query", "schema": { "type": "string", "example": "1" } },
-          { "name": "destinationId", "in": "query", "schema": { "type": "string", "example": "2" } },
-          { "name": "date", "in": "query", "schema": { "type": "string", "example": "2026-07-20" } }
-        ],
-        "responses": {
-          "200": { "description": "Lista de viajes o sucursales obtenida exitosamente" }
-        }
-      }
-    },
-    "/api/movil/viajes/asientos": {
-      "get": {
-        "summary": "Obtener Croquis y Estado de Asientos",
-        "description": "Devuelve la distribución de asientos de un viaje específico con su estado (disponible, pendiente o vendido).",
-        "parameters": [
-          { "name": "tripId", "in": "query", "required": true, "schema": { "type": "string", "example": "1" } }
-        ],
-        "responses": {
-          "200": { "description": "Croquis de asientos obtenido exitosamente" }
-        }
-      },
-      "post": {
-        "summary": "Bloquear Asientos Temporalmente",
-        "security": [{ "bearerAuth": [] }],
-        "description": "Bloquea asientos por 8 minutos para evitar concurrencia y sobreventa.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/BloqueoAsientosRequest" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Asientos bloqueados exitosamente" },
-          "401": { "description": "No autorizado (Falta JWT)" }
-        }
-      },
-      "delete": {
-        "summary": "Liberar Asientos Bloqueados",
-        "security": [{ "bearerAuth": [] }],
-        "description": "Libera manualmente los asientos bloqueados.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "seatIds": { "type": "array", "items": { "type": "string" } }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Asientos liberados exitosamente" }
-        }
-      }
-    },
-    "/api/movil/compras": {
-      "post": {
-        "summary": "Procesar Compra de Boletos con Culqi",
-        "security": [{ "bearerAuth": [] }],
-        "description": "Procesa el cobro seguro con el token de tarjeta Culqi y emite los pasajes generando códigos QR.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/CompraPasajesRequest" }
-            }
-          }
-        },
-        "responses": {
-          "200": { "description": "Compra realizada y boletos emitidos exitosamente" },
-          "401": { "description": "No autorizado (Falta JWT)" }
-        }
-      },
-      "get": {
-        "summary": "Obtener Boletos e Historial de Encomiendas del Cliente",
-        "security": [{ "bearerAuth": [] }],
-        "description": "Retorna los pasajes emitidos (con QR) y el historial de encomiendas enviadas o recibidas por el cliente.",
-        "parameters": [
-          { "name": "email", "in": "query", "required": true, "schema": { "type": "string", "example": "cliente@cumbe.com" } }
-        ],
-        "responses": {
-          "200": { "description": "Historial obtenido exitosamente" },
-          "401": { "description": "No autorizado (Falta JWT)" }
-        }
-      }
-    }
-  }
 }

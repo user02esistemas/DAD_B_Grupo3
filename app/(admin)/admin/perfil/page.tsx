@@ -61,8 +61,8 @@ export default function AdminPerfilPage() {
       return;
     }
 
-    if (newPassword && newPassword.trim().length > 0 && newPassword.trim().length < 6) {
-      setError("La nueva contraseña debe tener al menos 6 caracteres.");
+    if (newPassword && newPassword.trim().length > 0 && newPassword.trim().length < 8) {
+      setError("La nueva contraseña debe tener al menos 8 caracteres.");
       return;
     }
 

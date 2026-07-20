@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Users, Search, Edit2, Trash2, X, AlertTriangle, CheckCircle, ShieldAlert, Plus } from "lucide-react";
+import { Users, Search, Edit2, Trash2, X, AlertTriangle, CheckCircle, ShieldAlert, Plus, Briefcase, UserCheck } from "lucide-react";
 import { actualizarRolUsuario, eliminarUsuario, crearUsuario } from "@/app/(admin)/actions/usuarios";
 
 export default function UsuariosClient({ usuarios, userRole, currentUserId }: { usuarios: any[], userRole: string, currentUserId: string }) {
@@ -22,12 +22,21 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Filtro
+  const [activeCategoryTab, setActiveCategoryTab] = useState<"todos" | "personal" | "clientes">("todos");
+
+  // Filtro por categoría y término de búsqueda
   const filteredUsuarios = usuarios.filter((usuario) => {
+    // A. Filtro por categoría
+    if (activeCategoryTab === "personal" && usuario.rol === "cliente") return false;
+    if (activeCategoryTab === "clientes" && usuario.rol !== "cliente") return false;
+
+    // B. Filtro por término
     const term = searchTerm.toLowerCase();
     const matchesName = usuario.persona?.nombres?.toLowerCase().includes(term) || usuario.persona?.apellidos?.toLowerCase().includes(term);
     const matchesDni = usuario.persona?.dni?.includes(term);
-    return matchesName || matchesDni;
+    const matchesCorreo = usuario.correo?.toLowerCase().includes(term);
+    const matchesRol = usuario.rol?.toLowerCase().includes(term);
+    return matchesName || matchesDni || matchesCorreo || matchesRol;
   });
 
   const isGerente = userRole === "gerente";
@@ -123,6 +132,54 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
             )}
           </div>
         </div>
+      </div>
+
+      {/* PESTAÑAS DE CATEGORÍA DE USUARIOS */}
+      <div className="flex flex-wrap items-center gap-2.5 p-4 bg-gray-50/80 border-b border-gray-100 px-6">
+        <button
+          onClick={() => setActiveCategoryTab("todos")}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeCategoryTab === "todos"
+              ? "bg-[#0f172a] text-white shadow-md shadow-slate-900/10 scale-[1.02]"
+              : "bg-white text-gray-600 hover:bg-gray-100 border border-gray-200/80"
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>Todos</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${activeCategoryTab === "todos" ? "bg-white/20 text-white" : "bg-gray-100 text-gray-700"}`}>
+            {usuarios.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveCategoryTab("personal")}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeCategoryTab === "personal"
+              ? "bg-[#f07639] text-white shadow-md shadow-orange-500/20 scale-[1.02]"
+              : "bg-white text-gray-600 hover:bg-orange-50 hover:text-[#f07639] border border-gray-200/80"
+          }`}
+        >
+          <Briefcase className="w-4 h-4" />
+          <span>Personal de la Empresa</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${activeCategoryTab === "personal" ? "bg-white/20 text-white" : "bg-orange-100 text-orange-800"}`}>
+            {usuarios.filter((u) => u.rol !== "cliente").length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveCategoryTab("clientes")}
+          className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeCategoryTab === "clientes"
+              ? "bg-blue-600 text-white shadow-md shadow-blue-500/20 scale-[1.02]"
+              : "bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-gray-200/80"
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          <span>Clientes / Pasajeros</span>
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${activeCategoryTab === "clientes" ? "bg-white/20 text-white" : "bg-blue-100 text-blue-800"}`}>
+            {usuarios.filter((u) => u.rol === "cliente").length}
+          </span>
+        </button>
       </div>
 
       {error && (

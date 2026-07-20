@@ -39,14 +39,14 @@ type Conductor = {
   apellidos: string;
 };
 
-export default function ViajeClient({ 
-  initialViajes, 
-  rutas, 
+export default function ViajeClient({
+  initialViajes,
+  rutas,
   buses,
   conductores
-}: { 
-  initialViajes: Viaje[], 
-  rutas: Ruta[], 
+}: {
+  initialViajes: Viaje[],
+  rutas: Ruta[],
   buses: Bus[],
   conductores: Conductor[]
 }) {
@@ -104,9 +104,9 @@ export default function ViajeClient({
 
   const handleDownloadCSV = () => {
     if (!selectedViajeForPassengers) return;
-    
+
     const headers = ["Asiento", "Nombres", "Apellidos", "DNI", "Estado de Abordaje"];
-    
+
     const rows = passengersList.map((pasaje) => [
       pasaje.asiento_viaje.numero_asiento,
       `"${pasaje.pasajero.nombres}"`,
@@ -114,19 +114,19 @@ export default function ViajeClient({
       pasaje.pasajero.dni,
       pasaje.abordado ? "A BORDO" : "NO SUBIO"
     ]);
-    
-    const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF"
       + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-      
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    
+
     const orig = selectedViajeForPassengers.ruta.origen.nombre.replace(/\s+/g, '_');
     const dest = selectedViajeForPassengers.ruta.destino.nombre.replace(/\s+/g, '_');
     const dateStr = new Date(selectedViajeForPassengers.fecha_salida).toLocaleDateString().replace(/\//g, '-');
     const fileName = `Manifiesto_Viaje_${selectedViajeForPassengers.id}_${orig}_a_${dest}_${dateStr}.csv`;
-    
+
     link.setAttribute("download", fileName);
     document.body.appendChild(link);
     link.click();
@@ -149,7 +149,7 @@ export default function ViajeClient({
       timeStyle: "short"
     });
     const busPlaca = selectedViajeForPassengers.bus.placa;
-    const conductorName = selectedViajeForPassengers.conductor 
+    const conductorName = selectedViajeForPassengers.conductor
       ? `${selectedViajeForPassengers.conductor.nombres} ${selectedViajeForPassengers.conductor.apellidos}`
       : "Sin Conductor Asignado";
 
@@ -212,7 +212,7 @@ export default function ViajeClient({
             <h1 class="title">Transportes El Cumbe S.A.</h1>
             <div class="subtitle">Manifiesto Oficial de Pasajeros y Abordaje</div>
           </div>
-          
+
           <div class="meta-grid">
             <div class="meta-item">
               <span class="meta-label">Servicio</span>
@@ -306,10 +306,10 @@ export default function ViajeClient({
     bus_id: "",
     conductor_id: "",
   });
-  
+
   const [fechaSalidaDate, setFechaSalidaDate] = useState("");
   const [fechaSalidaTime, setFechaSalidaTime] = useState("");
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -333,18 +333,28 @@ export default function ViajeClient({
       bus_id: viaje.bus_id,
       conductor_id: viaje.conductor_id || "",
     });
-    
-    // Convertir la fecha UTC del servidor a local para los inputs de tipo date y time
-    const departure = new Date(viaje.fecha_salida);
-    const year = departure.getFullYear();
-    const month = String(departure.getMonth() + 1).padStart(2, '0');
-    const day = String(departure.getDate()).padStart(2, '0');
-    const hours = String(departure.getHours()).padStart(2, '0');
-    const minutes = String(departure.getMinutes()).padStart(2, '0');
+
+    // Convertir la fecha UTC del servidor a huso horario de Perú (America/Lima) en formato estricto 24h para los inputs
+    const formatter = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "America/Lima",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date(viaje.fecha_salida));
+    const year = parts.find((p) => p.type === "year")!.value;
+    const month = parts.find((p) => p.type === "month")!.value;
+    const day = parts.find((p) => p.type === "day")!.value;
+    let hour = parts.find((p) => p.type === "hour")!.value;
+    if (hour === "24") hour = "00";
+    const minute = parts.find((p) => p.type === "minute")!.value;
 
     setFechaSalidaDate(`${year}-${month}-${day}`);
-    setFechaSalidaTime(`${hours}:${minutes}`);
-    
+    setFechaSalidaTime(`${hour}:${minute}`);
+
     setEditingViajeId(viaje.id);
     setIsFormOpen(true);
   };
@@ -368,12 +378,21 @@ export default function ViajeClient({
       // Calcular automáticamente la hora de llegada en base a la duración de la ruta
       const rutaSel = rutas.find(r => r.id.toString() === formData.ruta_id.toString());
       const duration = rutaSel ? rutaSel.duracion_estimada_minutos : 0;
-      const departureDateTime = new Date(`${fechaSalidaDate}T${fechaSalidaTime}`);
+
+      const timeFormatted = fechaSalidaTime.length === 5 ? `${fechaSalidaTime}:00` : fechaSalidaTime;
+      const departureDateTime = new Date(`${fechaSalidaDate}T${timeFormatted}-05:00`);
+
+      if (isNaN(departureDateTime.getTime())) {
+        setError("Fecha u hora de salida inválida.");
+        setIsLoading(false);
+        return;
+      }
+
       const arrivalDateTime = new Date(departureDateTime.getTime() + duration * 60 * 1000);
 
       const payload = {
         ...formData,
-        fecha_salida: `${fechaSalidaDate}T${fechaSalidaTime}`,
+        fecha_salida: departureDateTime.toISOString(),
         fecha_llegada: arrivalDateTime.toISOString(),
       };
 
@@ -409,7 +428,7 @@ export default function ViajeClient({
     try {
       const res = await cancelarViaje(id);
       if (res.success) {
-        setViajes((prev) => 
+        setViajes((prev) =>
           prev.map((v) => v.id === id ? { ...v, estado: "cancelado" } : v)
         );
       } else {
@@ -440,7 +459,7 @@ export default function ViajeClient({
     const fechaSalida = new Date(viaje.fecha_salida);
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0); // Inicio de hoy
-    
+
     // 1. Filtro de período temporal (solo aplica si no hay un día seleccionado en el calendario)
     if (!selectedDate && periodo === "actuales") {
       if (fechaSalida < hoy) {
@@ -486,14 +505,14 @@ export default function ViajeClient({
           Programar Viaje
         </button>
       </div>
-      
+
       {/* Barra de Filtros y Búsqueda */}
       <div className="bg-white p-4 rounded-2xl border border-slate-100 mb-5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3 flex-1">
           {/* Buscador de Texto */}
           <div className="relative flex-1 max-w-xs min-w-[200px]">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
+            <input
               type="text"
               placeholder="Buscar por ruta o bus..."
               value={searchTerm}
@@ -505,14 +524,14 @@ export default function ViajeClient({
           {/* Filtro por Calendario */}
           <div className="relative min-w-[170px]">
             <Calendar className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
+            <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
               className="w-full pl-10 pr-10 py-2.5 bg-[#f8f9fc] border border-slate-200/60 focus:border-[#f07639]/30 rounded-xl focus:bg-white text-[13px] font-semibold text-slate-700 cursor-pointer outline-none transition-all"
             />
             {selectedDate && (
-              <button 
+              <button
                 onClick={() => setSelectedDate("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 font-bold text-sm leading-none bg-slate-200 hover:bg-slate-300 w-5 h-5 rounded-full flex items-center justify-center transition-colors"
                 title="Mostrar todos los días"
@@ -556,20 +575,20 @@ export default function ViajeClient({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#f8f9fc] border-b border-slate-100">
-                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Ruta</th>
-                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Salida</th>
-                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Llegada</th>
-                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Bus Asignado</th>
-                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Conductor</th>
-                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Estado</th>
-                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right">Acciones</th>
+                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Ruta</th>
+                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Salida</th>
+                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Llegada</th>
+                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Bus Asignado</th>
+                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Conductor</th>
+                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Estado</th>
+                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredViajes.length > 0 ? (
                 filteredViajes.map((viaje) => (
                   <tr key={viaje.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
+                    <td className="px-7 py-4.5">
                       <div className="flex items-center">
                         <MapPin className="w-5 h-5 text-slate-400 mr-3" />
                         <div>
@@ -579,29 +598,31 @@ export default function ViajeClient({
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-7 py-4.5">
                       <div className="flex items-center text-slate-600">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span className="font-medium" suppressHydrationWarning>
                           {new Date(viaje.fecha_salida).toLocaleString('es-PE', {
+                            timeZone: 'America/Lima',
                             dateStyle: 'short',
                             timeStyle: 'short',
                           })}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-7 py-4.5">
                       <div className="flex items-center text-slate-600">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span className="font-medium" suppressHydrationWarning>
                           {viaje.fecha_llegada ? new Date(viaje.fecha_llegada).toLocaleString('es-PE', {
+                            timeZone: 'America/Lima',
                             dateStyle: 'short',
                             timeStyle: 'short',
                           }) : "-"}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-7 py-4.5">
                       <div className="flex flex-col">
                         <div className="flex items-center font-bold text-slate-800">
                           <BusIcon className="w-4 h-4 mr-2 text-slate-400" />
@@ -612,7 +633,7 @@ export default function ViajeClient({
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-7 py-4.5">
                       {viaje.conductor ? (
                         <div className="flex flex-col">
                           <span className="font-bold text-slate-850">
@@ -621,13 +642,13 @@ export default function ViajeClient({
                           <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider">Conductor</span>
                         </div>
                       ) : (
-                        <span className="text-[10px] font-black text-red-600 bg-red-50/50 px-2 py-0.5 rounded border border-red-100 uppercase tracking-wide">Sin Asignar</span>
+                        <span className="text-[10px] font-black text-red-600 bg-red-50/50 px-2.5 py-1 rounded border border-red-100 uppercase tracking-wide">Sin Asignar</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-center">
+                    <td className="px-7 py-4.5 text-center">
                       {getStatusBadge(viaje.estado)}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-7 py-4.5 text-right">
                       <div className="flex items-center justify-end gap-3">
                         {viaje.estado === 'programado' && (
                           <>
@@ -681,11 +702,11 @@ export default function ViajeClient({
 
       {/* Modal Formulario */}
       {mounted && isFormOpen && createPortal(
-        <div 
+        <div
           onClick={handleCloseForm}
           className="fixed inset-0 z-[9999] overflow-y-auto bg-black/40 backdrop-blur-sm flex justify-center items-start py-8 px-4 sm:px-6"
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden relative my-auto p-8"
           >
@@ -699,14 +720,14 @@ export default function ViajeClient({
             <h3 className="text-xl font-bold text-slate-800 mb-6">
               {editingViajeId ? "Editar Viaje" : "Programar Nuevo Viaje"}
             </h3>
-            
+
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
                 <div className="p-3 bg-red-50 text-red-700 border border-red-155 rounded-xl text-sm">
                   {error}
                 </div>
               )}
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -726,7 +747,7 @@ export default function ViajeClient({
                     ))}
                   </select>
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-755 mb-1">
                     Bus Asignado <span className="text-red-500">*</span>
@@ -820,11 +841,11 @@ export default function ViajeClient({
 
       {/* Modal Enviar Alerta */}
       {mounted && isAlertModalOpen && alertTargetViaje && createPortal(
-        <div 
+        <div
           onClick={handleCloseAlertModal}
           className="fixed inset-0 z-[9999] overflow-y-auto bg-black/40 backdrop-blur-sm flex justify-center items-start py-8 px-4 sm:px-6"
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-[24px] shadow-2xl w-full max-w-lg border border-slate-100 overflow-hidden relative my-auto p-8 space-y-6"
           >
@@ -843,13 +864,13 @@ export default function ViajeClient({
                 Viaje: {alertTargetViaje.ruta.origen.nombre} → {alertTargetViaje.ruta.destino.nombre} ({alertTargetViaje.bus.placa})
               </p>
             </div>
-            
+
             <form onSubmit={handleSendAlert} className="space-y-5">
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase">
                   Mensaje de Advertencia
                 </label>
-                <textarea 
+                <textarea
                   required
                   rows={4}
                   value={alertMessage}
@@ -883,11 +904,11 @@ export default function ViajeClient({
 
       {/* Modal Lista de Pasajeros / Manifiesto de Embarque */}
       {mounted && isPassengerModalOpen && selectedViajeForPassengers && createPortal(
-        <div 
+        <div
           onClick={() => setIsPassengerModalOpen(false)}
           className="fixed inset-0 z-[9999] overflow-y-auto bg-black/40 backdrop-blur-sm flex justify-center items-start py-8 px-4 sm:px-6"
         >
-          <div 
+          <div
             onClick={(e) => e.stopPropagation()}
             className="bg-white rounded-[24px] shadow-2xl w-full max-w-2xl border border-slate-100 overflow-hidden relative my-auto p-8 space-y-6"
           >

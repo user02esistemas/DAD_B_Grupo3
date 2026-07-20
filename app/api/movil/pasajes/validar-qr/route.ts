@@ -1,80 +1,42 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { authenticateMobileRequest } from "@/lib/mobileAuth";
 
 export async function POST(req: Request) {
+  const auth = await authenticateMobileRequest(req, ["operario", "admin"]);
+  if (!auth.valid) return auth.response;
   try {
-    const body = await req.json();
-    const { codigo_qr } = body;
-
-    if (!codigo_qr) {
-      return NextResponse.json(
-        { error: "El código QR es obligatorio." },
-        { status: 400 }
-      );
+    const { codigo_qr } = await req.json();
+    if (typeof codigo_qr !== "string" || !codigo_qr.trim()) {
+      return NextResponse.json({ error: "El código QR es obligatorio." }, { status: 400 });
     }
-
-    // Buscar el pasaje por su código QR
     const pasaje = await prisma.pasaje.findUnique({
-      where: { codigo_qr },
+      where: { codigo_qr: codigo_qr.trim() },
       include: {
         pasajero: true,
-        asiento_viaje: {
-          include: {
-            viaje: {
-              include: {
-                ruta: {
-                  include: {
-                    origen: true,
-                    destino: true
-                  }
-                }
-              }
-            }
-          }
-        }
+        asiento_viaje: { include: { viaje: { include: { ruta: { include: { origen: true, destino: true } } } } } }
       }
     });
+    if (!pasaje) return NextResponse.json({ error: "Código QR inválido." }, { status: 404 });
 
-    if (!pasaje) {
-      return NextResponse.json(
-        { error: "Código inválido. No se encontró ningún pasaje con este QR." },
-        { status: 404 }
-      );
-    }
-
-    // Verificar si ya abordó
-    if (pasaje.abordado) {
-      return NextResponse.json(
-        { error: `El pasajero ${pasaje.pasajero.nombres} ya abordó previamente.` },
-        { status: 400 }
-      );
-    }
-
-    // Marcar como abordado
-    const pasajeActualizado = await prisma.pasaje.update({
-      where: { id: pasaje.id },
-      data: { abordado: true },
+    const actualizado = await prisma.pasaje.updateMany({
+      where: { id: pasaje.id, abordado: false }, data: { abordado: true }
     });
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Pasaje válido y abordaje registrado.",
-        data: {
-          pasajero: `${pasaje.pasajero.nombres} ${pasaje.pasajero.apellidos}`,
-          dni: pasaje.pasajero.dni,
-          asiento: pasaje.asiento_viaje.numero_asiento,
-          ruta: `${pasaje.asiento_viaje.viaje.ruta.origen.nombre} - ${pasaje.asiento_viaje.viaje.ruta.destino.nombre}`
-        }
-      },
-      { status: 200 }
-    );
-
-  } catch (error: any) {
+    if (actualizado.count !== 1) {
+      return NextResponse.json({ error: "El pasaje ya fue registrado como abordado." }, { status: 409 });
+    }
+    return NextResponse.json({
+      success: true,
+      message: "Pasaje válido y abordaje registrado.",
+      data: {
+        pasajero: `${pasaje.pasajero.nombres} ${pasaje.pasajero.apellidos}`,
+        dni: pasaje.pasajero.dni,
+        asiento: pasaje.asiento_viaje.numero_asiento,
+        ruta: `${pasaje.asiento_viaje.viaje.ruta.origen.nombre} - ${pasaje.asiento_viaje.viaje.ruta.destino.nombre}`
+      }
+    });
+  } catch (error) {
     console.error("Error al validar QR:", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor", details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "No se pudo validar el pasaje." }, { status: 500 });
   }
 }

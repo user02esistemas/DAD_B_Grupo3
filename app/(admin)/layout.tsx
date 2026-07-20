@@ -278,7 +278,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Page Content */}
         <main className="min-h-[calc(100vh-72px)] flex-1 overflow-x-hidden overflow-y-auto bg-[var(--page-bg)] p-5 transition-colors duration-300 sm:p-6 lg:p-8">
-          <div className="animate-fade-in-up">
+          <div className="animate-fade-in-up max-w-[1750px] mx-auto">
             {children}
           </div>
         </main>

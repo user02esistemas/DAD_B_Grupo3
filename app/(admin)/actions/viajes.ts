@@ -12,7 +12,6 @@ async function checkAdminOrVendedor() {
     throw new Error("Acceso no autorizado. Debe ser administrador o vendedor.");
   }
 }
-
 // Función auxiliar para parsear y validar ID numéricos / BigInt
 function parseId(id: string | number | bigint): bigint {
   return typeof id === "bigint" ? id : BigInt(id);
@@ -102,6 +101,43 @@ export async function crearViajeConAsientos(data: {
 
     if (!bus) {
       return { success: false, error: "El bus seleccionado no existe." };
+    }
+
+    // Validar solapamientos de horario para el bus y el conductor
+    const estimacionLlegada = fechaLlegada || new Date(fechaSalida.getTime() + 4 * 60 * 60 * 1000);
+
+    const busConflict = await prisma.viaje.findFirst({
+      where: {
+        bus_id: busId,
+        estado: { in: ["programado", "en_ruta"] },
+        fecha_salida: { lt: estimacionLlegada },
+        OR: [
+          { fecha_llegada: { gt: fechaSalida } },
+          { fecha_llegada: null }
+        ]
+      }
+    });
+
+    if (busConflict) {
+      return { success: false, error: `El bus ${bus.placa} ya tiene otro viaje programado en ese rango de horario.` };
+    }
+
+    if (conductorId) {
+      const condConflict = await prisma.viaje.findFirst({
+        where: {
+          conductor_id: conductorId,
+          estado: { in: ["programado", "en_ruta"] },
+          fecha_salida: { lt: estimacionLlegada },
+          OR: [
+            { fecha_llegada: { gt: fechaSalida } },
+            { fecha_llegada: null }
+          ]
+        }
+      });
+
+      if (condConflict) {
+        return { success: false, error: "El conductor seleccionado ya tiene otro viaje asignado en ese rango de horario." };
+      }
     }
 
     // Parsear asientos restringidos
@@ -244,6 +280,45 @@ export async function actualizarViaje(id: string | number, data: {
       return { success: false, error: "El viaje no existe." };
     }
 
+    // Validar solapamientos de horario al actualizar
+    const estimacionLlegada = fechaLlegada || new Date(fechaSalida.getTime() + 4 * 60 * 60 * 1000);
+
+    const busConflict = await prisma.viaje.findFirst({
+      where: {
+        id: { not: viajeId },
+        bus_id: busId,
+        estado: { in: ["programado", "en_ruta"] },
+        fecha_salida: { lt: estimacionLlegada },
+        OR: [
+          { fecha_llegada: { gt: fechaSalida } },
+          { fecha_llegada: null }
+        ]
+      }
+    });
+
+    if (busConflict) {
+      return { success: false, error: "El bus seleccionado ya tiene otro viaje asignado a esa misma hora." };
+    }
+
+    if (conductorId) {
+      const condConflict = await prisma.viaje.findFirst({
+        where: {
+          id: { not: viajeId },
+          conductor_id: conductorId,
+          estado: { in: ["programado", "en_ruta"] },
+          fecha_salida: { lt: estimacionLlegada },
+          OR: [
+            { fecha_llegada: { gt: fechaSalida } },
+            { fecha_llegada: null }
+          ]
+        }
+      });
+
+      if (condConflict) {
+        return { success: false, error: "El conductor seleccionado ya tiene otro viaje asignado a esa misma hora." };
+      }
+    }
+
     const busCambio = viajeActual.bus_id !== busId;
 
     const viajeActualizado = await prisma.$transaction(async (tx) => {
@@ -336,7 +411,9 @@ export async function actualizarViaje(id: string | number, data: {
       });
     });
 
-    revalidatePath("/admin/viajes");
+    try {
+      revalidatePath("/admin/viajes");
+    } catch (e) {}
     return { success: true, data: serializeBigInt(viajeActualizado) };
   } catch (error: any) {
     console.error("Error al actualizar viaje:", error);

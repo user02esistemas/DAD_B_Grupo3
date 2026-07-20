@@ -13,13 +13,13 @@ datasource db {
 // ==========================================
 
 model Persona {
-  id         BigInt    @id @default(autoincrement()) 
-  nombres    String    
-  apellidos  String    
-  dni        String    @unique 
-  telefono   String?   
-  created_at DateTime? @default(now()) 
-  updated_at DateTime? @default(now()) 
+  id         BigInt    @id @default(autoincrement())
+  nombres    String
+  apellidos  String
+  dni        String    @unique
+  telefono   String?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now()) @updatedAt
 
   usuario               Usuario?
   pasajes               Pasaje[]
@@ -34,19 +34,21 @@ model Persona {
 }
 
 model Usuario {
-  id         BigInt    @id @default(autoincrement()) 
-  persona_id BigInt    @unique 
-  correo     String    @unique 
-  contrasena String    
+  id         BigInt    @id @default(autoincrement())
+  persona_id BigInt    @unique
+  correo     String    @unique
+  contrasena String
   rol        String    @default("cliente")
-  created_at DateTime? @default(now()) 
-  updated_at DateTime? @default(now()) 
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now()) @updatedAt
 
   persona              Persona            @relation(fields: [persona_id], references: [id], onDelete: Cascade)
   asientos_bloqueados  AsientoViaje[]
   pasajes_comprados    Pasaje[]           @relation("Comprador")
   codigos_descuento    CodigoDescuento[]
   codigos_verificacion VerificationCode[]
+
+  @@index([rol])
 }
 
 // ==========================================
@@ -54,11 +56,11 @@ model Usuario {
 // ==========================================
 
 model Sucursal {
-  id         BigInt    @id @default(autoincrement()) 
-  nombre     String    
-  direccion  String?   
-  created_at DateTime? @default(now()) 
-  updated_at DateTime? @default(now()) 
+  id         BigInt    @id @default(autoincrement())
+  nombre     String
+  direccion  String?
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now()) @updatedAt
 
   rutas_origen        Ruta[]       @relation("RutaOrigen")
   rutas_destino       Ruta[]       @relation("RutaDestino")
@@ -67,29 +69,29 @@ model Sucursal {
 }
 
 model Bus {
-  id                    BigInt    @id @default(autoincrement()) 
-  placa                 String    @unique 
-  marca                 String?   
+  id                    BigInt    @id @default(autoincrement())
+  placa                 String    @unique
+  marca                 String?
   capacidad             Int
   pisos                 Int       @default(1)
   asientos_piso_1       Int?
-  asientos_restringidos String?   
-  imagenes              String?   
-  created_at            DateTime? @default(now()) 
-  updated_at            DateTime? @default(now()) 
+  asientos_restringidos String?
+  imagenes              String?
+  created_at            DateTime? @default(now())
+  updated_at            DateTime? @default(now())
 
   viajes    Viaje[]
   novedades NovedadMecanica[]
 }
 
 model Ruta {
-  id                        BigInt    @id @default(autoincrement()) 
-  origen_id                 BigInt    
-  destino_id                BigInt    
+  id                        BigInt    @id @default(autoincrement())
+  origen_id                 BigInt
+  destino_id                BigInt
   duracion_estimada_minutos Int
-  precio_base               Decimal   
-  created_at                DateTime? @default(now()) 
-  updated_at                DateTime? @default(now()) 
+  precio_base               Decimal
+  created_at                DateTime? @default(now())
+  updated_at                DateTime? @default(now())
 
   origen  Sucursal @relation("RutaOrigen", fields: [origen_id], references: [id], onDelete: Cascade)
   destino Sucursal @relation("RutaDestino", fields: [destino_id], references: [id], onDelete: Cascade)
@@ -97,15 +99,15 @@ model Ruta {
 }
 
 model Viaje {
-  id            BigInt    @id @default(autoincrement()) 
-  ruta_id       BigInt    
-  bus_id        BigInt    
-  conductor_id  BigInt?   
-  fecha_salida  DateTime  
-  fecha_llegada DateTime? 
+  id            BigInt    @id @default(autoincrement())
+  ruta_id       BigInt
+  bus_id        BigInt
+  conductor_id  BigInt?
+  fecha_salida  DateTime
+  fecha_llegada DateTime?
   estado        String    @default("programado")
-  created_at    DateTime? @default(now()) 
-  updated_at    DateTime? @default(now()) 
+  created_at    DateTime? @default(now())
+  updated_at    DateTime? @default(now())
 
   ruta           Ruta              @relation(fields: [ruta_id], references: [id], onDelete: Cascade)
   bus            Bus               @relation(fields: [bus_id], references: [id], onDelete: Cascade)
@@ -117,19 +119,22 @@ model Viaje {
   novedades      NovedadMecanica[]
   alertas        AlertaCentral[]
   bitacoras      BitacoraViaje[]
+
+  @@index([fecha_salida, estado])
+  @@index([conductor_id])
 }
 
 model AsientoViaje {
-  id                       BigInt    @id @default(autoincrement()) 
-  viaje_id                 BigInt    
+  id                       BigInt    @id @default(autoincrement())
+  viaje_id                 BigInt
   numero_asiento           Int
   piso                     Int       @default(1)
   estado                   String    @default("disponible")
-  bloqueado_por_usuario_id BigInt?   
+  bloqueado_por_usuario_id BigInt?
   bloqueado_por_token      String?
-  bloqueado_en             DateTime? 
-  created_at               DateTime? @default(now()) 
-  updated_at               DateTime? @default(now()) 
+  bloqueado_en             DateTime?
+  created_at               DateTime? @default(now())
+  updated_at               DateTime? @default(now())
 
   viaje                 Viaje    @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
   bloqueado_por_usuario Usuario? @relation(fields: [bloqueado_por_usuario_id], references: [id], onDelete: SetNull)
@@ -137,6 +142,9 @@ model AsientoViaje {
   pagos                 Pago[]
 
   @@unique([viaje_id, numero_asiento])
+  @@index([estado, bloqueado_en])
+  @@index([bloqueado_por_usuario_id])
+  @@index([bloqueado_por_token])
 }
 
 // ==========================================
@@ -144,46 +152,55 @@ model AsientoViaje {
 // ==========================================
 
 model Pasaje {
-  id               BigInt @id @default(autoincrement()) 
-  asiento_viaje_id BigInt @unique 
+  id               BigInt @id @default(autoincrement())
+  asiento_viaje_id BigInt @unique
 
-  persona_id   BigInt   // El pasajero físico
-  comprador_id BigInt?  // Usuario web opcional
+  persona_id   BigInt // El pasajero físico
+  comprador_id BigInt? // Usuario web opcional
 
-  precio       Decimal   
-  fecha_compra DateTime? @default(now()) 
-  codigo_qr    String?   @unique 
+  precio       Decimal
+  fecha_compra DateTime? @default(now())
+  codigo_qr    String?   @unique
   abordado     Boolean   @default(false)
-  created_at   DateTime? @default(now()) 
-  updated_at   DateTime? @default(now()) 
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now())
 
   asiento_viaje AsientoViaje @relation(fields: [asiento_viaje_id], references: [id], onDelete: Cascade)
   pasajero      Persona      @relation(fields: [persona_id], references: [id], onDelete: Cascade)
   comprador     Usuario?     @relation("Comprador", fields: [comprador_id], references: [id], onDelete: SetNull)
+
+  @@index([fecha_compra])
+  @@index([comprador_id])
+  @@index([persona_id])
 }
 
 model Encomienda {
-  id                 BigInt @id @default(autoincrement()) 
-  codigo_seguimiento String @unique 
+  id                 BigInt @id @default(autoincrement())
+  codigo_seguimiento String @unique
 
-  remitente_id    BigInt 
-  destinatario_id BigInt 
+  remitente_id    BigInt
+  destinatario_id BigInt
 
-  origen_id   BigInt    
-  destino_id  BigInt    
-  viaje_id    BigInt?   
-  peso_kg     Decimal   
-  descripcion String?   
-  precio      Decimal   
+  origen_id   BigInt
+  destino_id  BigInt
+  viaje_id    BigInt?
+  peso_kg     Decimal
+  descripcion String?
+  precio      Decimal
   estado      String    @default("recepcionado")
-  created_at  DateTime? @default(now()) 
-  updated_at  DateTime? @default(now()) 
+  created_at  DateTime? @default(now())
+  updated_at  DateTime? @default(now())
 
   remitente    Persona  @relation("Remitente", fields: [remitente_id], references: [id])
   destinatario Persona  @relation("Destinatario", fields: [destinatario_id], references: [id])
   origen       Sucursal @relation("EncomiendaOrigen", fields: [origen_id], references: [id], onDelete: Cascade)
   destino      Sucursal @relation("EncomiendaDestino", fields: [destino_id], references: [id], onDelete: Cascade)
   viaje        Viaje?   @relation(fields: [viaje_id], references: [id], onDelete: SetNull)
+
+  @@index([estado])
+  @@index([viaje_id])
+  @@index([remitente_id])
+  @@index([destinatario_id])
 }
 
 // ==========================================
@@ -191,19 +208,22 @@ model Encomienda {
 // ==========================================
 
 model Reclamo {
-  id                BigInt    @id @default(autoincrement()) 
-  codigo_reclamo    String    @unique  // Ej: REC-2026-0001
-  persona_id        BigInt    
+  id                BigInt    @id @default(autoincrement())
+  codigo_reclamo    String    @unique // Ej: REC-2026-0001
+  persona_id        BigInt
   tipo              String    @default("reclamo") // "reclamo" o "queja"
-  detalle_incidente String    
-  pedido_cliente    String    
+  detalle_incidente String
+  pedido_cliente    String
   estado            String    @default("pendiente") // "pendiente", "en_proceso", "resuelto"
-  respuesta_admin   String?   
-  fecha_incidente   DateTime  
-  created_at        DateTime? @default(now()) 
-  updated_at        DateTime? @default(now()) 
+  respuesta_admin   String?
+  fecha_incidente   DateTime
+  created_at        DateTime? @default(now())
+  updated_at        DateTime? @default(now())
 
   persona Persona @relation(fields: [persona_id], references: [id], onDelete: Cascade)
+
+  @@index([estado, created_at])
+  @@index([persona_id])
 }
 
 // ==========================================
@@ -211,41 +231,42 @@ model Reclamo {
 // ==========================================
 
 model CodigoDescuento {
-  id                   BigInt    @id @default(autoincrement()) 
-  codigo               String    @unique 
-  usuario_id           BigInt    
+  id                   BigInt    @id @default(autoincrement())
+  codigo               String    @unique
+  usuario_id           BigInt
   porcentaje_descuento Int       @default(10)
   esta_usado           Boolean   @default(false)
-  fecha_expiracion     DateTime? 
-  created_at           DateTime? @default(now()) 
-  updated_at           DateTime? @default(now()) 
+  fecha_expiracion     DateTime?
+  created_at           DateTime? @default(now())
+  updated_at           DateTime? @default(now())
 
   usuario Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
 }
 
 model VerificationCode {
-  id         BigInt   @id @default(autoincrement()) 
-  user_id    BigInt   
-  code       String   
-  expires_at DateTime 
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt
+  code       String
+  expires_at DateTime
   is_used    Boolean  @default(false)
-  created_at DateTime @default(now()) 
-  updated_at DateTime @default(now()) 
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
   usuario    Usuario  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "idx_verification_codes_user_id")
+  @@index([user_id, created_at])
   @@map("verification_codes")
 }
 
 model Pago {
-  id            BigInt        @id @default(autoincrement()) 
-  viaje_id      BigInt        
-  asiento_id    BigInt?       
-  preference_id String        
+  id            BigInt        @id @default(autoincrement())
+  viaje_id      BigInt
+  asiento_id    BigInt?
+  preference_id String
   status        String        @default("pending")
-  amount        Decimal       
-  created_at    DateTime      @default(now()) 
-  updated_at    DateTime      @default(now()) 
+  amount        Decimal
+  created_at    DateTime      @default(now())
+  updated_at    DateTime      @default(now())
   asiento       AsientoViaje? @relation(fields: [asiento_id], references: [id])
   viaje         Viaje         @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
 
@@ -259,60 +280,70 @@ model Pago {
 // ==========================================
 
 model GastoRuta {
-  id            BigInt    @id @default(autoincrement()) 
-  viaje_id      BigInt    
-  conductor_id  BigInt    
-  concepto      String    
-  monto         Decimal   
-  foto_url      String?   
-  created_at    DateTime? @default(now()) 
-  updated_at    DateTime? @default(now()) 
+  id           BigInt    @id @default(autoincrement())
+  viaje_id     BigInt
+  conductor_id BigInt
+  concepto     String
+  monto        Decimal
+  foto_url     String?
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now())
 
-  viaje         Viaje     @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
-  conductor     Persona   @relation(fields: [conductor_id], references: [id], onDelete: Cascade)
+  viaje     Viaje   @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
+  conductor Persona @relation(fields: [conductor_id], references: [id], onDelete: Cascade)
+
+  @@index([viaje_id])
+  @@index([conductor_id])
 }
 
 model NovedadMecanica {
-  id            BigInt    @id @default(autoincrement()) 
-  viaje_id      BigInt    
-  bus_id        BigInt    
-  conductor_id  BigInt    
-  categoria     String    
-  descripcion   String    
-  estado        String    @default("pendiente")
-  created_at    DateTime? @default(now()) 
-  updated_at    DateTime? @default(now()) 
+  id           BigInt    @id @default(autoincrement())
+  viaje_id     BigInt
+  bus_id       BigInt
+  conductor_id BigInt
+  categoria    String
+  descripcion  String
+  estado       String    @default("pendiente")
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now())
 
-  viaje         Viaje     @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
-  bus           Bus       @relation(fields: [bus_id], references: [id], onDelete: Cascade)
-  conductor     Persona   @relation(fields: [conductor_id], references: [id], onDelete: Cascade)
+  viaje     Viaje   @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
+  bus       Bus     @relation(fields: [bus_id], references: [id], onDelete: Cascade)
+  conductor Persona @relation(fields: [conductor_id], references: [id], onDelete: Cascade)
+
+  @@index([viaje_id])
+  @@index([conductor_id])
 }
 
 model AlertaCentral {
-  id            BigInt    @id @default(autoincrement()) 
-  viaje_id      BigInt    
-  mensaje       String    
-  leido         Boolean   @default(false)
-  created_at    DateTime? @default(now()) 
-  updated_at    DateTime? @default(now()) 
+  id         BigInt    @id @default(autoincrement())
+  viaje_id   BigInt
+  mensaje    String
+  leido      Boolean   @default(false)
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now())
 
-  viaje         Viaje     @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
+  viaje Viaje @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
+
+  @@index([viaje_id, leido])
 }
 
 model BitacoraViaje {
-  id              BigInt    @id @default(autoincrement()) 
-  viaje_id        BigInt    
-  conductor_id    BigInt    
-  tipo            String    
-  gravedad        String    
-  descripcion     String    
+  id              BigInt    @id @default(autoincrement())
+  viaje_id        BigInt
+  conductor_id    BigInt
+  tipo            String
+  gravedad        String
+  descripcion     String
   retraso_minutos Int       @default(0)
   solucionado     Boolean   @default(false)
-  fecha_solucion  DateTime? 
-  created_at      DateTime? @default(now()) 
-  updated_at      DateTime? @default(now()) 
+  fecha_solucion  DateTime?
+  created_at      DateTime? @default(now())
+  updated_at      DateTime? @default(now())
 
-  viaje         Viaje     @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
-  conductor     Persona   @relation(fields: [conductor_id], references: [id], onDelete: Cascade)
+  viaje     Viaje   @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
+  conductor Persona @relation(fields: [conductor_id], references: [id], onDelete: Cascade)
+
+  @@index([viaje_id])
+  @@index([conductor_id])
 }
-

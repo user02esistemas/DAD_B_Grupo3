@@ -27,9 +27,9 @@ export async function POST(req: Request) {
       );
     }
 
-    if (contrasena.length < 6) {
+    if (contrasena.length < 8) {
       return NextResponse.json(
-        { error: "La contraseña debe tener al menos 6 caracteres" },
+        { error: "La contraseña debe tener al menos 8 caracteres" },
         { status: 400 }
       );
     }
@@ -89,7 +89,7 @@ export async function POST(req: Request) {
       }
 
       // 3. Hashear password y crear el Usuario
-      const hashedPassword = await bcrypt.hash(contrasena, 10);
+      const hashedPassword = await bcrypt.hash(contrasena, 12);
 
       const newUser = await tx.usuario.create({
         data: {
@@ -129,7 +129,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { error: "Error interno del servidor", details: error.message },
+      { error: "Error interno del servidor" },
       { status: 500 }
     );
   }

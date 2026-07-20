@@ -36,7 +36,7 @@ const UsuarioCreateSchema = z.object({
   dni: z.string().min(8, "El DNI debe tener 8 dígitos"),
   telefono: z.string().min(9, "El teléfono es obligatorio"),
   correo: z.string().email("Correo inválido"),
-  contrasena: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  contrasena: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   rol: z.enum(["admin", "cliente", "vendedor", "gerente", "operario"], {
     error: "Rol inválido"
   }),
@@ -52,6 +52,7 @@ async function verifyAdminRole() {
 
 export async function obtenerUsuarios() {
   try {
+    await verifyAdminRole();
     const usuarios = await prisma.usuario.findMany({
       include: {
         persona: true
@@ -107,7 +108,7 @@ export async function crearUsuario(data: any) {
       }
 
       // 3. Hashear password
-      const hashedPassword = await bcrypt.hash(validData.contrasena, 10);
+      const hashedPassword = await bcrypt.hash(validData.contrasena, 12);
 
       // 4. Crear usuario
       const newUser = await tx.usuario.create({

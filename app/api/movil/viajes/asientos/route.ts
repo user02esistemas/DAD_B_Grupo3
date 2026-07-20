@@ -1,82 +1,48 @@
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { getTripSeats, marcarAsientosPendientes, liberarAsientos } from "@/app/actions";
-import { verifyMobileToken } from "@/lib/mobileAuth";
+import { authenticateMobileRequest } from "@/lib/mobileAuth";
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
-    const tripId = searchParams.get("tripId");
-
-    if (!tripId) {
-      return NextResponse.json({ error: "Falta el parámetro tripId" }, { status: 400 });
-    }
-
-    const seats = await getTripSeats(tripId);
-    return NextResponse.json({ success: true, seats }, { status: 200 });
-
-  } catch (error: any) {
+    const tripId = new URL(req.url).searchParams.get("tripId");
+    if (!tripId || !/^\d+$/.test(tripId)) return NextResponse.json({ error: "tripId inválido." }, { status: 400 });
+    return NextResponse.json({ success: true, seats: await getTripSeats(tripId) });
+  } catch (error) {
     console.error("Error en GET asientos móvil:", error);
-    return NextResponse.json(
-      { error: "Error interno al obtener asientos", details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "No se pudieron obtener los asientos." }, { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
+  const auth = await authenticateMobileRequest(req);
+  if (!auth.valid) return auth.response;
   try {
-    const auth = verifyMobileToken(req);
-    if (!auth.valid) return auth.response;
-
-    const body = await req.json();
-    const { seatIds, email, guestToken } = body;
-
-    if (!seatIds || !Array.isArray(seatIds) || seatIds.length === 0) {
-      return NextResponse.json({ error: "Faltan o son inválidos los seatIds" }, { status: 400 });
-    }
-
-    const token = guestToken || "mobile-session-" + Math.random().toString(36).substring(2, 12);
-    const result = await marcarAsientosPendientes(seatIds, token, email);
-
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
-    }
-
-    return NextResponse.json({ success: true, count: result.count, guestToken: token }, { status: 200 });
-
-  } catch (error: any) {
+    const { seatIds, guestToken } = await req.json();
+    if (!Array.isArray(seatIds) || seatIds.length === 0) return NextResponse.json({ error: "seatIds inválidos." }, { status: 400 });
+    const reservationToken = typeof guestToken === "string" && guestToken.length >= 16 ? guestToken : `mobile_${randomUUID()}`;
+    const result = await marcarAsientosPendientes(seatIds.map(String), reservationToken);
+    if (!result.success) return NextResponse.json({ error: result.error }, { status: 409 });
+    return NextResponse.json({ success: true, count: result.count, guestToken: reservationToken });
+  } catch (error) {
     console.error("Error en POST bloquear asientos móvil:", error);
-    return NextResponse.json(
-      { error: "Error al reservar los asientos", details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "No se pudieron reservar los asientos." }, { status: 500 });
   }
 }
 
 export async function DELETE(req: Request) {
+  const auth = await authenticateMobileRequest(req);
+  if (!auth.valid) return auth.response;
   try {
-    const auth = verifyMobileToken(req);
-    if (!auth.valid) return auth.response;
-
-    const body = await req.json();
-    const { seatIds } = body;
-
-    if (!seatIds || !Array.isArray(seatIds) || seatIds.length === 0) {
-      return NextResponse.json({ error: "Faltan o son inválidos los seatIds" }, { status: 400 });
+    const { seatIds, guestToken } = await req.json();
+    if (!Array.isArray(seatIds) || seatIds.length === 0 || typeof guestToken !== "string") {
+      return NextResponse.json({ error: "seatIds y guestToken son obligatorios." }, { status: 400 });
     }
-
-    const result = await liberarAsientos(seatIds);
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 400 });
-    }
-
-    return NextResponse.json({ success: true, count: result.count }, { status: 200 });
-
-  } catch (error: any) {
+    const result = await liberarAsientos(seatIds.map(String), guestToken);
+    if (!result.success) return NextResponse.json({ error: result.error }, { status: 403 });
+    return NextResponse.json({ success: true, count: result.count });
+  } catch (error) {
     console.error("Error en DELETE liberar asientos móvil:", error);
-    return NextResponse.json(
-      { error: "Error al liberar los asientos", details: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "No se pudieron liberar los asientos." }, { status: 500 });
   }
 }

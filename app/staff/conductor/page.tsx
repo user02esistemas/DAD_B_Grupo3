@@ -13,8 +13,13 @@ export default async function ConductorDashboard() {
     redirect("/login");
   }
 
+  const getPeruDateStr = (dateInput: Date | string) => {
+    return new Date(dateInput).toLocaleDateString("en-CA", { timeZone: "America/Lima" });
+  };
+  const hoyPeruStr = getPeruDateStr(new Date());
+
   const viajes = await getViajesConductor(Number((session.user as any).persona_id));
-  const viajesHoy = viajes.filter((v: any) => new Date(v.fecha_salida).toDateString() === new Date().toDateString());
+  const viajesHoy = viajes.filter((v: any) => v.estado !== "cancelado" && getPeruDateStr(v.fecha_salida) === hoyPeruStr);
   const viajesCompletados = viajes.filter((v: any) => v.estado === "completado" || v.estado === "finalizado");
   const viajesEnCurso = viajes.filter((v: any) => v.estado === "en_ruta" || v.estado === "en curso");
 

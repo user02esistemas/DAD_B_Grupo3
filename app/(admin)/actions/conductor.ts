@@ -55,10 +55,25 @@ export async function getViajesConductor(personaId: number) {
 export async function updateEstadoViaje(viajeId: number, estado: string) {
   try {
     await requireTripAccess(viajeId);
+    const vId = BigInt(viajeId);
+
     await prisma.viaje.update({
-      where: { id: viajeId },
+      where: { id: vId },
       data: { estado }
     });
+
+    if (estado === "en_ruta") {
+      await prisma.encomienda.updateMany({
+        where: { viaje_id: vId, estado: { not: "entregado" } },
+        data: { estado: "en_transito" }
+      });
+    } else if (estado === "completado" || estado === "finalizado") {
+      await prisma.encomienda.updateMany({
+        where: { viaje_id: vId, estado: { not: "entregado" } },
+        data: { estado: "en_destino" }
+      });
+    }
+
     revalidatePath("/admin/conductor/viajes");
     return { success: true };
   } catch (error) {

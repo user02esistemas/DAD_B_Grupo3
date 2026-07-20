@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { parseBusImages, serializeBusImages } from "@/lib/bus-images";
 import { createPortal } from "react-dom";
 import { Plus, Edit2, Trash2, Hash, Box, Settings, Bus as BusIcon, X } from "lucide-react";
 import { crearBus, actualizarBus, eliminarBus } from "../../actions/buses";
@@ -91,7 +92,7 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
     const files = e.target.files;
     if (!files) return;
 
-    const currentImages = formData.imagenes ? formData.imagenes.split(",").filter(Boolean) : [];
+    const currentImages = parseBusImages(formData.imagenes);
     const availableSlots = 6 - currentImages.length; // Máximo 6 imágenes
 
     if (files.length > availableSlots) {
@@ -110,14 +111,14 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
       }
     }
 
-    const updatedImages = [...currentImages, ...newImagesBase64].join(",");
+    const updatedImages = serializeBusImages([...currentImages, ...newImagesBase64]);
     setFormData({ ...formData, imagenes: updatedImages });
     setIsLoading(false);
   };
 
   const removeImage = (indexToRemove: number) => {
-    const currentImages = formData.imagenes ? formData.imagenes.split(",").filter(Boolean) : [];
-    const updatedImages = currentImages.filter((_, idx) => idx !== indexToRemove).join(",");
+    const currentImages = parseBusImages(formData.imagenes);
+    const updatedImages = serializeBusImages(currentImages.filter((_, idx) => idx !== indexToRemove));
     setFormData({ ...formData, imagenes: updatedImages });
   };
 
@@ -488,9 +489,9 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                   </label>
                   
                   {/* Grid de previsualización */}
-                  {formData.imagenes && formData.imagenes.split(",").filter(Boolean).length > 0 && (
+                  {parseBusImages(formData.imagenes).length > 0 && (
                     <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 mb-3">
-                      {formData.imagenes.split(",").filter(Boolean).map((img, idx) => (
+                      {parseBusImages(formData.imagenes).map((img, idx) => (
                         <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 group">
                           <img 
                             src={img} 
@@ -500,7 +501,7 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                           <button
                             type="button"
                             onClick={() => removeImage(idx)}
-                            className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-650 text-white rounded-full transition-colors cursor-pointer"
+                            className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-red-600 text-white rounded-full transition-colors cursor-pointer"
                             title="Eliminar foto"
                           >
                             <X className="w-3 h-3" />
@@ -511,7 +512,7 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                   )}
 
                   {/* Botón de carga */}
-                  {(!formData.imagenes || formData.imagenes.split(",").filter(Boolean).length < 6) ? (
+                  {parseBusImages(formData.imagenes).length < 6 ? (
                     <div>
                       <input 
                         type="file" 

@@ -6,6 +6,10 @@ import { StatusBar } from 'expo-status-bar';
 import LoginScreen from './src/screens/LoginScreen';
 import OperadorDashboardScreen from './src/screens/OperadorDashboardScreen';
 import ConductorDashboardScreen from './src/screens/ConductorDashboardScreen';
+import ConductorViajesScreen from './src/screens/ConductorViajesScreen';
+import ConductorViajeDetalleScreen from './src/screens/ConductorViajeDetalleScreen';
+import ConductorNovedadesScreen from './src/screens/ConductorNovedadesScreen';
+import ConductorAlertasScreen from './src/screens/ConductorAlertasScreen';
 import QRScannerScreen from './src/screens/QRScannerScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import ClienteTabNavigator from './src/navigation/ClienteTabNavigator';
@@ -21,6 +25,10 @@ export type RootStackParamList = {
   Login: undefined;
   OperadorDashboard: undefined;
   ConductorDashboard: undefined;
+  ConductorViajes: undefined;
+  ConductorViajeDetalle: { viajeId: string };
+  ConductorNovedades: undefined;
+  ConductorAlertas: undefined;
   QRScanner: undefined;
   Register: undefined;
   ClienteDashboard: undefined;
@@ -49,6 +57,10 @@ export default function App() {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="OperadorDashboard" component={OperadorDashboardScreen} />
         <Stack.Screen name="ConductorDashboard" component={ConductorDashboardScreen} />
+        <Stack.Screen name="ConductorViajes" component={ConductorViajesScreen} />
+        <Stack.Screen name="ConductorViajeDetalle" component={ConductorViajeDetalleScreen} />
+        <Stack.Screen name="ConductorNovedades" component={ConductorNovedadesScreen} />
+        <Stack.Screen name="ConductorAlertas" component={ConductorAlertasScreen} />
         <Stack.Screen name="QRScanner" component={QRScannerScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="ClienteDashboard" component={ClienteTabNavigator} />

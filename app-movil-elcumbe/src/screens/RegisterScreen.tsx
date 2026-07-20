@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,9 +10,10 @@ import {
   Platform,
   ScrollView,
   Image,
-  SafeAreaView,
-  Animated
+  Animated,
+  Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -36,7 +37,7 @@ function getPasswordStrength(pwd: string) {
   if (!pwd) return { score: 0, label: '', color: '#94a3b8' };
   let score = 0;
   
-  if (pwd.length >= 6) score += 1;
+  if (pwd.length >= 8) score += 1;
   if (pwd.length >= 9) score += 1;
   if (/[A-Z]/.test(pwd)) score += 1;
   if (/[0-9]/.test(pwd)) score += 1;
@@ -75,7 +76,7 @@ function FloatingLabelInput({
 }: FloatingLabelInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const [secure, setSecure] = useState(secureTextEntry);
-  const animatedIsFocused = useRef(new Animated.Value(value ? 1 : 0)).current;
+  const [animatedIsFocused] = useState(() => new Animated.Value(value ? 1 : 0));
 
   useEffect(() => {
     Animated.timing(animatedIsFocused, {
@@ -194,8 +195,8 @@ export default function RegisterScreen({ navigation }: Props) {
 
     if (!password) {
       newErrors.password = 'La contraseña es obligatoria.';
-    } else if (password.length < 6) {
-      newErrors.password = 'La contraseña debe tener al menos 6 caracteres.';
+    } else if (password.length < 8) {
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres.';
     }
 
     if (!confirmPassword) {

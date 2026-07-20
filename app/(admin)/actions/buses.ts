@@ -40,6 +40,8 @@ async function verifyAdminRole() {
 
 export async function obtenerBuses() {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session || !["admin", "gerente"].includes(session.user.role || "")) throw new Error("No autorizado.");
     const buses = await prisma.bus.findMany({
       orderBy: { created_at: "desc" },
     });

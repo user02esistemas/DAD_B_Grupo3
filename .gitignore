@@ -44,3 +44,11 @@ next-env.d.ts
 
 # Base de datos local privada
 cumbe_db.sql
+
+# IDE and local tooling
+.idea/
+**/.expo/
+**/node_modules/
+
+# Safe environment template
+!.env.example

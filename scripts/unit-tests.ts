@@ -1,6 +1,8 @@
 import assert from "assert";
 import * as jwt from "jsonwebtoken";
-import { verifyMobileToken } from "../lib/mobileAuth";
+import { canAccessPersona, verifyMobileToken } from "../lib/mobileAuth";
+
+process.env.NEXTAUTH_SECRET ||= "test_only_secret_with_at_least_32_chars";
 
 async function runUnitTests() {
   console.log("=================================================");
@@ -58,7 +60,7 @@ async function runUnitTests() {
   // -------------------------------------------------------------
   console.log("\n📋 Suite 2: Seguridad y Firma de Tokens JWT");
 
-  const secret = process.env.NEXTAUTH_SECRET || "default_movil_secret_key";
+  const secret = process.env.NEXTAUTH_SECRET!;
 
   test("Debe generar un token JWT válido con payload de usuario", () => {
     const mockUser = {
@@ -112,6 +114,21 @@ async function runUnitTests() {
     assert.strictEqual(result.valid, false);
   });
 
+  test("Debe rechazar tokens sin una identidad completa", () => {
+    const token = jwt.sign({ id: "5", role: "cliente" }, secret, { expiresIn: "1h" });
+    const reqMock = new Request("http://localhost/api/movil/compras", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    assert.strictEqual(verifyMobileToken(reqMock).valid, false);
+  });
+
+  test("Debe impedir que un usuario acceda a recursos de otra persona", () => {
+    const cliente = { id: "5", role: "cliente", dni: "12345678", persona_id: "5" };
+    const admin = { ...cliente, role: "admin" };
+    assert.strictEqual(canAccessPersona(cliente, BigInt(6)), false);
+    assert.strictEqual(canAccessPersona(cliente, BigInt(5)), true);
+    assert.strictEqual(canAccessPersona(admin, BigInt(6)), true);
+  });
   // -------------------------------------------------------------
   // SUITE 3: Reglas de Negocio (Asientos y Precios)
   // -------------------------------------------------------------
