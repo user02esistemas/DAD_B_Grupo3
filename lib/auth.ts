@@ -23,13 +23,13 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!user) {
-          throw new Error("Usuario no encontrado");
+          throw new Error("Credenciales inválidas");
         }
 
         const isValidPassword = await bcrypt.compare(credentials.password, user.contrasena);
 
         if (!isValidPassword) {
-          throw new Error("Contraseña incorrecta");
+          throw new Error("Credenciales inválidas");
         }
 
         const fullName = `${user.persona.nombres} ${user.persona.apellidos}`.trim();
@@ -54,8 +54,19 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.dni = user.dni;
         token.persona_id = user.persona_id;
-      }
-      return token;
+      } else if (token.id) {
+        const currentUser = await prisma.usuario.findUnique({
+          where: { id: BigInt(token.id as string) },
+          include: { persona: true },
+        });
+        if (!currentUser) {
+          token.role = "revoked";
+        } else {
+          token.role = currentUser.rol;
+          token.dni = currentUser.persona.dni;
+          token.persona_id = currentUser.persona_id.toString();
+        }
+      }      return token;
     },
     async session({ session, token }) {
       if (token) {

@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   FlatList,
   Modal,
@@ -14,11 +13,20 @@ import {
   Platform,
   Linking
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
+const cleanLocationName = (name: string) => {
+  if (!name) return '';
+  return name
+    .replace(/^Terminal\s+/i, '')
+    .replace(/\s+El\s+Cumbe$/i, '')
+    .trim();
+};
 
 type RootStackParamList = {
   Login: undefined;
@@ -49,6 +57,7 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
   const [showOriginModal, setShowOriginModal] = useState(false);
   const [showDestinationModal, setShowDestinationModal] = useState(false);
   const [showDatePickerModal, setShowDatePickerModal] = useState(false);
+  const [calendarMonthDate, setCalendarMonthDate] = useState<Date>(new Date());
 
   // Resultados
   const [trips, setTrips] = useState<any[]>([]);
@@ -64,6 +73,61 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
   const [encomiendas, setEncomiendas] = useState<any[]>([]);
   const [loadingEncomiendas, setLoadingEncomiendas] = useState(false);
   const [selectedEncomienda, setSelectedEncomienda] = useState<any>(null);
+
+  // Modal de Fotos del Bus
+  const [showBusPhotosModal, setShowBusPhotosModal] = useState(false);
+  const [selectedBusPhotos, setSelectedBusPhotos] = useState<any[]>([]);
+  const [selectedBusInfo, setSelectedBusInfo] = useState<any>(null);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+
+  const getBusPhotos = (bus: any) => {
+    const defaultFallback = [
+      { uri: `${API_URL}/bus_1.jpg` },
+      { uri: `${API_URL}/bus_2.jpg` },
+      { uri: `${API_URL}/bus_3.jpg` }
+    ];
+
+    if (!bus || !bus.imagenes) return defaultFallback;
+
+    const raw = String(bus.imagenes).trim();
+    let array: string[] = [];
+
+    try {
+      if (raw.startsWith('[') && raw.endsWith(']')) {
+        array = JSON.parse(raw);
+      } else if (raw.includes('|||')) {
+        array = raw.split('|||');
+      } else if (raw.includes('data:image/')) {
+        array = raw.split(/(?=data:image\/)/g).map((s: string) => s.replace(/^,|,$/g, '').trim());
+      } else {
+        array = raw.split(',');
+      }
+    } catch {
+      array = [];
+    }
+
+    const validUrls = array.map(s => s.trim()).filter(Boolean);
+    if (validUrls.length === 0) return defaultFallback;
+
+    return validUrls.map(url => {
+      if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:image/')) {
+        return { uri: url };
+      }
+      if (url.startsWith('/')) {
+        return { uri: `${API_URL}${url}` };
+      }
+      return { uri: `${API_URL}/${url}` };
+    });
+  };
+
+  const openBusPhotosModal = (bus: any) => {
+    if (!bus) return;
+    const photos = getBusPhotos(bus);
+    setSelectedBusPhotos(photos);
+    setSelectedBusInfo(bus);
+    setCurrentPhotoIndex(0);
+    setShowBusPhotosModal(true);
+  };
 
   // Cargar usuario y ubicaciones
   useEffect(() => {
@@ -95,15 +159,9 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
   }, []);
 
   // Recargar datos si cambiamos de pestaña
-  useEffect(() => {
-    if (activeTab === 'boletos' && user?.correo) {
-      loadTickets();
-    } else if (activeTab === 'encomiendas' && user?.correo) {
-      loadEncomiendas();
-    }
-  }, [activeTab, user]);
 
-  const loadTickets = async () => {
+
+  async function loadTickets() {
     setLoadingTickets(true);
     try {
       const token = await AsyncStorage.getItem('@auth_token');
@@ -122,9 +180,9 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
     } finally {
       setLoadingTickets(false);
     }
-  };
+  }
 
-  const loadEncomiendas = async () => {
+  async function loadEncomiendas() {
     setLoadingEncomiendas(true);
     try {
       const token = await AsyncStorage.getItem('@auth_token');
@@ -143,7 +201,15 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
     } finally {
       setLoadingEncomiendas(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    if (activeTab === 'boletos' && user?.correo) {
+      loadTickets();
+    } else if (activeTab === 'encomiendas' && user?.correo) {
+      loadEncomiendas();
+    }
+  }, [activeTab, user]);
 
   const handleSearch = async () => {
     if (!origin) {
@@ -197,22 +263,81 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
     }
   };
 
-  // Generar fechas para el selector simple (hoy y los próximos 7 días)
-  const getDates = () => {
-    const dates = [];
-    const today = new Date();
-    const dias = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-    for (let i = 0; i < 8; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, '0');
-      const day = String(d.getDate()).padStart(2, '0');
-      const dateString = `${year}-${month}-${day}`;
-      const label = i === 0 ? 'Hoy' : `${dias[d.getDay()]} ${d.getDate()}`;
-      dates.push({ dateString, label });
+  // Generar fechas para el selector
+  const mesesNombres = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const getCalendarMonthGrid = () => {
+    const year = calendarMonthDate.getFullYear();
+    const month = calendarMonthDate.getMonth();
+
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDayIndex = new Date(year, month, 1).getDay();
+
+    const cells: any[] = [];
+    for (let i = 0; i < firstDayIndex; i++) {
+      cells.push({ dayNumber: null, dateString: `empty-${i}` });
     }
-    return dates;
+
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const monthStr = String(month + 1).padStart(2, '0');
+      const dayStr = String(day).padStart(2, '0');
+      const dateString = `${year}-${monthStr}-${dayStr}`;
+
+      const cellDate = new Date(year, month, day);
+      cellDate.setHours(0, 0, 0, 0);
+
+      const isPast = cellDate < todayObj;
+      const isSelected = selectedDate === dateString;
+      const isToday = cellDate.getTime() === todayObj.getTime();
+
+      cells.push({
+        dayNumber: day,
+        dateString,
+        isPast,
+        isSelected,
+        isToday
+      });
+    }
+
+    // Garantizar exactamente 42 celdas (6 filas fijas de 7 días) para evitar saltos de tamaño entre meses
+    while (cells.length < 42) {
+      cells.push({ dayNumber: null, dateString: `empty-end-${cells.length}` });
+    }
+
+    return cells;
+  };
+
+  const handlePrevMonth = () => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+
+    if (
+      calendarMonthDate.getFullYear() === currentYear &&
+      calendarMonthDate.getMonth() <= currentMonth
+    ) {
+      return;
+    }
+
+    setCalendarMonthDate(new Date(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth() - 1, 1));
+  };
+
+  const handleNextMonth = () => {
+    setCalendarMonthDate(new Date(calendarMonthDate.getFullYear(), calendarMonthDate.getMonth() + 1, 1));
+  };
+
+  const cleanLocationName = (name: string) => {
+    if (!name) return '';
+    return name
+      .replace(/^Terminal\s+/i, '')
+      .replace(/\s+El\s+Cumbe$/i, '')
+      .trim();
   };
 
   const formatPrice = (price: any) => {
@@ -283,17 +408,52 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
             <Text style={styles.searchCardTitle}>Reserva tu Pasaje</Text>
 
             {/* Selector de Origen */}
-            <TouchableOpacity style={styles.selectorField} onPress={() => setShowOriginModal(true)}>
-              <View style={styles.selectorIconWrapper}>
-                <Ionicons name="location-outline" size={22} color="#f07639" />
-              </View>
-              <View>
-                <Text style={styles.selectorLabel}>Origen</Text>
-                <Text style={styles.selectorValue}>
-                  {origin ? origin.nombre : '¿Desde dónde viajas?'}
-                </Text>
-              </View>
-            </TouchableOpacity>
+            <View style={{ position: 'relative' }}>
+              <TouchableOpacity style={styles.selectorField} onPress={() => setShowOriginModal(true)}>
+                <View style={styles.selectorIconWrapper}>
+                  <Ionicons name="location-outline" size={22} color="#f07639" />
+                </View>
+                <View style={{ flex: 1, paddingRight: origin ? 44 : 0 }}>
+                  <Text style={styles.selectorLabel}>Origen</Text>
+                  <Text style={styles.selectorValue} numberOfLines={1}>
+                    {origin ? cleanLocationName(origin.nombre) : '¿Desde dónde viajas?'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              {/* Botón de Intercambio Origen ↔ Destino (Solo visible si hay un Origen seleccionado) */}
+              {origin && (
+                <TouchableOpacity
+                  style={{
+                    position: 'absolute',
+                    right: 16,
+                    top: '50%',
+                    marginTop: -18,
+                    zIndex: 20,
+                    backgroundColor: '#ffffff',
+                    width: 36,
+                    height: 36,
+                    borderRadius: 18,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: '#cbd5e1',
+                    shadowColor: '#0f172a',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3
+                  }}
+                  onPress={() => {
+                    const temp = origin;
+                    setOrigin(destination);
+                    setDestination(temp);
+                  }}
+                >
+                  <Ionicons name="swap-vertical" size={20} color="#f07639" />
+                </TouchableOpacity>
+              )}
+            </View>
 
             {/* Selector de Destino */}
             <TouchableOpacity style={styles.selectorField} onPress={() => setShowDestinationModal(true)}>
@@ -303,7 +463,7 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
               <View>
                 <Text style={styles.selectorLabel}>Destino</Text>
                 <Text style={styles.selectorValue}>
-                  {destination ? destination.nombre : '¿A dónde quieres ir?'}
+                  {destination ? cleanLocationName(destination.nombre) : '¿A dónde quieres ir?'}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -366,12 +526,35 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
                     <View style={styles.tripCardDivider} />
 
                     <View style={styles.tripCardBody}>
-                      <View style={styles.tripDetailRow}>
-                        <Ionicons name="bus-outline" size={16} color="#64748b" />
-                        <Text style={styles.tripDetailText}>
-                          Bus {item.bus.placa} ({item.bus.pisos} piso{item.bus.pisos > 1 ? 's' : ''})
-                        </Text>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                        <View style={styles.tripDetailRow}>
+                          <Ionicons name="bus-outline" size={16} color="#64748b" />
+                          <Text style={styles.tripDetailText}>
+                            Bus {item.bus.placa} ({item.bus.pisos} piso{item.bus.pisos > 1 ? 's' : ''})
+                          </Text>
+                        </View>
+
+                        <TouchableOpacity
+                          style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: '#fff7ed',
+                            paddingHorizontal: 10,
+                            paddingVertical: 5,
+                            borderRadius: 12,
+                            borderWidth: 1,
+                            borderColor: '#fed7aa'
+                          }}
+                          onPress={(e) => {
+                            e.stopPropagation();
+                            openBusPhotosModal(item.bus);
+                          }}
+                        >
+                          <Ionicons name="camera-outline" size={14} color="#f07639" style={{ marginRight: 4 }} />
+                          <Text style={{ fontSize: 11, fontWeight: '800', color: '#f07639' }}>Ver Bus</Text>
+                        </TouchableOpacity>
                       </View>
+
                       <View style={styles.tripDetailRow}>
                         <Ionicons name="people-outline" size={16} color="#64748b" />
                         <Text style={styles.tripDetailText}>
@@ -629,14 +812,26 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={styles.modalListItem}
+                  style={[
+                    styles.modalListItem,
+                    destination?.id === item.id && { opacity: 0.5, backgroundColor: '#f1f5f9' }
+                  ]}
                   onPress={() => {
                     setOrigin(item);
+                    if (destination?.id === item.id) {
+                      setDestination(null);
+                    }
                     setShowOriginModal(false);
                   }}
                 >
                   <Ionicons name="location" size={18} color="#f07639" style={{ marginRight: 12 }} />
-                  <Text style={styles.modalListItemText}>{item.nombre}</Text>
+                  <Text style={[styles.modalListItemText, { flex: 1 }]}>{cleanLocationName(item.nombre)}</Text>
+                  {origin?.id === item.id && (
+                    <Ionicons name="checkmark-circle" size={18} color="#f07639" />
+                  )}
+                  {destination?.id === item.id && (
+                    <Text style={{ fontSize: 10, color: '#94a3b8', fontWeight: '700', textTransform: 'uppercase' }}>Destino actual</Text>
+                  )}
                 </TouchableOpacity>
               )}
             />
@@ -655,7 +850,7 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
               </TouchableOpacity>
             </View>
             <FlatList
-              data={locations}
+              data={locations.filter(loc => loc.id !== origin?.id)}
               keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -666,7 +861,10 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
                   }}
                 >
                   <Ionicons name="flag" size={18} color="#10b981" style={{ marginRight: 12 }} />
-                  <Text style={styles.modalListItemText}>{item.nombre}</Text>
+                  <Text style={[styles.modalListItemText, { flex: 1 }]}>{cleanLocationName(item.nombre)}</Text>
+                  {destination?.id === item.id && (
+                    <Ionicons name="checkmark-circle" size={18} color="#10b981" />
+                  )}
                 </TouchableOpacity>
               )}
             />
@@ -674,39 +872,224 @@ export default function ClienteDashboardScreen({ navigation }: Props) {
         </View>
       </Modal>
 
-      {/* MODAL SELECTOR FECHA SIMPLE */}
-      <Modal visible={showDatePickerModal} animationType="fade" transparent>
+      {/* MODAL GALERÍA FOTOS DEL BUS */}
+      <Modal visible={showBusPhotosModal} animationType="fade" transparent>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { maxHeight: 400 }]}>
+          <View style={[styles.modalContent, { maxHeight: '85%', padding: 20 }]}>
+            {/* HEADER */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Selecciona Fecha</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="bus" size={22} color="#f07639" style={{ marginRight: 10 }} />
+                <View>
+                  <Text style={styles.modalTitle}>Bus {selectedBusInfo?.placa || ''}</Text>
+                  <Text style={{ fontSize: 12, color: '#64748b' }}>
+                    {selectedBusInfo?.marca || 'Scania Marcopolo'} · {selectedBusInfo?.pisos || 1} Piso(s)
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity onPress={() => setShowBusPhotosModal(false)} style={{ padding: 4 }}>
+                <Ionicons name="close-circle" size={26} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            {/* FOTO PRINCIPAL Y NAVEGACIÓN */}
+            {selectedBusPhotos.length > 0 && (
+              <View style={{ alignItems: 'center', marginVertical: 16 }}>
+                <View style={{ width: '100%', height: 220, borderRadius: 18, overflow: 'hidden', backgroundColor: '#0f172a', position: 'relative' }}>
+                  <Image
+                    source={selectedBusPhotos[currentPhotoIndex]}
+                    style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+                  />
+
+                  {/* Botón Izquierda */}
+                  {selectedBusPhotos.length > 1 && (
+                    <TouchableOpacity
+                      style={{
+                        position: 'absolute',
+                        left: 10,
+                        top: '50%',
+                        marginTop: -18,
+                        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                        width: 36,
+                        height: 36,
+                        borderRadius: 18,
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      onPress={() => setCurrentPhotoIndex((prev) => (prev > 0 ? prev - 1 : selectedBusPhotos.length - 1))}
+                    >
+                      <Ionicons name="chevron-back" size={22} color="#ffffff" />
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Botón Derecha */}
+                  {selectedBusPhotos.length > 1 && (
+                    <TouchableOpacity
+                      style={{
+                        position: 'absolute',
+                        right: 10,
+                        top: '50%',
+                        marginTop: -18,
+                        backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                        width: 36,
+                        height: 36,
+                        borderRadius: 18,
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      onPress={() => setCurrentPhotoIndex((prev) => (prev < selectedBusPhotos.length - 1 ? prev + 1 : 0))}
+                    >
+                      <Ionicons name="chevron-forward" size={22} color="#ffffff" />
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Contador de Fotos */}
+                  <View
+                    style={{
+                      position: 'absolute',
+                      bottom: 10,
+                      right: 12,
+                      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                      paddingHorizontal: 10,
+                      paddingVertical: 4,
+                      borderRadius: 12
+                    }}
+                  >
+                    <Text style={{ color: '#ffffff', fontSize: 11, fontWeight: '700' }}>
+                      {currentPhotoIndex + 1} / {selectedBusPhotos.length}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* MINIATURAS BOTTOM BAR */}
+                {selectedBusPhotos.length > 1 && (
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 14, flexDirection: 'row' }}>
+                    {selectedBusPhotos.map((photo, index) => (
+                      <TouchableOpacity
+                        key={index}
+                        onPress={() => setCurrentPhotoIndex(index)}
+                        style={{
+                          marginRight: 10,
+                          borderRadius: 10,
+                          overflow: 'hidden',
+                          borderWidth: currentPhotoIndex === index ? 2 : 1,
+                          borderColor: currentPhotoIndex === index ? '#f07639' : '#cbd5e1'
+                        }}
+                      >
+                        <Image source={photo} style={{ width: 56, height: 44, resizeMode: 'cover' }} />
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={{
+                backgroundColor: '#f07639',
+                paddingVertical: 14,
+                borderRadius: 16,
+                alignItems: 'center',
+                marginTop: 8
+              }}
+              onPress={() => setShowBusPhotosModal(false)}
+            >
+              <Text style={{ color: '#ffffff', fontSize: 15, fontWeight: '800' }}>Cerrar Galería</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* MODAL CALENDARIO INTERACTIVO (MES Y DÍA - ALTURA ESTÁTICA) */}
+      <Modal visible={showDatePickerModal} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { height: 490, padding: 20 }]}>
+            {/* MODAL HEADER */}
+            <View style={styles.modalHeader}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name="calendar-outline" size={22} color="#f07639" style={{ marginRight: 8 }} />
+                <Text style={styles.modalTitle}>Selecciona Fecha de Salida</Text>
+              </View>
               <TouchableOpacity onPress={() => setShowDatePickerModal(false)}>
                 <Ionicons name="close" size={24} color="#0f172a" />
               </TouchableOpacity>
             </View>
-            <FlatList
-              data={getDates()}
-              keyExtractor={(item) => item.dateString}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[styles.modalListItem, selectedDate === item.dateString && { backgroundColor: '#fff7ed' }]}
-                  onPress={() => {
-                    setSelectedDate(item.dateString);
-                    setShowDatePickerModal(false);
-                  }}
-                >
-                  <Ionicons 
-                    name="calendar" 
-                    size={18} 
-                    color={selectedDate === item.dateString ? "#f07639" : "#64748b"} 
-                    style={{ marginRight: 12 }} 
-                  />
-                  <Text style={[styles.modalListItemText, selectedDate === item.dateString && { color: '#f07639', fontWeight: '700' }]}>
-                    {item.label} ({formatDateLabel(item.dateString)})
-                  </Text>
-                </TouchableOpacity>
-              )}
-            />
+
+            {/* NAVEGACIÓN DE MES (MES Y AÑO) */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 14, backgroundColor: '#f8fafc', padding: 12, borderRadius: 16 }}>
+              <TouchableOpacity onPress={handlePrevMonth} style={{ padding: 6 }}>
+                <Ionicons name="chevron-back" size={24} color="#0f172a" />
+              </TouchableOpacity>
+
+              <Text style={{ fontSize: 16, fontWeight: '800', color: '#0f172a' }}>
+                {mesesNombres[calendarMonthDate.getMonth()]} {calendarMonthDate.getFullYear()}
+              </Text>
+
+              <TouchableOpacity onPress={handleNextMonth} style={{ padding: 6 }}>
+                <Ionicons name="chevron-forward" size={24} color="#0f172a" />
+              </TouchableOpacity>
+            </View>
+
+            {/* CABECERA DÍAS DE LA SEMANA */}
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10, paddingHorizontal: 4 }}>
+              {['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'].map((d, idx) => (
+                <Text key={idx} style={{ width: '14.28%', textAlign: 'center', fontSize: 11, fontWeight: '800', color: '#94a3b8' }}>
+                  {d}
+                </Text>
+              ))}
+            </View>
+
+            {/* GRID DÍAS DEL MES */}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              {getCalendarMonthGrid().map((cell, idx) => {
+                if (!cell.dayNumber) {
+                  return <View key={idx} style={{ width: '14.28%', height: 44 }} />;
+                }
+
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    disabled={cell.isPast}
+                    onPress={() => {
+                      setSelectedDate(cell.dateString);
+                      setShowDatePickerModal(false);
+                    }}
+                    style={{
+                      width: '14.28%',
+                      height: 44,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginBottom: 6
+                    }}
+                  >
+                    <View
+                      style={[
+                        {
+                          width: 38,
+                          height: 38,
+                          borderRadius: 19,
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        },
+                        cell.isSelected && { backgroundColor: '#f07639' },
+                        cell.isToday && !cell.isSelected && { borderWidth: 2, borderColor: '#f07639' }
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          { fontSize: 14, fontWeight: '600', color: '#0f172a' },
+                          cell.isPast && { color: '#cbd5e1' },
+                          cell.isSelected && { color: '#ffffff', fontWeight: '800' },
+                          cell.isToday && !cell.isSelected && { color: '#f07639', fontWeight: '800' }
+                        ]}
+                      >
+                        {cell.dayNumber}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           </View>
         </View>
       </Modal>

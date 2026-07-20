@@ -289,7 +289,7 @@ export default function SeguimientoPage() {
             className="relative z-10 rounded-xl border border-[var(--card-border)] bg-[var(--card-bg)]/90 backdrop-blur-md p-4 shadow-[var(--shadow-md)] sm:p-5"
           >
             <label htmlFor="tracking-query" className="text-sm font-bold text-[var(--foreground)]">
-              {session ? "DNI del remitente" : "Código de seguimiento"}
+              {session ? "DNI (Remitente o Destinatario)" : "Código de seguimiento"}
             </label>
             <div className="mt-2 flex flex-col gap-3 sm:flex-row">
               <div className="relative min-w-0 flex-1">

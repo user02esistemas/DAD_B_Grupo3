@@ -42,13 +42,13 @@ DIRECT_URL="postgresql://postgres.xxx:password@aws-0-us-east-1.pooler.supabase.c
 
 # JWT y NextAuth
 NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="development_secret_key_32_characters_long"
+NEXTAUTH_SECRET="genera_un_secreto_aleatorio_de_32_bytes_o_mas"
 
 # Pasarela de Pagos Culqi y Servicios
-NEXT_PUBLIC_CULQI_PUBLIC_KEY="pk_test_lkYsEtGV030Goa3V"
-CULQI_SECRET_KEY="sk_test_Lr8ZyYy1HvncSGGz"
-RESEND_API_KEY="re_Smz1dtH8_5R9WVumzBmi2KhTbSqn2WECV"
-EXPO_PUBLIC_API_URL="http://192.168.101.18:3000"
+NEXT_PUBLIC_CULQI_PUBLIC_KEY="pk_test_REEMPLAZAR"
+CULQI_SECRET_KEY="sk_test_REEMPLAZAR"
+RESEND_API_KEY="re_REEMPLAZAR"
+EXPO_PUBLIC_API_URL="http://TU_IP_LOCAL:3000"
 ```
 
 ### 4. Sincronizar Base de Datos y Cargar Datos Iniciales

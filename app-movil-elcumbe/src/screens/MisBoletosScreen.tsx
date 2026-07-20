@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   FlatList,
   Modal,
@@ -14,6 +13,7 @@ import {
   Platform,
   Linking
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
@@ -95,15 +95,9 @@ export default function MisBoletosScreen({ navigation }: Props) {
   }, []);
 
   // Recargar datos si cambiamos de pestaña
-  useEffect(() => {
-    if (activeTab === 'boletos' && user?.correo) {
-      loadTickets();
-    } else if (activeTab === 'encomiendas' && user?.correo) {
-      loadEncomiendas();
-    }
-  }, [activeTab, user]);
 
-  const loadTickets = async () => {
+
+  async function loadTickets() {
     setLoadingTickets(true);
     try {
       const token = await AsyncStorage.getItem('@auth_token');
@@ -122,9 +116,9 @@ export default function MisBoletosScreen({ navigation }: Props) {
     } finally {
       setLoadingTickets(false);
     }
-  };
+  }
 
-  const loadEncomiendas = async () => {
+  async function loadEncomiendas() {
     setLoadingEncomiendas(true);
     try {
       const token = await AsyncStorage.getItem('@auth_token');
@@ -143,7 +137,15 @@ export default function MisBoletosScreen({ navigation }: Props) {
     } finally {
       setLoadingEncomiendas(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    if (activeTab === 'boletos' && user?.correo) {
+      loadTickets();
+    } else if (activeTab === 'encomiendas' && user?.correo) {
+      loadEncomiendas();
+    }
+  }, [activeTab, user]);
 
   const handleSearch = async () => {
     if (!origin) {

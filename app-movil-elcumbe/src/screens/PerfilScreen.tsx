@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   Image,
   ActivityIndicator,
   Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -25,11 +25,9 @@ export default function PerfilScreen({ navigation }: Props) {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ ticketsCount: 0, encomiendasCount: 0 });
 
-  useEffect(() => {
-    loadUserData();
-  }, []);
 
-  const loadUserData = async () => {
+
+  async function loadUserData() {
     setLoading(true);
     try {
       const storedUser = await AsyncStorage.getItem('@user_data');
@@ -58,7 +56,11 @@ export default function PerfilScreen({ navigation }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
 
   const handleLogout = async () => {
     Alert.alert(

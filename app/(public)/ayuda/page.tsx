@@ -3,16 +3,12 @@
 import Image from "next/image";
 import { useState } from "react";
 import {
-  AlertCircle,
-  BookOpen,
   BriefcaseBusiness,
   CalendarClock,
   ChevronDown,
   HelpCircle,
-  MessageCircle,
   UserRoundCheck,
 } from "lucide-react";
-import { ComplaintBookModalTrigger } from "@/components/ComplaintBook";
 
 type FAQItem = {
   question: string;
@@ -221,34 +217,6 @@ export default function AyudaPage() {
               );
             })}
           </div>
-
-          <section className="mt-12 rounded-lg bg-[#244c45] p-5 text-white dark:bg-[#182a25] sm:p-6">
-            <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-orange-300" aria-hidden="true" />
-                <div>
-                  <h3 className="font-extrabold">¿Necesitas atención adicional?</h3>
-                  <p className="mt-1 text-sm leading-6 text-white/70">Conversa con soporte o registra formalmente una incidencia.</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <a
-                  href="https://wa.me/51976202295"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-white/25 px-4 text-sm font-bold text-white transition-colors hover:bg-white/10"
-                >
-                  <MessageCircle className="h-4 w-4" aria-hidden="true" />
-                  WhatsApp
-                </a>
-                <ComplaintBookModalTrigger
-                  label="Libro de reclamaciones"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-[var(--primary)] px-4 text-sm font-bold text-white transition-colors hover:bg-[var(--primary-dark)]"
-                  icon={<BookOpen className="h-4 w-4" aria-hidden="true" />}
-                />
-              </div>
-            </div>
-          </section>
         </div>
       </div>
     </div>

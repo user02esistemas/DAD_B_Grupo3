@@ -4,11 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   ScrollView,
   ActivityIndicator,
   Alert
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
@@ -53,7 +53,7 @@ export default function BusSeatSelectionScreen({ navigation, route }: Props) {
     loadSeats();
   }, []);
 
-  const loadSeats = async () => {
+  async function loadSeats() {
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/movil/viajes/asientos?tripId=${tripId}`);
@@ -69,7 +69,7 @@ export default function BusSeatSelectionScreen({ navigation, route }: Props) {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   const handleSelectSeat = (seat: any) => {
     if (seat.estado !== 'disponible') return;

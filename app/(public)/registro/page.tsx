@@ -25,7 +25,7 @@ function getPasswordStrength(password: string): StrengthIndicator {
   if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
   // Penalización por longitud muy corta (menos de 6 caracteres)
-  if (password.length < 6) {
+  if (password.length < 8) {
     return { label: "Muy leve", color: "bg-red-500", percent: 20, textClass: "text-red-500" };
   }
 

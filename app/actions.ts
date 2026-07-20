@@ -6,6 +6,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getCustomerProfileByUserId } from "@/lib/customer-profile";
 // import { Resend } from "resend";
 
 // const resend = new Resend(process.env.RESEND_API_KEY);
@@ -44,7 +45,7 @@ const checkoutSchema = z.array(z.object({
   pasajeroData: pasajeroSchema
 }));
 
-export async function getCurrentUser() {
+async function getCurrentUser() {
   const session = await getServerSession(authOptions);
   if (!session || !session.user?.email) {
     return null;
@@ -56,6 +57,11 @@ export async function getCurrentUser() {
   return user;
 }
 
+async function requireLegacyRoles(roles: string[]) {
+  const user = await getCurrentUser();
+  if (!user || !roles.includes(user.rol)) throw new Error("No autorizado.");
+  return user;
+}
 // Función auxiliar para liberar asientos bloqueados que ya excedieron los 8 minutos
 export async function limpiarBloqueosExpirados() {
   try {
@@ -70,6 +76,7 @@ export async function limpiarBloqueosExpirados() {
       data: {
         estado: "disponible",
         bloqueado_por_usuario_id: null,
+        bloqueado_por_token: null,
         bloqueado_en: null,
       } as any,
     });
@@ -98,22 +105,27 @@ export async function buscarEncomiendasPorDNI(dni: string) {
 
     const encomiendas = await prisma.encomienda.findMany({
       where: {
-        remitente: { dni: dni.trim() },
+        OR: [
+          { remitente: { dni: dni.trim() } },
+          { destinatario: { dni: dni.trim() } },
+        ],
       },
       include: {
         origen: true,
         destino: true,
         viaje: true,
         destinatario: true,
+        remitente: true,
       },
       orderBy: {
         created_at: "desc",
       },
     });
 
-    // Mapear el nombre del destinatario para la vista pública
+    // Mapear los nombres para la vista pública
     const encomiendasMapeadas = encomiendas.map(enc => ({
       ...enc,
+      remitente_nombre: enc.remitente ? `${enc.remitente.nombres} ${enc.remitente.apellidos}` : "Desconocido",
       destinatario_nombre: enc.destinatario ? `${enc.destinatario.nombres} ${enc.destinatario.apellidos}` : "Desconocido"
     }));
 
@@ -144,37 +156,12 @@ export async function searchTrips(originId: string, destinationId: string, date:
   try {
     await limpiarBloqueosExpirados();
     
-    // La base de datos guarda la hora local (Perú) como si fuera UTC (naive timestamp).
-    // Por lo tanto, creamos las fechas de búsqueda en UTC explícitamente.
-    const startDate = new Date(`${date}T00:00:00.000Z`);
-    const endDate = new Date(`${date}T23:59:59.999Z`);
+    // Rango completo del día solicitado en huso horario de Perú (America/Lima UTC-5)
+    const startDate = new Date(`${date}T00:00:00.000-05:00`);
+    const endDate = new Date(`${date}T23:59:59.999-05:00`);
 
-    // Para filtrar viajes que ya pasaron, obtenemos la hora actual en Perú
-    // de manera robusta usando Intl.DateTimeFormat (multiplataforma y estándar en nubes/UTC).
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/Lima",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(new Date());
-    const year = parseInt(parts.find((p) => p.type === "year")!.value, 10);
-    const month = parseInt(parts.find((p) => p.type === "month")!.value, 10) - 1; // 0-indexed
-    const day = parseInt(parts.find((p) => p.type === "day")!.value, 10);
-    const hour = parseInt(parts.find((p) => p.type === "hour")!.value, 10);
-    const minute = parseInt(parts.find((p) => p.type === "minute")!.value, 10);
-    const second = parseInt(parts.find((p) => p.type === "second")!.value, 10);
-
-    // Creamos la fecha UTC "falsa" para compararla con los naive timestamps de la DB
-    const nowFakeUTC = new Date(Date.UTC(year, month, day, hour, minute, second));
-
-    // Solo mostrar viajes que ocurran dentro del día solicitado
-    // Y que la fecha de salida sea MAYOR a la hora actual en Perú
-    const filterStartDate = nowFakeUTC > startDate ? nowFakeUTC : startDate;
+    const nowInPeru = new Date();
+    const filterStartDate = nowInPeru > startDate && nowInPeru < endDate ? nowInPeru : startDate;
 
     const trips = await prisma.viaje.findMany({
       where: {
@@ -300,103 +287,17 @@ export async function simularPagoYCrearTicket() {
 }
 
 // 6. getClienteProfile
-export async function getClienteProfile(email: string) {
+export async function getClienteProfile(email?: string) {
   try {
-    const usuario = await prisma.usuario.findUnique({
-      where: { correo: email },
-      include: {
-        persona: {
-          include: {
-            reclamos: {
-              orderBy: { created_at: "desc" }
-            }
-          }
-        },
-      },
-    });
-
-    if (!usuario) {
-      throw new Error("Cliente no encontrado");
-    }
-
-    // Buscar pasajes donde el usuario es el comprador O el pasajero
-    const pasajesBrutos = await prisma.pasaje.findMany({
-      where: {
-        OR: [
-          { comprador_id: usuario.id },
-          { persona_id: usuario.persona_id },
-        ],
-      },
-      include: {
-        pasajero: true,
-        asiento_viaje: {
-          include: {
-            viaje: {
-              include: {
-                ruta: {
-                  include: {
-                    origen: true,
-                    destino: true,
-                  },
-                },
-                bus: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        fecha_compra: "desc",
-      },
-    });
-
-    // Mapear los pasajes para mantener compatibilidad con el frontend que espera nombres, apellidos y dni en la raíz del ticket
-    const pasajesMapeados = pasajesBrutos.map((pasaje) => ({
-      ...pasaje,
-      nombres: pasaje.pasajero.nombres,
-      apellidos: pasaje.pasajero.apellidos,
-      dni: pasaje.pasajero.dni,
-    }));
-
-    const encomiendasBrutas = await prisma.encomienda.findMany({
-      where: {
-        OR: [
-          { remitente_id: usuario.persona_id },
-          { destinatario_id: usuario.persona_id },
-        ],
-      },
-      include: {
-        remitente: true,
-        destinatario: true,
-        origen: true,
-        destino: true,
-        viaje: {
-          include: {
-            ruta: {
-              include: {
-                origen: true,
-                destino: true,
-              }
-            }
-          }
-        }
-      },
-      orderBy: {
-        created_at: "desc",
-      },
-    });
-
-    return serializeBigInt({
-      ...usuario,
-      pasajes: pasajesMapeados,
-      encomiendas: encomiendasBrutas,
-    });
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser) return null;
+    if (email && email.trim().toLowerCase() !== sessionUser.correo.toLowerCase()) return null;
+    return await getCustomerProfileByUserId(sessionUser.id);
   } catch (error) {
     console.error("Error al obtener perfil de cliente:", error);
     return null;
   }
 }
-
 // 7. updateClienteProfile
 
 export async function updateClienteProfile(
@@ -404,6 +305,10 @@ export async function updateClienteProfile(
   data: { nombre: string; correo?: string; dni?: string; telefono?: string; newPassword?: string }
 ) {
   try {
+    const sessionUser = await getCurrentUser();
+    if (!sessionUser || sessionUser.correo.toLowerCase() !== email.trim().toLowerCase()) {
+      return { success: false, error: "No autorizado." };
+    }
     const usuario = await prisma.usuario.findUnique({ where: { correo: email } });
     if (!usuario) throw new Error("Usuario no encontrado");
 
@@ -442,15 +347,16 @@ export async function updateClienteProfile(
     }
 
     // Actualizar contraseña si se ingresó
-    if (data.newPassword && data.newPassword.trim().length >= 6) {
-      const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+    if (data.newPassword && data.newPassword.trim().length >= 8) {
+      const hashedPassword = await bcrypt.hash(data.newPassword, 12);
       usuarioActualizado = await prisma.usuario.update({
         where: { id: usuario.id },
         data: { contrasena: hashedPassword },
       });
     }
 
-    return { success: true, user: serializeBigInt({ ...usuarioActualizado, persona: personaActualizada }) };
+    const { contrasena: _contrasena, ...usuarioSeguro } = usuarioActualizado;
+    return { success: true, user: serializeBigInt({ ...usuarioSeguro, persona: personaActualizada }) };
   } catch (error: any) {
     console.error("Error al actualizar perfil:", error);
     let errorMessage = "Ocurrió un error inesperado al guardar los datos.";
@@ -468,6 +374,7 @@ export async function updateClienteProfile(
 // 8. getAdminDashboardStats
 export async function getAdminDashboardStats() {
   try {
+    await requireLegacyRoles(["admin", "vendedor", "gerente"]);
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
 
@@ -550,6 +457,7 @@ export async function getAdminDashboardStats() {
 // 9. getBuses
 export async function getBuses() {
   try {
+    await requireLegacyRoles(["admin", "gerente"]);
     const buses = await prisma.bus.findMany({
       orderBy: {
         created_at: "desc",
@@ -565,6 +473,7 @@ export async function getBuses() {
 // 10. createBus
 export async function createBus(data: { placa: string; marca: string; capacidad: number; pisos: number }) {
   try {
+    await requireLegacyRoles(["admin"]);
     const existe = await prisma.bus.findUnique({ where: { placa: data.placa } });
     if (existe) {
       return { success: false, error: "La placa de bus ingresada ya está registrada." };
@@ -589,6 +498,7 @@ export async function createBus(data: { placa: string; marca: string; capacidad:
 // 11. deleteBus
 export async function deleteBus(id: string) {
   try {
+    await requireLegacyRoles(["admin"]);
     const tieneViajes = await prisma.viaje.findFirst({
       where: { bus_id: BigInt(id) },
     });
@@ -611,6 +521,7 @@ export async function deleteBus(id: string) {
 // 12. getAdminEncomiendas
 export async function getAdminEncomiendas(query?: string) {
   try {
+    await requireLegacyRoles(["admin", "vendedor", "gerente"]);
     const whereClause: any = {};
 
     if (query && query.trim() !== "") {
@@ -667,6 +578,7 @@ export async function createEncomienda(data: {
   viaje_id?: string;
 }) {
   try {
+    await requireLegacyRoles(["admin", "vendedor"]);
     const result = await prisma.$transaction(async (tx) => {
       let codigo = "";
       let esUnico = false;
@@ -725,6 +637,7 @@ export async function createEncomienda(data: {
 // 14. updateEncomiendaEstado
 export async function updateEncomiendaEstado(id: string, nuevoEstado: string) {
   try {
+    await requireLegacyRoles(["admin", "vendedor"]);
     const actualizada = await prisma.encomienda.update({
       where: { id: BigInt(id) },
       data: { estado: nuevoEstado },
@@ -739,6 +652,7 @@ export async function updateEncomiendaEstado(id: string, nuevoEstado: string) {
 // 15. getAdminPasajes
 export async function getAdminPasajes() {
   try {
+    await requireLegacyRoles(["admin", "vendedor", "gerente"]);
     const pasajes = await prisma.pasaje.findMany({
       include: {
         pasajero: true,
@@ -778,6 +692,7 @@ export async function venderPasajePresencial(
   precio: number
 ) {
   try {
+    await requireLegacyRoles(["admin", "vendedor"]);
     const nameParts = clienteNombre.trim().split(/\s+/);
     const nombres = nameParts.slice(0, Math.ceil(nameParts.length / 2)).join(" ");
     const apellidos = nameParts.slice(Math.ceil(nameParts.length / 2)).join(" ") || "-";
@@ -829,6 +744,7 @@ export async function venderPasajePresencial(
 // 17. getRutas
 export async function getRutas() {
   try {
+    await requireLegacyRoles(["admin", "vendedor", "gerente"]);
     const rutas = await prisma.ruta.findMany({
       include: {
         origen: true,
@@ -853,6 +769,7 @@ export async function createRuta(data: {
   precio_base: number;
 }) {
   try {
+    await requireLegacyRoles(["admin"]);
     if (data.origen_id === data.destino_id) {
       return { success: false, error: "El origen y el destino de la ruta no pueden ser iguales." };
     }
@@ -887,6 +804,7 @@ export async function createRuta(data: {
 // 19. deleteRuta
 export async function deleteRuta(id: string) {
   try {
+    await requireLegacyRoles(["admin"]);
     const tieneViajes = await prisma.viaje.findFirst({
       where: { ruta_id: BigInt(id) },
     });
@@ -909,6 +827,7 @@ export async function deleteRuta(id: string) {
 // 20. getViajesAdmin
 export async function getViajesAdmin() {
   try {
+    await requireLegacyRoles(["admin", "vendedor", "gerente"]);
     const viajes = await prisma.viaje.findMany({
       include: {
         ruta: {
@@ -953,6 +872,7 @@ export async function getViajesAdmin() {
 // 21. createViaje
 export async function createViaje(data: { ruta_id: string; bus_id: string; fecha_salida: string }) {
   try {
+    await requireLegacyRoles(["admin", "vendedor"]);
     const ruta = await prisma.ruta.findUnique({
       where: { id: BigInt(data.ruta_id) },
     });
@@ -1005,6 +925,7 @@ export async function createViaje(data: { ruta_id: string; bus_id: string; fecha
 // 22. updateViajeEstado
 export async function updateViajeEstado(id: string, nuevoEstado: string) {
   try {
+    await requireLegacyRoles(["admin", "vendedor"]);
     const actualizado = await prisma.viaje.update({
       where: { id: BigInt(id) },
       data: { estado: nuevoEstado },
@@ -1019,6 +940,7 @@ export async function updateViajeEstado(id: string, nuevoEstado: string) {
 // 23. deleteViaje
 export async function deleteViaje(id: string) {
   try {
+    await requireLegacyRoles(["admin"]);
     const tieneVentas = await prisma.asientoViaje.findFirst({
       where: {
         viaje_id: BigInt(id),
@@ -1044,6 +966,7 @@ export async function deleteViaje(id: string) {
 // 24. updateBus
 export async function updateBus(id: string, data: { placa: string; marca: string; capacidad: number; pisos: number }) {
   try {
+    await requireLegacyRoles(["admin"]);
     const existePlaca = await prisma.bus.findFirst({
       where: {
         placa: data.placa.toUpperCase(),
@@ -1078,6 +1001,7 @@ export async function updateRuta(
   data: { origen_id: string; destino_id: string; duracion_estimada_minutos: number; precio_base: number }
 ) {
   try {
+    await requireLegacyRoles(["admin"]);
     if (data.origen_id === data.destino_id) {
       return { success: false, error: "El origen y el destino de la ruta no pueden ser iguales." };
     }
@@ -1114,6 +1038,7 @@ export async function updateRuta(
 // 26. updateViaje
 export async function updateViaje(id: string, data: { ruta_id: string; bus_id: string; fecha_salida: string }) {
   try {
+    await requireLegacyRoles(["admin", "vendedor"]);
     const viajeActual = await prisma.viaje.findUnique({
       where: { id: BigInt(id) },
       include: { asientos_viaje: true, bus: true },
@@ -1336,13 +1261,11 @@ export async function procesarPagoMultiplesAsientosCulqi(
     }
 
     let userId: bigint | null = null;
-    if (email) {
-      const user = await prisma.usuario.findUnique({ where: { correo: email } });
-      if (user) {
-        userId = user.id;
-      }
+    const session = await getServerSession(authOptions);
+    if (session?.user?.email) {
+      const user = await prisma.usuario.findUnique({ where: { correo: session.user.email } });
+      userId = user?.id ?? null;
     }
-
     const result = await prisma.$transaction(async (tx) => {
       const tickets = [];
       const paymentAmountPerSeat = amount / asientosPasajeros.length;
@@ -1363,10 +1286,11 @@ export async function procesarPagoMultiplesAsientosCulqi(
 
         // Validar propiedad de la reserva del asiento
         if (userId) {
-          if (asientoActual.bloqueado_por_usuario_id !== userId) {
+          const reservadoPorUsuario = asientoActual.bloqueado_por_usuario_id === userId;
+          const reservadoPorToken = Boolean(guestToken) && asientoActual.bloqueado_por_token === guestToken;
+          if (!reservadoPorUsuario && !reservadoPorToken) {
             throw new Error(`El asiento número ${asientoActual.numero_asiento} no está reservado por su usuario.`);
-          }
-        } else if (guestToken) {
+          }        } else if (guestToken) {
           if (asientoActual.bloqueado_por_token !== guestToken) {
             throw new Error(`El asiento número ${asientoActual.numero_asiento} no está reservado con su sesión de invitado.`);
           }
@@ -1437,100 +1361,51 @@ export async function procesarPagoMultiplesAsientosCulqi(
 }
 
 // 27. marcarAsientosPendientes
-export async function marcarAsientosPendientes(seatIds: string[], guestToken: string, email?: string) {
+export async function marcarAsientosPendientes(seatIds: string[], guestToken: string, _email?: string) {
   try {
-    const rateKey = email || guestToken || "anonymous";
-    checkRateLimit(rateKey);
-
+    const uniqueSeatIds = [...new Set(seatIds)];
+    if (uniqueSeatIds.length === 0 || uniqueSeatIds.length > 6 || uniqueSeatIds.some((id) => !/^\d+$/.test(id))) throw new Error("La selección de asientos no es válida.");
+    if (typeof guestToken !== "string" || guestToken.length < 16) throw new Error("La sesión de reserva no es válida.");
+    checkRateLimit(guestToken);
     await limpiarBloqueosExpirados();
-    
-    let userId: bigint | null = null;
-    if (email) {
-      const user = await prisma.usuario.findUnique({ where: { correo: email } });
-      if (user) {
-        userId = user.id;
-      }
-    }
 
+    const ids = uniqueSeatIds.map((id) => BigInt(id));
     const result = await prisma.$transaction(async (tx) => {
-      // Solo auto-liberamos los asientos del usuario que NO están en la solicitud actual.
-      // Si piden un asiento que ya tienen bloqueado (por ejemplo desde otra pestaña), lanzará error.
-      const releaseCondition: any = userId 
-        ? { bloqueado_por_usuario_id: userId, estado: "pendiente" } 
-        : { estado: "pendiente" };
-
       await tx.asientoViaje.updateMany({
-        where: {
-          ...releaseCondition,
-          id: { notIn: seatIds.map(id => BigInt(id)) }
-        },
-        data: {
-          estado: "disponible",
-          bloqueado_por_usuario_id: null,
-          bloqueado_en: null,
-        } as any,
+        where: { bloqueado_por_token: guestToken, estado: "pendiente", id: { notIn: ids } },
+        data: { estado: "disponible", bloqueado_por_usuario_id: null, bloqueado_por_token: null, bloqueado_en: null },
       });
-
-      // Verificar que no se pidan más de 6 asientos en esta solicitud
-      if (seatIds.length > 6) {
-        throw new Error("No puedes seleccionar más de 6 asientos a la vez.");
-      }
-
-      // Modificamos el updateMany para que solo actúe sobre asientos que estén en estado "disponible".
-      // Esto previene race conditions en transacciones concurrentes a nivel de motor de base de datos.
       const updatedSeats = await tx.asientoViaje.updateMany({
-        where: { 
-          id: { in: seatIds.map(id => BigInt(id)) },
-          estado: "disponible"
-        },
-        data: {
-          estado: "pendiente",
-          bloqueado_por_usuario_id: userId,
-          bloqueado_en: new Date(),
-        } as any,
+        where: { id: { in: ids }, estado: "disponible" },
+        data: { estado: "pendiente", bloqueado_por_usuario_id: null, bloqueado_por_token: guestToken, bloqueado_en: new Date() },
       });
-
-      // Si la cantidad de registros modificados no es igual a la cantidad de asientos solicitados,
-      // significa que al menos uno de ellos ya no está en estado "disponible" (fue tomado o bloqueado de forma concurrente).
-      if (updatedSeats.count !== seatIds.length) {
-        throw new Error("Uno o más de los asientos seleccionados ya han sido reservados o vendidos por otro pasajero.");
-      }
-
+      if (updatedSeats.count !== ids.length) throw new Error("Uno o más asientos ya fueron reservados o vendidos.");
       return updatedSeats;
     });
-
-    return { success: true, count: serializeBigInt(result.count) };
-  } catch (error: any) {
-    console.error("Error al marcar asientos pendientes:", error);
-    return { success: false, error: error.message || "Alguno de los asientos ya ha sido seleccionado por otro pasajero." };
-  }
-}
-
-// 28. liberarAsientos
-export async function liberarAsientos(seatIds: string[]) {
-  if (!seatIds || seatIds.length === 0) return { success: true, count: 0 };
-  
-  try {
-    const result = await prisma.asientoViaje.updateMany({
-      where: {
-        id: { in: seatIds.map(id => BigInt(id)) },
-        estado: "pendiente",
-      },
-      data: {
-        estado: "disponible",
-        bloqueado_por_usuario_id: null,
-        bloqueado_por_token: null,
-        bloqueado_en: null,
-      } as any,
-    });
-
     return { success: true, count: result.count };
-  } catch (error: any) {
-    console.error("Error al liberar asientos:", error);
-    return { success: false, error: error.message || "Error al liberar asientos." };
+  } catch (error) {
+    console.error("Error al marcar asientos pendientes:", error);
+    return { success: false, error: error instanceof Error ? error.message : "No se pudieron reservar los asientos." };
   }
 }
 
+export async function liberarAsientos(seatIds: string[], guestToken?: string) {
+  try {
+    const uniqueSeatIds = [...new Set(seatIds)];
+    if (uniqueSeatIds.length === 0) return { success: true, count: 0 };
+    if (uniqueSeatIds.some((id) => !/^\d+$/.test(id))) throw new Error("IDs de asiento inválidos.");
+    if (!guestToken || guestToken.length < 16) throw new Error("No autorizado para liberar estos asientos.");
+
+    const result = await prisma.asientoViaje.updateMany({
+      where: { id: { in: uniqueSeatIds.map((id) => BigInt(id)) }, estado: "pendiente", bloqueado_por_token: guestToken },
+      data: { estado: "disponible", bloqueado_por_usuario_id: null, bloqueado_por_token: null, bloqueado_en: null },
+    });
+    return { success: true, count: result.count };
+  } catch (error) {
+    console.error("Error al liberar asientos:", error);
+    return { success: false, error: error instanceof Error ? error.message : "No se pudieron liberar los asientos." };
+  }
+}
 export async function enviarTicketEmail(emailDestino: string, tickets: any[], tripDetails: any) {
   try {
     if (!process.env.RESEND_API_KEY) {
@@ -1727,6 +1602,8 @@ export async function buscarPersonaPorDNI(dni: string) {
       sessionUser.persona?.dni === persona.dni
     );
     const isAdmin = sessionUser && (sessionUser.rol === "admin" || sessionUser.rol === "vendedor");
+
+    if (!isOwner && !isAdmin) return { success: false, error: "No autorizado." };
 
     return {
       success: true,

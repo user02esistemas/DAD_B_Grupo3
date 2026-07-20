@@ -4,6 +4,10 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
+  const seedPassword = process.env.SEED_DEFAULT_PASSWORD;
+  if (!seedPassword || seedPassword.length < 12) {
+    throw new Error("SEED_DEFAULT_PASSWORD debe configurarse con al menos 12 caracteres.");
+  }
   console.log("🚀 Iniciando seed inicial en Supabase con los campos correctos...");
 
   try {
@@ -106,9 +110,9 @@ async function main() {
 
     // 5. Crear Personas y Usuarios (Bcrypt contrasenas)
     console.log("Creando personal (Admins, Conductores y Operarios)...");
-    const passwordHashConductor = await bcrypt.hash("123456", 10);
-    const passwordHashAdmin = await bcrypt.hash("admin123", 10);
-    const passwordHashOperario = await bcrypt.hash("123456", 10);
+    const passwordHashConductor = await bcrypt.hash(seedPassword, 12);
+    const passwordHashAdmin = await bcrypt.hash(seedPassword, 12);
+    const passwordHashOperario = await bcrypt.hash(seedPassword, 12);
 
     // Conductor 1: Carlos Mendoza
     const pConductor1 = await prisma.persona.create({

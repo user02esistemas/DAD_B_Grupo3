@@ -25,7 +25,7 @@ export async function POST(req: Request) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "Usuario no encontrado o credenciales inválidas" },
+        { error: "Credenciales inválidas" },
         { status: 401 }
       );
     }
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
     if (!isValidPassword) {
       return NextResponse.json(
-        { error: "Contraseña incorrecta" },
+        { error: "Credenciales inválidas" },
         { status: 401 }
       );
     }
@@ -45,8 +45,14 @@ export async function POST(req: Request) {
     // 4. Generar respuesta exitosa
     const fullName = `${user.persona.nombres} ${user.persona.apellidos}`.trim();
 
-    // Generar un JWT simple (opcional, si tienes un SECRET configurado)
-    const secret = process.env.NEXTAUTH_SECRET || "default_movil_secret_key";
+    const secret = process.env.NEXTAUTH_SECRET;
+    if (!secret || secret.length < 32) {
+      console.error("NEXTAUTH_SECRET no está configurado o tiene menos de 32 caracteres.");
+      return NextResponse.json(
+        { error: "El servicio de autenticación no está configurado." },
+        { status: 500 }
+      );
+    }
     const token = jwt.sign(
       { 
         id: user.id.toString(), 
@@ -55,7 +61,7 @@ export async function POST(req: Request) {
         persona_id: user.persona_id.toString() 
       },
       secret,
-      { expiresIn: "30d" }
+      { algorithm: "HS256", expiresIn: "8h" }
     );
 
     return NextResponse.json(
@@ -65,6 +71,7 @@ export async function POST(req: Request) {
         token, // El token que la app usará en el header Authorization
         user: {
           id: user.id.toString(),
+          persona_id: user.persona_id.toString(),
           nombres: fullName,
           correo: user.correo,
           rol: user.rol,
@@ -74,10 +81,10 @@ export async function POST(req: Request) {
       { status: 200 }
     );
 
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error en login móvil:", error);
     return NextResponse.json(
-      { error: "Error interno del servidor", details: error.message },
+      { error: "Error interno del servidor" },
       { status: 500 }
     );
   }

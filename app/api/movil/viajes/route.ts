@@ -29,7 +29,7 @@ export async function GET(req: Request) {
   } catch (error: any) {
     console.error("Error en API de viajes móvil:", error);
     return NextResponse.json(
-      { error: "Error interno al buscar viajes", details: error.message },
+      { error: "Error interno al buscar viajes" },
       { status: 500 }
     );
   }

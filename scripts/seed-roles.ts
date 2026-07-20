@@ -4,8 +4,9 @@ import bcrypt from "bcrypt";
 const prisma = new PrismaClient();
 
 async function main() {
-  const contrasenaPlana = "123456";
-  const hashedPassword = await bcrypt.hash(contrasenaPlana, 10);
+  const contrasenaPlana = process.env.SEED_DEFAULT_PASSWORD;
+  if (!contrasenaPlana || contrasenaPlana.length < 12) throw new Error("SEED_DEFAULT_PASSWORD debe tener al menos 12 caracteres.");
+  const hashedPassword = await bcrypt.hash(contrasenaPlana, 12);
 
   console.log("🚀 Iniciando creación de cuentas (Conductor, Operario, Vendedor)...");
 
@@ -39,7 +40,7 @@ async function main() {
       where: { correo: correoConductor },
       data: { contrasena: hashedPassword, rol: "conductor" }
     });
-    console.log("🔄 Conductor existente actualizado con contraseña '123456':", correoConductor);
+    console.log("🔄 Conductor existente actualizado con contraseña configurada:", correoConductor);
   }
 
   // 2. OPERARIO
@@ -72,7 +73,7 @@ async function main() {
       where: { correo: correoOperario },
       data: { contrasena: hashedPassword, rol: "operario" }
     });
-    console.log("🔄 Operario existente actualizado con contraseña '123456':", correoOperario);
+    console.log("🔄 Operario existente actualizado con contraseña configurada:", correoOperario);
   }
 
   // 3. VENDEDOR
@@ -105,11 +106,11 @@ async function main() {
       where: { correo: correoVendedor },
       data: { contrasena: hashedPassword, rol: "vendedor" }
     });
-    console.log("🔄 Vendedor existente actualizado con contraseña '123456':", correoVendedor);
+    console.log("🔄 Vendedor existente actualizado con contraseña configurada:", correoVendedor);
   }
 
   console.log("\n🎉 Proceso finalizado. Credenciales comunes:");
-  console.log("🔑 Contraseña para todos:", contrasenaPlana);
+  console.log("🔑 Contraseña tomada de SEED_DEFAULT_PASSWORD.");
 }
 
 main()
