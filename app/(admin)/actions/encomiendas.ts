@@ -93,7 +93,7 @@ export async function actualizarEstadoEncomienda(
 export async function registrarEncomienda(data: {
   remitente: { dni: string; nombres: string; apellidos: string; telefono?: string };
   destinatario: { dni: string; nombres: string; apellidos: string; telefono?: string };
-  paquete: { origen_id: string; destino_id: string; peso_kg: string; precio: string; descripcion: string };
+  paquete: { origen_id: string; destino_id: string; peso_kg: string; precio: string; descripcion: string; viaje_id?: string };
 }) {
   try {
     await requireAdminOrVendedor();
@@ -143,6 +143,7 @@ export async function registrarEncomienda(data: {
           peso_kg: parseFloat(data.paquete.peso_kg),
           precio: parseFloat(data.paquete.precio),
           descripcion: data.paquete.descripcion,
+          viaje_id: data.paquete.viaje_id ? parseId(data.paquete.viaje_id) : null,
           estado: 'recepcionado'
         }
       });
@@ -161,7 +162,7 @@ export async function registrarEncomienda(data: {
 export async function editarEncomienda(id: string | number, data: {
   remitente: { dni: string; nombres: string; apellidos: string; telefono?: string };
   destinatario: { dni: string; nombres: string; apellidos: string; telefono?: string };
-  paquete: { origen_id: string; destino_id: string; peso_kg: string; precio: string; descripcion: string };
+  paquete: { origen_id: string; destino_id: string; peso_kg: string; precio: string; descripcion: string; viaje_id?: string };
   estado?: string;
 }) {
   try {
@@ -225,6 +226,7 @@ export async function editarEncomienda(id: string | number, data: {
           peso_kg: parseFloat(data.paquete.peso_kg),
           precio: parseFloat(data.paquete.precio),
           descripcion: data.paquete.descripcion,
+          viaje_id: data.paquete.viaje_id ? parseId(data.paquete.viaje_id) : null,
           estado: data.estado || undefined
         }
       });
