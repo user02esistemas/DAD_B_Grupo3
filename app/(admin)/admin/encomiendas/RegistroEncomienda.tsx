@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { User, MapPin, Package, Save, Loader2, Search, CheckCircle2 } from "lucide-react";
 import { registrarEncomienda, editarEncomienda } from "../../actions/encomiendas";
 import { buscarPasajeroPorDni } from "../../actions/pasajes"; // Usamos esta función porque busca en Persona
@@ -16,11 +16,13 @@ type PersonaForm = {
 
 export default function RegistroEncomienda({ 
   sucursales,
+  viajesActivos,
   onSuccess,
   editingEncomienda,
   onCancel
 }: { 
   sucursales: Sucursal[],
+  viajesActivos: any[],
   onSuccess: () => void,
   editingEncomienda?: any | null,
   onCancel?: () => void
@@ -43,13 +45,22 @@ export default function RegistroEncomienda({
     destino_id: editingEncomienda?.destino_id?.toString() || "",
     peso_kg: editingEncomienda?.peso_kg?.toString() || "",
     precio: editingEncomienda?.precio?.toString() || "",
-    descripcion: editingEncomienda?.descripcion || ""
+    descripcion: editingEncomienda?.descripcion || "",
+    viaje_id: editingEncomienda?.viaje_id?.toString() || ""
   });
 
   const [isLoadingRemitente, setIsLoadingRemitente] = useState(false);
   const [isLoadingDestinatario, setIsLoadingDestinatario] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+
+  const filteredViajes = useMemo(() => {
+    if (!paquete.origen_id || !paquete.destino_id) return [];
+    return viajesActivos.filter(v => 
+      v.ruta.origen_id?.toString() === paquete.origen_id &&
+      v.ruta.destino_id?.toString() === paquete.destino_id
+    );
+  }, [viajesActivos, paquete.origen_id, paquete.destino_id]);
 
   const buscarPersona = async (dni: string, type: 'remitente' | 'destinatario') => {
     if (dni.length < 8) return;
@@ -119,7 +130,7 @@ export default function RegistroEncomienda({
           // Limpiar form
           setRemitente({ dni: "", nombres: "", apellidos: "", telefono: "" });
           setDestinatario({ dni: "", nombres: "", apellidos: "", telefono: "" });
-          setPaquete({ origen_id: "", destino_id: "", peso_kg: "", precio: "", descripcion: "" });
+          setPaquete({ origen_id: "", destino_id: "", peso_kg: "", precio: "", descripcion: "", viaje_id: "" });
           
           // Llamamos al callback después de unos segundos
           setTimeout(() => {
@@ -285,10 +296,35 @@ export default function RegistroEncomienda({
                 value={paquete.precio} onChange={e => setPaquete({...paquete, precio: e.target.value})} />
             </div>
 
-            <div className="md:col-span-2 lg:col-span-4">
+            <div className="md:col-span-2 lg:col-span-2">
               <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Descripción del Contenido</label>
               <input type="text" required placeholder="Ej. Caja de ropa, documentos..." className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#f07639] outline-none"
                 value={paquete.descripcion} onChange={e => setPaquete({...paquete, descripcion: e.target.value})} />
+            </div>
+
+            <div className="md:col-span-2 lg:col-span-2">
+              <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Asignar Viaje (Opcional)</label>
+              <select 
+                value={paquete.viaje_id} 
+                onChange={e => setPaquete({...paquete, viaje_id: e.target.value})} 
+                className="w-full px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#f07639] outline-none bg-white cursor-pointer"
+              >
+                <option value="">No asignar viaje aún</option>
+                {filteredViajes.map(v => {
+                  const fecha = new Date(v.fecha_salida).toLocaleString("es-PE", {
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  });
+                  const driver = v.conductor ? ` (${v.conductor.nombres} ${v.conductor.apellidos})` : "";
+                  return (
+                    <option key={v.id} value={v.id}>
+                      {fecha} | Bus: {v.bus.placa}{driver}
+                    </option>
+                  );
+                })}
+              </select>
             </div>
           </div>
         </div>

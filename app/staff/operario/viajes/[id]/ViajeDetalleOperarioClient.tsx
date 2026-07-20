@@ -219,33 +219,49 @@ export default function ViajeDetalleOperarioClient({
         const scanner = new Html5Qrcode("reader");
         qrScannerRef.current = scanner;
 
+        const onScanSuccess = async (decodedText: string) => {
+          playBeep(true);
+          await stopCameraScan();
+          setQrCodeInput(decodedText);
+          await triggerValidation(decodedText);
+        };
+
+        const onScanFailure = (errorMessage: string) => {
+          // Ignorar errores de escaneo intermedios
+        };
+
         scanner.start(
-          { facingMode: "environment" },
+          { facingMode: { ideal: "environment" } },
           {
             fps: 10,
             qrbox: { width: 250, height: 250 },
           },
-          async (decodedText: string) => {
-            playBeep(true);
-            await stopCameraScan();
-            setQrCodeInput(decodedText);
-            await triggerValidation(decodedText);
-          },
-          (errorMessage: string) => {
-            // Ignorar errores de escaneo intermedios
-          }
+          onScanSuccess,
+          onScanFailure
         ).catch((err: any) => {
-          console.error("Error starting html5Qrcode:", err);
+          console.warn("Error starting with environment camera, trying fallback...", err);
+          // Intentar fallback sin restricciones (usará la cámara por defecto del sistema)
+          return scanner.start(
+            {},
+            {
+              fps: 10,
+              qrbox: { width: 250, height: 250 },
+            },
+            onScanSuccess,
+            onScanFailure
+          );
+        }).catch((err: any) => {
+          console.error("Error starting html5Qrcode even with fallback:", err);
           const msg = String(err).toLowerCase();
-          if (msg.includes("not supported") || msg.includes("mediadevices")) {
+          if (msg.includes("not supported") || msg.includes("mediadevices") || msg.includes("insecure")) {
             setScanResult({
               success: false,
-              message: "⚠️ Cámara no disponible: La cámara solo funciona en HTTPS (usa la URL de ngrok) o en localhost. Usa el campo de texto para ingresar el código QR manualmente.",
+              message: "⚠️ Cámara no disponible: La cámara solo funciona en contextos seguros. Asegúrate de estar usando HTTPS (ej: ngrok) o localhost. En redes locales HTTP (ej: 192.168.x.x) los navegadores desactivan la cámara por seguridad.",
             });
           } else {
             setScanResult({
               success: false,
-              message: "Error de permisos: Asegúrate de otorgar acceso a la cámara de tu dispositivo.",
+              message: "Error de permisos: Asegúrate de otorgar acceso a la cámara de tu dispositivo y que no esté siendo usada por otra aplicación.",
             });
           }
           setCameraActive(false);

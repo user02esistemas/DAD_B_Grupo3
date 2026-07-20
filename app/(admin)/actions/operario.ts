@@ -22,59 +22,118 @@ function serializeBigInt<T>(obj: T): any {
   );
 }
 
-export async function obtenerViajesOperario() {
+export interface FiltrosOperario {
+  ruta_id?: string;
+  bus_id?: string;
+  fecha?: string; // "YYYY-MM-DD"
+  estado?: string;
+}
+
+export async function obtenerViajesOperario(filtros: FiltrosOperario = {}) {
   try {
     await checkOperarioOrAdmin();
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
 
-    const mañana = new Date(hoy);
-    mañana.setDate(mañana.getDate() + 2); // Traer hoy y mañana
+    // Construir el where dinámico
+    const where: any = {
+      estado: filtros.estado
+        ? filtros.estado
+        : { not: "cancelado" },
+    };
+
+    // Filtro por fecha: si se envía una fecha específica usar ese día, sino hoy y mañana
+    if (filtros.fecha) {
+      const inicio = new Date(filtros.fecha);
+      inicio.setHours(0, 0, 0, 0);
+      const fin = new Date(inicio);
+      fin.setDate(fin.getDate() + 1);
+      where.fecha_salida = { gte: inicio, lt: fin };
+    } else {
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const pasadoMañana = new Date(hoy);
+      pasadoMañana.setDate(pasadoMañana.getDate() + 2);
+      where.fecha_salida = { gte: hoy, lt: pasadoMañana };
+    }
+
+    // Filtro por ruta
+    if (filtros.ruta_id) {
+      where.ruta_id = BigInt(filtros.ruta_id);
+    }
+
+    // Filtro por bus
+    if (filtros.bus_id) {
+      where.bus_id = BigInt(filtros.bus_id);
+    }
 
     const viajes = await prisma.viaje.findMany({
-      where: {
-        fecha_salida: {
-          gte: hoy,
-          lt: mañana,
-        },
-        estado: { not: "cancelado" },
-      },
+      where,
       include: {
         ruta: {
           include: {
             origen: { select: { nombre: true } },
             destino: { select: { nombre: true } },
-          }
+          },
         },
         bus: { select: { placa: true, capacidad: true, pisos: true } },
       },
-      orderBy: { fecha_salida: "asc" }
+      orderBy: { fecha_salida: "asc" },
     });
 
-    // Contar pasajes vendidos por viaje para mostrar avance
-    const viajesConPasajes = await Promise.all(viajes.map(async (v) => {
-      const pasajesCount = await prisma.pasaje.count({
-        where: {
-          asiento_viaje: { viaje_id: v.id }
-        }
-      });
-      const abordadosCount = await prisma.pasaje.count({
-        where: {
-          asiento_viaje: { viaje_id: v.id },
-          abordado: true
-        }
-      });
-      return {
-        ...v,
-        total_pasajeros: pasajesCount,
-        total_abordados: abordadosCount
-      };
-    }));
+    // Contar pasajes vendidos/confirmados por viaje (excluir estados inválidos)
+    const viajesConPasajes = await Promise.all(
+      viajes.map(async (v) => {
+        const [pasajesCount, abordadosCount] = await Promise.all([
+          prisma.pasaje.count({
+            where: {
+              asiento_viaje: { viaje_id: v.id },
+            },
+          }),
+          prisma.pasaje.count({
+            where: {
+              asiento_viaje: { viaje_id: v.id },
+              abordado: true,
+            },
+          }),
+        ]);
+
+        return {
+          ...v,
+          total_pasajeros: pasajesCount,
+          total_abordados: abordadosCount,
+        };
+      })
+    );
 
     return { success: true, data: serializeBigInt(viajesConPasajes) };
   } catch (error) {
     console.error("Error al obtener viajes de operario:", error);
     return { success: false, error: "Error al obtener viajes" };
+  }
+}
+
+// Obtener listas de rutas y buses para los filtros
+export async function obtenerFiltrosOperario() {
+  try {
+    await checkOperarioOrAdmin();
+
+    const [rutas, buses] = await Promise.all([
+      prisma.ruta.findMany({
+        include: {
+          origen: { select: { nombre: true } },
+          destino: { select: { nombre: true } },
+        },
+        orderBy: [{ origen: { nombre: "asc" } }],
+      }),
+      prisma.bus.findMany({
+        select: { id: true, placa: true, marca: true },
+        orderBy: { placa: "asc" },
+      }),
+    ]);
+
+    return { success: true, data: serializeBigInt({ rutas, buses }) };
+  } catch (error) {
+    console.error("Error al obtener filtros de operario:", error);
+    return { success: false, error: "Error al obtener filtros" };
   }
 }
 
@@ -84,7 +143,7 @@ export async function obtenerPasajerosViaje(viajeId: string | number) {
     const id = BigInt(viajeId);
     const pasajes = await prisma.pasaje.findMany({
       where: {
-        asiento_viaje: { viaje_id: id }
+        asiento_viaje: { viaje_id: id },
       },
       include: {
         pasajero: {
@@ -93,19 +152,19 @@ export async function obtenerPasajerosViaje(viajeId: string | number) {
             apellidos: true,
             dni: true,
             telefono: true,
-          }
+          },
         },
         asiento_viaje: {
           select: {
             numero_asiento: true,
             piso: true,
             estado: true,
-          }
+          },
         },
       },
       orderBy: {
-        asiento_viaje: { numero_asiento: "asc" }
-      }
+        asiento_viaje: { numero_asiento: "asc" },
+      },
     });
     return { success: true, data: serializeBigInt(pasajes) };
   } catch (error) {
@@ -118,15 +177,15 @@ export async function registrarAbordaje(pasajeId: string | number, abordado: boo
   try {
     await checkOperarioOrAdmin();
     const id = BigInt(pasajeId);
-    
+
     // Obtener primero el viaje_id asociado
     const pasajeTemp = await prisma.pasaje.findUnique({
       where: { id },
       select: {
         asiento_viaje: {
-          select: { viaje_id: true }
-        }
-      }
+          select: { viaje_id: true },
+        },
+      },
     });
 
     if (!pasajeTemp) {
@@ -137,8 +196,8 @@ export async function registrarAbordaje(pasajeId: string | number, abordado: boo
       where: { id },
       data: { abordado },
       include: {
-        asiento_viaje: true
-      }
+        asiento_viaje: true,
+      },
     });
 
     revalidatePath(`/staff/operario/viajes/${pasaje.asiento_viaje.viaje_id}`);
@@ -156,12 +215,12 @@ export async function validarBoletoQR(viajeId: string | number, codigoQr: string
     const pasaje = await prisma.pasaje.findFirst({
       where: {
         codigo_qr: codigoQr,
-        asiento_viaje: { viaje_id: vId }
+        asiento_viaje: { viaje_id: vId },
       },
       include: {
         pasajero: true,
-        asiento_viaje: true
-      }
+        asiento_viaje: true,
+      },
     });
 
     if (!pasaje) {
@@ -178,8 +237,8 @@ export async function validarBoletoQR(viajeId: string | number, codigoQr: string
       data: { abordado: true },
       include: {
         pasajero: true,
-        asiento_viaje: true
-      }
+        asiento_viaje: true,
+      },
     });
 
     revalidatePath(`/staff/operario/viajes/${vId}`);

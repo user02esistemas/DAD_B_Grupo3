@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } fr
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RootStackParamList } from '../../App';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -49,10 +50,13 @@ export default function QRScannerScreen({ navigation }: Props) {
     setLoading(true);
 
     try {
+      const token = await AsyncStorage.getItem('@auth_token');
+      
       const response = await fetch(`${API_URL}/api/movil/pasajes/validar-qr`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token || ''}`,
         },
         body: JSON.stringify({ codigo_qr: data }),
       });

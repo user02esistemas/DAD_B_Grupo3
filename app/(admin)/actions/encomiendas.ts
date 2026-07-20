@@ -28,7 +28,13 @@ export async function obtenerEncomiendas() {
         viaje: {
           select: {
             id: true,
-            bus: { select: { placa: true } }
+            bus: { select: { placa: true } },
+            conductor: {
+              select: {
+                nombres: true,
+                apellidos: true
+              }
+            }
           }
         },
         remitente: true,

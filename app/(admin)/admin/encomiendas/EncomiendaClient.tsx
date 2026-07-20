@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Package, Search, Edit2, MapPin, Truck, CheckCircle, PackageOpen, FileText, PlusCircle } from "lucide-react";
+import { Package, Search, Edit2, MapPin, Truck, CheckCircle, PackageOpen, FileText, PlusCircle, Filter, X, ChevronDown } from "lucide-react";
 import { actualizarEstadoEncomienda, obtenerEncomiendas } from "../../actions/encomiendas";
 import RegistroEncomienda from "./RegistroEncomienda";
 
@@ -20,9 +20,15 @@ type Encomienda = {
   remitente_dni: string;
   destinatario_nombre: string;
   destinatario_dni: string;
+  origen_id: string;
+  destino_id: string;
   origen: { nombre: string };
   destino: { nombre: string };
-  viaje?: { id: string, bus: { placa: string } } | null;
+  viaje?: { 
+    id: string; 
+    bus: { placa: string }; 
+    conductor?: { nombres: string; apellidos: string } | null;
+  } | null;
   peso_kg: string | number;
   estado: string;
   created_at: string;
@@ -54,6 +60,11 @@ export default function EncomiendaClient({
   // Estados para filtros
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("todos");
+  const [filterOrigen, setFilterOrigen] = useState("todos");
+  const [filterDestino, setFilterDestino] = useState("todos");
+  const [filterFecha, setFilterFecha] = useState("");
+  const [filterViajeAsignado, setFilterViajeAsignado] = useState("todos");
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -65,16 +76,45 @@ export default function EncomiendaClient({
   // Filtrado
   const filteredEncomiendas = useMemo(() => {
     return encomiendas.filter((enc) => {
-      const matchSearch = 
-        enc.codigo_seguimiento.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const query = searchTerm.toLowerCase();
+      const matchSearch = !searchTerm || 
+        enc.codigo_seguimiento.toLowerCase().includes(query) ||
         enc.remitente_dni.includes(searchTerm) ||
-        enc.destinatario_dni.includes(searchTerm);
+        enc.destinatario_dni.includes(searchTerm) ||
+        enc.remitente_nombre.toLowerCase().includes(query) ||
+        enc.destinatario_nombre.toLowerCase().includes(query);
       
       const matchEstado = filterEstado === "todos" || enc.estado === filterEstado;
+      const matchOrigen = filterOrigen === "todos" || enc.origen_id?.toString() === filterOrigen;
+      const matchDestino = filterDestino === "todos" || enc.destino_id?.toString() === filterDestino;
+      
+      let matchFecha = true;
+      if (filterFecha) {
+        const fEnc = new Date(enc.created_at).toISOString().split("T")[0];
+        matchFecha = fEnc === filterFecha;
+      }
 
-      return matchSearch && matchEstado;
+      let matchViaje = true;
+      if (filterViajeAsignado === "sin_viaje") {
+        matchViaje = !enc.viaje;
+      } else if (filterViajeAsignado === "con_viaje") {
+        matchViaje = !!enc.viaje;
+      }
+
+      return matchSearch && matchEstado && matchOrigen && matchDestino && matchFecha && matchViaje;
     });
-  }, [encomiendas, searchTerm, filterEstado]);
+  }, [encomiendas, searchTerm, filterEstado, filterOrigen, filterDestino, filterFecha, filterViajeAsignado]);
+
+  const hayFiltrosActivos = searchTerm || filterEstado !== "todos" || filterOrigen !== "todos" || filterDestino !== "todos" || filterFecha || filterViajeAsignado !== "todos";
+
+  const limpiarFiltros = () => {
+    setSearchTerm("");
+    setFilterEstado("todos");
+    setFilterOrigen("todos");
+    setFilterDestino("todos");
+    setFilterFecha("");
+    setFilterViajeAsignado("todos");
+  };
 
   const handleOpenModal = (enc: Encomienda) => {
     setEditingId(enc.id);
@@ -192,6 +232,7 @@ export default function EncomiendaClient({
       {view === "registro" ? (
         <RegistroEncomienda 
           sucursales={sucursales} 
+          viajesActivos={viajesActivos}
           editingEncomienda={editingEncomienda}
           onCancel={() => {
             setView("lista");
@@ -206,32 +247,116 @@ export default function EncomiendaClient({
       ) : (
         <>
           {/* Filtros */}
-          <div className="bg-white p-4 rounded-2xl border border-slate-100 mb-5 flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <Search className="h-4 w-4 text-slate-400" />
+          <div className="bg-white rounded-2xl border border-slate-100 mb-5 overflow-hidden shadow-sm">
+            <div className="p-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full pl-10 pr-3 py-2.5 bg-[#f8f9fc] border border-slate-200/60 rounded-xl focus:border-[#f07639]/30 focus:bg-white text-[13px] font-semibold text-slate-700 placeholder-slate-400 outline-none transition-all"
+                  placeholder="Buscar por DNI, Nombre o Código de Seguimiento..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
-              <input
-                type="text"
-                className="block w-full pl-10 pr-3 py-2.5 bg-[#f8f9fc] border border-slate-200/60 rounded-xl focus:border-[#f07639]/30 focus:bg-white text-[13px] font-semibold text-slate-700 placeholder-slate-400 outline-none transition-all"
-                placeholder="Buscar por DNI o Código de Seguimiento..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="w-full sm:w-64">
-              <select
-                value={filterEstado}
-                onChange={(e) => setFilterEstado(e.target.value)}
-                className="block w-full px-4 py-2.5 bg-[#f8f9fc] border border-slate-200/60 rounded-xl focus:border-[#f07639]/30 focus:bg-white text-[13px] font-semibold text-slate-700 outline-none transition-all appearance-none cursor-pointer"
+              <div className="w-full sm:w-64">
+                <select
+                  value={filterEstado}
+                  onChange={(e) => setFilterEstado(e.target.value)}
+                  className="block w-full px-4 py-2.5 bg-[#f8f9fc] border border-slate-200/60 rounded-xl focus:border-[#f07639]/30 focus:bg-white text-[13px] font-semibold text-slate-700 outline-none transition-all cursor-pointer"
+                >
+                  <option value="todos">Todos los estados</option>
+                  <option value="recepcionado">Recepcionados</option>
+                  <option value="en_transito">En Tránsito</option>
+                  <option value="listo_para_recojo">Listos para Recojo</option>
+                  <option value="entregado">Entregados</option>
+                </select>
+              </div>
+              <button
+                onClick={() => setMostrarFiltros(!mostrarFiltros)}
+                className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border text-[13px] font-bold transition-all ${
+                  mostrarFiltros || hayFiltrosActivos
+                    ? "bg-[#f07639] text-white border-[#f07639]"
+                    : "border-slate-200 text-slate-600 hover:border-[#f07639] hover:text-[#f07639] bg-[#f8f9fc]"
+                }`}
               >
-                <option value="todos">Todos los estados</option>
-                <option value="recepcionado">Recepcionados</option>
-                <option value="en_transito">En Tránsito</option>
-                <option value="listo_para_recojo">Listos para Recojo</option>
-                <option value="entregado">Entregados</option>
-              </select>
+                <Filter className="w-4 h-4" />
+                Filtros
+                {hayFiltrosActivos && (
+                  <span className="bg-white text-[#f07639] rounded-full w-5 h-5 flex items-center justify-center text-[10px] font-black">
+                    {[searchTerm, filterEstado !== "todos", filterOrigen !== "todos", filterDestino !== "todos", filterFecha, filterViajeAsignado !== "todos"].filter(Boolean).length}
+                  </span>
+                )}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${mostrarFiltros ? "rotate-180" : ""}`} />
+              </button>
+              {hayFiltrosActivos && (
+                <button
+                  onClick={limpiarFiltros}
+                  className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl border border-red-200 text-red-500 text-[13px] font-bold hover:bg-red-50 transition-all cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                  Limpiar
+                </button>
+              )}
             </div>
+
+            {/* Filtros expandidos */}
+            {mostrarFiltros && (
+              <div className="px-4 pb-4 pt-0 border-t border-slate-50 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-[#f8f9fc]/40">
+                {/* Filtro Origen */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Sucursal Origen</label>
+                  <select
+                    value={filterOrigen}
+                    onChange={(e) => setFilterOrigen(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-xl text-xs font-semibold text-slate-700 outline-none transition-all cursor-pointer"
+                  >
+                    <option value="todos">Todas las sucursales</option>
+                    {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                  </select>
+                </div>
+
+                {/* Filtro Destino */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Sucursal Destino</label>
+                  <select
+                    value={filterDestino}
+                    onChange={(e) => setFilterDestino(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-xl text-xs font-semibold text-slate-700 outline-none transition-all cursor-pointer"
+                  >
+                    <option value="todos">Todas las sucursales</option>
+                    {sucursales.map(s => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                  </select>
+                </div>
+
+                {/* Filtro Fecha */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Fecha de Envío</label>
+                  <input
+                    type="date"
+                    value={filterFecha}
+                    onChange={(e) => setFilterFecha(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-xl text-xs font-semibold text-slate-700 outline-none transition-all"
+                  />
+                </div>
+
+                {/* Filtro Viaje Asignado */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-wider block">Asignación de Viaje</label>
+                  <select
+                    value={filterViajeAsignado}
+                    onChange={(e) => setFilterViajeAsignado(e.target.value)}
+                    className="w-full px-3 py-2 bg-white border border-slate-200/60 rounded-xl text-xs font-semibold text-slate-700 outline-none transition-all cursor-pointer"
+                  >
+                    <option value="todos">Todos</option>
+                    <option value="sin_viaje">Sin viaje asignado</option>
+                    <option value="con_viaje">Con viaje asignado</option>
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden">
@@ -242,6 +367,8 @@ export default function EncomiendaClient({
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Código / Fecha</th>
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Ruta</th>
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Remitente / Destinatario</th>
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Bus</th>
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Conductor</th>
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Estado</th>
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right">Acciones</th>
               </tr>
@@ -274,11 +401,32 @@ export default function EncomiendaClient({
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
+                      {enc.viaje ? (
+                        <span className="inline-flex items-center gap-1.5 bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-100 text-xs font-bold text-slate-600">
+                          <Truck className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          {enc.viaje.bus.placa}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {enc.viaje?.conductor ? (
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 leading-tight">
+                            {enc.viaje.conductor.nombres}
+                          </p>
+                          <p className="text-xs text-slate-400 leading-none mt-0.5">
+                            {enc.viaje.conductor.apellidos}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-center">
                       <div className="flex flex-col items-center justify-center space-y-1">
                         {getStatusBadge(enc.estado)}
-                        {enc.viaje && (
-                          <span className="text-[10px] text-gray-500">Bus: {enc.viaje.bus.placa}</span>
-                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -313,7 +461,7 @@ export default function EncomiendaClient({
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                     No se encontraron encomiendas.
                   </td>
                 </tr>
