@@ -1024,12 +1024,27 @@ export default function PasajesClient({ initialSucursales, userRole }: { initial
                               <input 
                                 type="text" maxLength={15}
                                 value={pasajero.dni} 
-                                onChange={(e) => {
+                               onChange={(e) => {
                                   const val = e.target.value;
                                   if (val.length < 8) {
                                     setPasajero(prev => ({...prev, dni: val, nombres: "", apellidos: ""}));
                                   } else {
                                     setPasajero(prev => ({...prev, dni: val}));
+                                    if (val.length === 8) {
+                                      (async () => {
+                                        setIsSearchingDni(true);
+                                        const res = await buscarPasajeroPorDni(val);
+                                        if (res.success && res.data) {
+                                          setPasajero(prev => ({
+                                            ...prev,
+                                            nombres: res.data.nombres || "",
+                                            apellidos: res.data.apellidos || "",
+                                            telefono: res.data.telefono || ""
+                                          }));
+                                        }
+                                        setIsSearchingDni(false);
+                                      })();
+                                    }
                                   }
                                 }}
                                 onBlur={handleDniBlur}

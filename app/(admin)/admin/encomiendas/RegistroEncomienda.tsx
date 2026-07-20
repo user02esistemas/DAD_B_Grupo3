@@ -163,7 +163,13 @@ export default function RegistroEncomienda({
                     type="text" required maxLength={8}
                     className="flex-1 px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#f07639] outline-none"
                     value={remitente.dni} 
-                    onChange={(e) => setRemitente({...remitente, dni: e.target.value})}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setRemitente({...remitente, dni: val});
+                      if (val.length === 8) {
+                        buscarPersona(val, 'remitente');
+                      }
+                    }}
                   />
                   <button type="button" onClick={() => buscarPersona(remitente.dni, 'remitente')} className="bg-gray-200 p-2 rounded-xl hover:bg-gray-300 transition-colors">
                     {isLoadingRemitente ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
@@ -204,7 +210,13 @@ export default function RegistroEncomienda({
                     type="text" required maxLength={8}
                     className="flex-1 px-4 py-2 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#f07639] outline-none"
                     value={destinatario.dni} 
-                    onChange={(e) => setDestinatario({...destinatario, dni: e.target.value})}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setDestinatario({...destinatario, dni: val});
+                      if (val.length === 8) {
+                        buscarPersona(val, 'destinatario');
+                      }
+                    }}
                   />
                   <button type="button" onClick={() => buscarPersona(destinatario.dni, 'destinatario')} className="bg-gray-200 p-2 rounded-xl hover:bg-gray-300 transition-colors">
                     {isLoadingDestinatario ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
