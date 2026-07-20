@@ -48,8 +48,12 @@ function LoginContent() {
         setIsLoading(false);
       } else {
         const session = await getSession();
-        if (session?.user?.role === "admin" || session?.user?.role === "operario") {
+        const role = session?.user?.role;
+        
+        if (["admin", "operario", "gerente", "vendedor"].includes(role as string)) {
           window.location.href = "/admin";
+        } else if (role === "conductor") {
+          window.location.href = "/admin/conductor";
         } else {
           // Validar que la redirección sea local y segura para evitar Open Redirect
           const isSafeUrl = callbackUrl.startsWith("/") && !callbackUrl.startsWith("//");
