@@ -358,9 +358,38 @@ export async function getClienteProfile(email: string) {
       dni: pasaje.pasajero.dni,
     }));
 
+    const encomiendasBrutas = await prisma.encomienda.findMany({
+      where: {
+        OR: [
+          { remitente_id: usuario.persona_id },
+          { destinatario_id: usuario.persona_id },
+        ],
+      },
+      include: {
+        remitente: true,
+        destinatario: true,
+        origen: true,
+        destino: true,
+        viaje: {
+          include: {
+            ruta: {
+              include: {
+                origen: true,
+                destino: true,
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+
     return serializeBigInt({
       ...usuario,
       pasajes: pasajesMapeados,
+      encomiendas: encomiendasBrutas,
     });
   } catch (error) {
     console.error("Error al obtener perfil de cliente:", error);

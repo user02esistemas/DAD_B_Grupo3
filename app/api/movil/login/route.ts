@@ -41,10 +41,10 @@ export async function POST(req: Request) {
     }
 
     // 3. Restricción de Rol
-    const rolPermitido = user.rol === "conductor" || user.rol === "operario" || user.rol === "operador";
+    const rolPermitido = user.rol === "conductor" || user.rol === "operario" || user.rol === "operador" || user.rol === "cliente";
     if (!rolPermitido) {
       return NextResponse.json(
-        { error: "Acceso no autorizado para esta aplicación. Requiere rol de conductor u operador." },
+        { error: "Acceso no autorizado para esta aplicación." },
         { status: 403 }
       );
     }
