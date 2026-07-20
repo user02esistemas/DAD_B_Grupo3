@@ -89,10 +89,9 @@ export default function LoginScreen({ navigation }: Props) {
           navigation.replace('OperadorDashboard');
         } else if (data.user.rol === 'conductor') {
           navigation.replace('ConductorDashboard');
-        } else if (data.user.rol === 'cliente') {
-          navigation.replace('ClienteDashboard');
         } else {
-          setErrorMsg('Rol no soportado por esta aplicación.');
+          // Clientes, Admins, Gerentes y Vendedores caen por defecto al panel general (ClienteDashboard)
+          navigation.replace('ClienteDashboard');
         }
       } else {
         setErrorMsg(data.error || 'Credenciales incorrectas o acceso denegado.');

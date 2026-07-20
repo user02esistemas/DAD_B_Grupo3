@@ -34,8 +34,8 @@ interface Props {
   navigation: ClienteDashboardNavigationProp;
 }
 
-export default function ClienteDashboardScreen({ navigation }: Props) {
-  let activeTab = 'buscar';
+export default function SeguimientoScreen({ navigation }: Props) {
+  let activeTab = 'encomiendas';
   const [user, setUser] = useState<any>(null);
   const [originalRole, setOriginalRole] = useState<string>('cliente');
 
@@ -1462,3 +1462,4 @@ const styles = StyleSheet.create({
     color: '#10b981',
   }
 });
+

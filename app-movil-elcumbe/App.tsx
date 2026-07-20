@@ -8,10 +8,14 @@ import OperadorDashboardScreen from './src/screens/OperadorDashboardScreen';
 import ConductorDashboardScreen from './src/screens/ConductorDashboardScreen';
 import QRScannerScreen from './src/screens/QRScannerScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
-import ClienteDashboardScreen from './src/screens/ClienteDashboardScreen';
+import ClienteTabNavigator from './src/navigation/ClienteTabNavigator';
 import BusSeatSelectionScreen from './src/screens/BusSeatSelectionScreen';
 import PassengerFormScreen from './src/screens/PassengerFormScreen';
 import PaymentScreen from './src/screens/PaymentScreen';
+import PerfilScreen from './src/screens/PerfilScreen';
+import ReclamacionesScreen from './src/screens/ReclamacionesScreen';
+import QuienesSomosScreen from './src/screens/QuienesSomosScreen';
+import AyudaScreen from './src/screens/AyudaScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -23,6 +27,10 @@ export type RootStackParamList = {
   BusSeatSelection: { tripId: string; price: number; busDetails: any };
   PassengerForm: { tripId: string; selectedSeats: any[]; price: number; guestToken: string };
   Payment: { tripId: string; asientosPasajeros: any[]; amount: number; guestToken: string };
+  Perfil: undefined;
+  Reclamaciones: undefined;
+  QuienesSomos: undefined;
+  Ayuda: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -43,10 +51,14 @@ export default function App() {
         <Stack.Screen name="ConductorDashboard" component={ConductorDashboardScreen} />
         <Stack.Screen name="QRScanner" component={QRScannerScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="ClienteDashboard" component={ClienteDashboardScreen} />
+        <Stack.Screen name="ClienteDashboard" component={ClienteTabNavigator} />
         <Stack.Screen name="BusSeatSelection" component={BusSeatSelectionScreen} />
         <Stack.Screen name="PassengerForm" component={PassengerFormScreen} />
         <Stack.Screen name="Payment" component={PaymentScreen} />
+        <Stack.Screen name="Perfil" component={PerfilScreen} />
+        <Stack.Screen name="Reclamaciones" component={ReclamacionesScreen} />
+        <Stack.Screen name="QuienesSomos" component={QuienesSomosScreen} />
+        <Stack.Screen name="Ayuda" component={AyudaScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

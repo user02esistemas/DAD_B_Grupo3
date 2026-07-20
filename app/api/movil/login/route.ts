@@ -40,14 +40,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 3. Restricción de Rol
-    const rolPermitido = user.rol === "conductor" || user.rol === "operario" || user.rol === "operador" || user.rol === "cliente";
-    if (!rolPermitido) {
-      return NextResponse.json(
-        { error: "Acceso no autorizado para esta aplicación." },
-        { status: 403 }
-      );
-    }
+    // 3. La app móvil ahora permite a todos los roles loguearse
 
     // 4. Generar respuesta exitosa
     const fullName = `${user.persona.nombres} ${user.persona.apellidos}`.trim();
