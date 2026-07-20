@@ -283,18 +283,21 @@ export default function EncomiendaClient({
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end items-center gap-2">
-                        {enc.estado === 'recepcionado' && (
-                          <button
-                            onClick={() => {
-                              setEditingEncomienda(enc);
-                              setView("registro");
-                            }}
-                            className="inline-flex items-center px-3 py-1.5 bg-orange-50 hover:bg-orange-100 text-[#f07639] border border-orange-200/40 text-sm font-bold rounded-lg transition-colors cursor-pointer"
-                          >
-                            <Edit2 className="w-4 h-4 mr-1.5" />
-                            Editar
-                          </button>
-                        )}
+                        <button
+                          disabled={enc.estado !== 'recepcionado'}
+                          onClick={() => {
+                            setEditingEncomienda(enc);
+                            setView("registro");
+                          }}
+                          className={`inline-flex items-center px-3 py-1.5 text-sm font-bold rounded-lg transition-colors border ${
+                            enc.estado === 'recepcionado'
+                              ? "bg-orange-50 hover:bg-orange-100 text-[#f07639] border-orange-200/40 cursor-pointer"
+                              : "bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-50"
+                          }`}
+                        >
+                          <Edit2 className="w-4 h-4 mr-1.5" />
+                          Editar
+                        </button>
                         {enc.estado !== 'entregado' && (
                           <button
                             onClick={() => handleOpenModal(enc)}
