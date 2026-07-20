@@ -262,7 +262,7 @@ export async function reportarFallaMecanicaDirecta(data: { conductor_id: number,
   }
 }
 
-export async function registrarOcurrenciaRuta(data: { viaje_id: number, conductor_id: number, tipo: string, gravedad: string, descripcion: string, retraso_minutos: number }) {
+export async function registrarOcurrenciaRuta(data: { viaje_id: number, conductor_id: number, tipo: string, gravedad: string, descripcion: string, retraso_minutos: number, foto_url?: string }) {
   try {
     await requireTripAccess(data.viaje_id);
     await requireConductorOwner(data.conductor_id);
@@ -274,7 +274,8 @@ export async function registrarOcurrenciaRuta(data: { viaje_id: number, conducto
         tipo: data.tipo,
         gravedad: data.gravedad,
         descripcion: data.descripcion,
-        retraso_minutos: data.retraso_minutos
+        retraso_minutos: data.retraso_minutos,
+        foto_url: data.foto_url || null
       }
     });
 

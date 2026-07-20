@@ -338,6 +338,7 @@ model BitacoraViaje {
   retraso_minutos Int       @default(0)
   solucionado     Boolean   @default(false)
   fecha_solucion  DateTime?
+  foto_url        String?
   created_at      DateTime? @default(now())
   updated_at      DateTime? @default(now())
 

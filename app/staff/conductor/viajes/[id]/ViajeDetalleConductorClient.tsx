@@ -126,6 +126,7 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
 
   // Estados para foto evidencia de gastos
   const [fotoBase64, setFotoBase64] = useState<string>("");
+  const [novedadFotoBase64, setNovedadFotoBase64] = useState<string>("");
   const [previewFoto, setPreviewFoto] = useState<string | null>(null);
 
   // Estados de carga de Google Maps
@@ -704,12 +705,14 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
         gravedad: novedadForm.gravedad,
         descripcion: `${novedadForm.descripcion} (Local/Pendiente)`,
         retraso_minutos: 0,
+        foto_url: novedadFotoBase64 || null,
         created_at: new Date().toISOString()
       };
       const updatedLocalNovedades = [...localNovedades, nuevaNovedadLocal];
       setLocalNovedades(updatedLocalNovedades);
       localStorage.setItem(`queued_novedades_${viaje.id}`, JSON.stringify(updatedLocalNovedades));
       setNovedadForm({ tipo: "Tránsito", gravedad: "Baja", descripcion: "", retraso_minutos: "0" });
+      setNovedadFotoBase64("");
       showAlert("Ocurrencia guardada localmente. Se sincronizará al conectar señal.", "info");
       setIsUpdating(false);
     } else {
@@ -720,10 +723,12 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
         tipo: novedadForm.tipo,
         gravedad: novedadForm.gravedad,
         descripcion: novedadForm.descripcion,
-        retraso_minutos: 0
+        retraso_minutos: 0,
+        foto_url: novedadFotoBase64 || undefined
       });
       if (res.success) {
         setNovedadForm({ tipo: "Tránsito", gravedad: "Baja", descripcion: "", retraso_minutos: "0" });
+        setNovedadFotoBase64("");
         router.refresh();
         showAlert("Incidente de bitácora registrado con éxito.", "exito");
       } else {
@@ -1382,7 +1387,51 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
                 />
               </div>
 
-              <button disabled={isUpdating} type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold flex justify-center items-center transition-colors">
+              <div className="mb-4 w-full sm:w-auto flex flex-col items-start">
+                <label className="block text-xs font-bold text-slate-500 mb-1 flex items-center gap-1">
+                  <Camera className="w-3.5 h-3.5 text-[#f07639]" /> Tomar Foto Evidencia (Opcional)
+                </label>
+                <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-[#f07639]/50 transition-colors h-[38px] text-xs font-bold text-slate-600">
+                  <Camera className="w-4 h-4 text-slate-400" />
+                  <span>{novedadFotoBase64 ? "Foto Capturada ✓" : "Tomar Foto"}</span>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    capture="environment"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setNovedadFotoBase64(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+                
+                {novedadFotoBase64 && (
+                  <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 w-fit mt-3">
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+                      <img src={novedadFotoBase64} alt="Vista previa de novedad" className="w-full h-full object-cover" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-xs font-bold text-slate-700">Evidencia capturada</p>
+                      <button 
+                        type="button" 
+                        onClick={() => setNovedadFotoBase64("")}
+                        className="text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-wider block mt-0.5"
+                      >
+                        Eliminar Foto
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <button disabled={isUpdating} type="submit" className="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold flex justify-center items-center transition-colors cursor-pointer">
                 <ClipboardList className="w-5 h-5 mr-2" /> Registrar en Bitácora
               </button>
             </form>
@@ -1391,41 +1440,61 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
               <h3 className="text-sm font-bold text-slate-500">Historial de la Bitácora</h3>
               {allNovedades.map((n: any) => (
                 <div key={n.id} className="p-4 rounded-xl border border-slate-100 bg-slate-50 flex justify-between items-start gap-4">
-                  <div className="space-y-1 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="inline-block px-2 py-0.5 rounded bg-slate-200 text-[10px] font-bold text-slate-600 uppercase">{n.tipo}</span>
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        n.gravedad === 'Alta' 
-                          ? 'bg-red-100 text-red-700' 
-                          : n.gravedad === 'Media' 
-                          ? 'bg-amber-100 text-amber-700' 
-                          : 'bg-slate-100 text-slate-600'
-                      }`}>{n.gravedad}</span>
-                      {Number(n.retraso_minutos) > 0 && (
-                        <span className="inline-block px-2 py-0.5 rounded bg-red-50 border border-red-100 text-[10px] font-extrabold text-red-600">
-                          Retraso: +{n.retraso_minutos} min
-                        </span>
-                      )}
-                      {n.solucionado ? (
-                        <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 border border-emerald-200 text-[10px] font-extrabold text-emerald-700">
-                          ✓ SOLUCIONADO
-                        </span>
-                      ) : (
-                        <span className="inline-block px-2 py-0.5 rounded bg-amber-100 border border-amber-200 text-[10px] font-extrabold text-amber-800">
-                          ⚠ EN CURSO
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-sm font-medium text-slate-700">{n.descripcion}</p>
-                    <div className="text-[10px] text-slate-400 font-bold space-y-0.5">
-                      <p>Reportado: {n.created_at ? new Date(n.created_at).toLocaleString() : "Fecha no disponible"}</p>
-                      {n.solucionado && n.fecha_solucion && (
-                        <p className="text-emerald-600">Solucionado: {new Date(n.fecha_solucion).toLocaleString()}</p>
-                      )}
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    {n.foto_url && (
+                      <button 
+                        onClick={() => setPreviewFoto(n.foto_url)}
+                        className="w-12 h-12 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 hover:scale-105 transition-transform flex items-center justify-center text-slate-400 hover:text-[#f07639] shrink-0 group cursor-pointer"
+                        title="Ver evidencia del incidente"
+                      >
+                        <img src={n.foto_url} alt="Evidencia" className="w-full h-full object-cover group-hover:opacity-85" />
+                      </button>
+                    )}
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <span className="inline-block px-2 py-0.5 rounded bg-slate-200 text-[10px] font-bold text-slate-600 uppercase">{n.tipo}</span>
+                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                          n.gravedad === 'Alta' 
+                            ? 'bg-red-100 text-red-700' 
+                            : n.gravedad === 'Media' 
+                            ? 'bg-amber-100 text-amber-700' 
+                            : 'bg-slate-100 text-slate-600'
+                        }`}>{n.gravedad}</span>
+                        {Number(n.retraso_minutos) > 0 && (
+                          <span className="inline-block px-2 py-0.5 rounded bg-red-50 border border-red-100 text-[10px] font-extrabold text-red-600">
+                            Retraso: +{n.retraso_minutos} min
+                          </span>
+                        )}
+                        {n.solucionado ? (
+                          <span className="inline-block px-2 py-0.5 rounded bg-emerald-100 border border-emerald-200 text-[10px] font-extrabold text-emerald-700">
+                            ✓ SOLUCIONADO
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2 py-0.5 rounded bg-amber-100 border border-amber-200 text-[10px] font-extrabold text-amber-800">
+                            ⚠ EN CURSO
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-medium text-slate-700 break-words">{n.descripcion}</p>
+                      <div className="text-[10px] text-slate-400 font-bold space-y-0.5">
+                        <p>Reportado: {n.created_at ? new Date(n.created_at).toLocaleString() : "Fecha no disponible"}</p>
+                        {n.solucionado && n.fecha_solucion && (
+                          <p className="text-emerald-600">Solucionado: {new Date(n.fecha_solucion).toLocaleString()}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
                   
                   <div className="flex items-center gap-2 shrink-0">
+                    {n.foto_url && (
+                      <button
+                        onClick={() => setPreviewFoto(n.foto_url)}
+                        className="text-slate-450 hover:text-[#f07639] p-1.5 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                        title="Ver evidencia"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    )}
                     {!n.solucionado && (
                       <button
                         disabled={isUpdating}
