@@ -82,7 +82,7 @@ export async function updateEstadoViaje(viajeId: number, estado: string) {
   }
 }
 
-export async function registrarGasto(data: { viaje_id: number, conductor_id: number, concepto: string, monto: number }) {
+export async function registrarGasto(data: { viaje_id: number, conductor_id: number, concepto: string, monto: number, foto_url?: string }) {
   try {
     await requireTripAccess(data.viaje_id);
     await requireConductorOwner(data.conductor_id);
@@ -91,7 +91,8 @@ export async function registrarGasto(data: { viaje_id: number, conductor_id: num
         viaje_id: data.viaje_id,
         conductor_id: data.conductor_id,
         concepto: data.concepto,
-        monto: data.monto
+        monto: data.monto,
+        foto_url: data.foto_url || null
       }
     });
     revalidatePath("/admin/conductor/viajes");

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { updateEstadoViaje, registrarGasto, registrarOcurrenciaRuta, marcarAlertaLeida, eliminarGasto, eliminarBitacora, resolverIncidente } from "@/app/(admin)/actions/conductor";
-import { ArrowLeft, MapPin, Bus, Clock, Box, Play, CheckCircle, Receipt, Wrench, AlertCircle, Wifi, WifiOff, Navigation, ClipboardList, Trash2, CheckSquare } from "lucide-react";
+import { ArrowLeft, MapPin, Bus, Clock, Box, Play, CheckCircle, Receipt, Wrench, AlertCircle, Wifi, WifiOff, Navigation, ClipboardList, Trash2, CheckSquare, Camera, Eye, Image, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -123,6 +123,10 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
   const [currentCoords, setCurrentCoords] = useState<StopCoords | null>(null);
   const [gpsStatus, setGpsStatus] = useState<"inactivo" | "activo" | "error">("inactivo");
   const [lastNotification, setLastNotification] = useState<string | null>(null);
+
+  // Estados para foto evidencia de gastos
+  const [fotoBase64, setFotoBase64] = useState<string>("");
+  const [previewFoto, setPreviewFoto] = useState<string | null>(null);
 
   // Estados de carga de Google Maps
   const [googleMapsLoaded, setGoogleMapsLoaded] = useState(false);
@@ -656,12 +660,14 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
         id: `local-g_${Date.now()}`,
         concepto: `${gastoForm.concepto} (Local/Pendiente)`,
         monto: Number(gastoForm.monto),
+        foto_url: fotoBase64 || null,
         fecha: new Date().toISOString()
       };
       const updatedLocalGastos = [...localGastos, nuevoGastoLocal];
       setLocalGastos(updatedLocalGastos);
       localStorage.setItem(`queued_gastos_${viaje.id}`, JSON.stringify(updatedLocalGastos));
       setGastoForm({ concepto: "", monto: "" });
+      setFotoBase64("");
       showAlert("Gasto guardado localmente. Se sincronizará cuando recuperes señal.", "info");
       setIsUpdating(false);
     } else {
@@ -670,10 +676,12 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
         viaje_id: viaje.id,
         conductor_id: conductorId,
         concepto: gastoForm.concepto,
-        monto: Number(gastoForm.monto)
+        monto: Number(gastoForm.monto),
+        foto_url: fotoBase64 || undefined
       });
       if (res.success) {
         setGastoForm({ concepto: "", monto: "" });
+        setFotoBase64("");
         router.refresh();
         showAlert("Gasto registrado con éxito.", "exito");
       } else {
@@ -1184,45 +1192,114 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
           <div>
             <h2 className="text-lg font-bold text-slate-800 mb-4">Reporte de Peajes y Gastos</h2>
             
-            <form onSubmit={handleGuardarGasto} className="bg-slate-50 p-5 rounded-2xl border border-slate-100 mb-6 flex flex-col sm:flex-row gap-3 items-end">
-              <div className="flex-1 w-full">
-                <label className="block text-xs font-bold text-slate-500 mb-1">Concepto</label>
-                <input 
-                  type="text" 
-                  placeholder="Ej. Peaje Chicama"
-                  required
-                  value={gastoForm.concepto}
-                  onChange={(e) => setGastoForm({...gastoForm, concepto: e.target.value})}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#f07639] bg-white text-sm"
-                />
+            <form onSubmit={handleGuardarGasto} className="bg-slate-50 p-5 rounded-2xl border border-slate-100 mb-6 space-y-4">
+              <div className="flex flex-col sm:flex-row gap-3 items-end">
+                <div className="flex-1 w-full">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Concepto</label>
+                  <input 
+                    type="text" 
+                    placeholder="Ej. Peaje Chicama"
+                    required
+                    value={gastoForm.concepto}
+                    onChange={(e) => setGastoForm({...gastoForm, concepto: e.target.value})}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#f07639] bg-white text-sm"
+                  />
+                </div>
+                <div className="w-full sm:w-32">
+                  <label className="block text-xs font-bold text-slate-500 mb-1">Monto (S/)</label>
+                  <input 
+                    type="number" 
+                    step="0.1"
+                    required
+                    placeholder="15.50"
+                    value={gastoForm.monto}
+                    onChange={(e) => setGastoForm({...gastoForm, monto: e.target.value})}
+                    className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#f07639] bg-white text-sm"
+                  />
+                </div>
+                <div className="w-full sm:w-auto flex flex-col">
+                  <label className="block text-xs font-bold text-slate-500 mb-1 flex items-center gap-1">
+                    <Camera className="w-3.5 h-3.5 text-[#f07639]" /> Tomar Foto Evidencia
+                  </label>
+                  <label className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl cursor-pointer hover:border-[#f07639]/50 transition-colors h-[38px] text-xs font-bold text-slate-600">
+                    <Camera className="w-4 h-4 text-slate-400" />
+                    <span>{fotoBase64 ? "Foto Capturada ✓" : "Tomar Foto"}</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            setFotoBase64(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+                <button disabled={isUpdating} type="submit" className="bg-[#f07639] hover:bg-[#e06528] text-white px-6 py-2 rounded-xl font-bold h-[38px] w-full sm:w-auto transition-colors cursor-pointer">
+                  Agregar
+                </button>
               </div>
-              <div className="w-full sm:w-32">
-                <label className="block text-xs font-bold text-slate-500 mb-1">Monto (S/)</label>
-                <input 
-                  type="number" 
-                  step="0.1"
-                  required
-                  placeholder="15.50"
-                  value={gastoForm.monto}
-                  onChange={(e) => setGastoForm({...gastoForm, monto: e.target.value})}
-                  className="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#f07639] bg-white text-sm"
-                />
-              </div>
-              <button disabled={isUpdating} type="submit" className="bg-[#f07639] hover:bg-[#e06528] text-white px-6 py-2 rounded-xl font-bold h-[42px] w-full sm:w-auto transition-colors">
-                Agregar
-              </button>
+
+              {fotoBase64 && (
+                <div className="flex items-center gap-3 bg-white p-3 rounded-xl border border-slate-100 w-fit">
+                  <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0">
+                    <img src={fotoBase64} alt="Vista previa de evidencia" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-xs font-bold text-slate-700">Evidencia capturada</p>
+                    <button 
+                      type="button" 
+                      onClick={() => setFotoBase64("")}
+                      className="text-[10px] font-black text-red-500 hover:text-red-700 uppercase tracking-wider block mt-0.5"
+                    >
+                      Eliminar Foto
+                    </button>
+                  </div>
+                </div>
+              )}
             </form>
 
             <div className="space-y-2">
               {allGastos.map((g: any) => (
                 <div key={g.id} className="flex justify-between items-center p-3 border-b border-slate-100 text-sm">
-                  <span className="font-medium text-slate-700">{g.concepto}</span>
+                  <div className="flex items-center gap-3">
+                    {g.foto_url ? (
+                      <button 
+                        onClick={() => setPreviewFoto(g.foto_url)}
+                        className="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-100 hover:scale-105 transition-transform flex items-center justify-center text-slate-400 hover:text-[#f07639] shrink-0 group cursor-pointer"
+                        title="Ver foto de evidencia"
+                      >
+                        <img src={g.foto_url} alt="Evidencia" className="w-full h-full object-cover group-hover:opacity-85" />
+                      </button>
+                    ) : (
+                      <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400 shrink-0">
+                        <Receipt className="w-5 h-5 opacity-60" />
+                      </div>
+                    )}
+                    <span className="font-medium text-slate-700">{g.concepto}</span>
+                  </div>
                   <div className="flex items-center gap-4">
                     <span className="font-bold text-slate-900">S/ {Number(g.monto).toFixed(2)}</span>
+                    {g.foto_url && (
+                      <button
+                        onClick={() => setPreviewFoto(g.foto_url)}
+                        className="text-slate-450 hover:text-[#f07639] p-1.5 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer"
+                        title="Ver evidencia"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    )}
                     <button
                       disabled={isUpdating}
                       onClick={() => handleEliminarGastoClient(g.id)}
-                      className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-50 transition-colors"
+                      className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
                       title="Eliminar gasto"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -1233,6 +1310,26 @@ export default function ViajeDetalleConductorClient({ viaje, conductorId }: { vi
               {allGastos.length === 0 && (
                 <p className="text-slate-400 text-sm text-center py-4">No has registrado gastos aún.</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Vista Previa de Evidencia */}
+        {previewFoto && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+            <div className="relative bg-white rounded-3xl p-5 max-w-lg w-full overflow-hidden shadow-2xl flex flex-col items-center">
+              <button 
+                onClick={() => setPreviewFoto(null)} 
+                className="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-full transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <h3 className="text-base font-bold text-slate-800 mb-3 pr-8 w-full text-left flex items-center gap-1.5">
+                <Receipt className="w-5 h-5 text-[#f07639]" /> Evidencia de Gasto
+              </h3>
+              <div className="w-full rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center min-h-[300px] max-h-[70vh]">
+                <img src={previewFoto} alt="Evidencia de peaje" className="w-full max-h-[70vh] object-contain" />
+              </div>
             </div>
           </div>
         )}
