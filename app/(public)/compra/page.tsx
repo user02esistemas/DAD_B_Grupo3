@@ -976,7 +976,7 @@ function CompraContent() {
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              const imgs = trip.bus.imagenes.split(",").map((i: string) => i.trim()).filter((i: string) => i !== "");
+                              const imgs = trip.bus.imagenes.split(",").map((i: string) => i.trim()).filter((i: string) => i !== "").map((i: string) => i.startsWith("http") || i.startsWith("/") ? i : `/${i}`);
                               if (imgs.length > 0) {
                                 setBusImages(imgs);
                                 setCurrentImageIndex(0);
