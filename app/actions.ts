@@ -711,6 +711,18 @@ export async function venderPasajePresencial(
         data: { estado: "vendido" },
       });
 
+      // Validar que el pasajero no tenga otro pasaje para el mismo viaje
+      const pasajeExistente = await tx.pasaje.findFirst({
+        where: {
+          pasajero: { dni: clienteDni },
+          asiento_viaje: { viaje_id: seat.viaje_id }
+        }
+      });
+
+      if (pasajeExistente) {
+        throw new Error(`El pasajero con DNI ${clienteDni} ya tiene un pasaje registrado para este viaje.`);
+      }
+
       const persona = await tx.persona.upsert({
         where: { dni: clienteDni },
         create: {
@@ -1318,6 +1330,18 @@ export async function procesarPagoMultiplesAsientosCulqi(
             bloqueado_por_token: null,
           },
         });
+
+        // Validar que el pasajero no tenga otro pasaje para el mismo viaje
+        const pasajeExistente = await tx.pasaje.findFirst({
+          where: {
+            pasajero: { dni: item.pasajeroData.dni },
+            asiento_viaje: { viaje_id: BigInt(viajeId) }
+          }
+        });
+
+        if (pasajeExistente) {
+          throw new Error(`El pasajero con DNI ${item.pasajeroData.dni} ya tiene un pasaje registrado para este viaje.`);
+        }
 
         const persona = await tx.persona.upsert({
           where: { dni: item.pasajeroData.dni },

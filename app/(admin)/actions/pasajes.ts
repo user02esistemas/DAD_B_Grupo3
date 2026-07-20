@@ -139,6 +139,18 @@ export async function venderPasaje(data: {
         throw new Error("Ups, el asiento acaba de ser ocupado por otro canal u otra ventanilla. Intenta con otro asiento.");
       }
 
+      // Validar que el pasajero no tenga otro pasaje para el mismo viaje
+      const pasajeExistente = await tx.pasaje.findFirst({
+        where: {
+          pasajero: { dni: data.pasajero.dni },
+          asiento_viaje: { viaje_id: vId }
+        }
+      });
+
+      if (pasajeExistente) {
+        throw new Error(`El pasajero con DNI ${data.pasajero.dni} ya tiene un pasaje registrado para este viaje.`);
+      }
+
       // 4. Buscar a la persona por DNI y crearla si no existe (upsert)
       const persona = await tx.persona.upsert({
         where: { dni: data.pasajero.dni },
