@@ -605,3 +605,66 @@ a:not([class]):hover {
 .dark .panel-shell textarea {
   color-scheme: dark;
 }
+
+/* ===== COMPACT SIDEBAR - Always on (matches 90% zoom appearance at 100% zoom) ===== */
+
+/* Logo Area spacing */
+.admin-sidebar-logo {
+  padding-top: 0.625rem !important; /* pt-2.5 */
+  padding-bottom: 0.5rem !important; /* pb-2 */
+}
+.admin-sidebar-logo img {
+  height: 2.25rem !important; /* h-9 */
+}
+.admin-sidebar-logo span {
+  margin-top: 0.25rem !important; /* mt-1 */
+}
+
+/* Section margins */
+.admin-sidebar-section {
+  margin-bottom: 0.625rem !important; /* mb-2.5 */
+}
+.admin-sidebar-section-header {
+  margin-bottom: 0.25rem !important; /* mb-1 */
+}
+
+/* Link items padding and height */
+.admin-sidebar-link {
+  padding-top: 0.25rem !important; /* py-1 */
+  padding-bottom: 0.25rem !important;
+  padding-left: 0.625rem !important;
+  padding-right: 0.625rem !important;
+  border-radius: 0.5rem !important;
+}
+.admin-sidebar-icon {
+  width: 1.75rem !important; /* w-7 */
+  height: 1.75rem !important; /* h-7 */
+  margin-right: 0.5rem !important;
+}
+.admin-sidebar-icon svg {
+  width: 0.875rem !important; /* 14px */
+  height: 0.875rem !important;
+}
+.admin-sidebar-text {
+  font-size: 0.75rem !important; /* text-xs = 12px */
+}
+
+/* Section header labels */
+.admin-sidebar-section-header span {
+  font-size: 0.65rem !important;
+}
+
+/* Styled thin scrollbar for admin sidebar nav */
+.admin-sidebar-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.admin-sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+.admin-sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+.admin-sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}

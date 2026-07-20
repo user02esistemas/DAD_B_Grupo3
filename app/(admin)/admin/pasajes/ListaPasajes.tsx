@@ -310,7 +310,11 @@ export default function ListaPasajes({ sucursales }: { sucursales: Sucursal[] })
       {/* Modal de Detalle del Ticket */}
       {mounted && selectedTicket && createPortal(
         <div 
-          onClick={() => setSelectedTicket(null)}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedTicket(null);
+            }
+          }}
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
         >
           <div 
@@ -393,7 +397,11 @@ export default function ListaPasajes({ sucursales }: { sucursales: Sucursal[] })
       {/* Modal de Edición de Pasaje */}
       {mounted && editingTicket && createPortal(
         <div 
-          onClick={() => setEditingTicket(null)}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setEditingTicket(null);
+            }
+          }}
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
         >
           <div 

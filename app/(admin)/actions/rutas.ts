@@ -24,8 +24,12 @@ function serializeBigInt<T>(obj: T): any {
 const RutaSchema = z.object({
   origen_id: z.union([z.string(), z.number()]),
   destino_id: z.union([z.string(), z.number()]),
-  duracion_estimada_minutos: z.coerce.number().min(1, "Duración inválida"),
-  precio_base: z.coerce.number().min(0.01, "Precio base debe ser mayor a 0")
+  duracion_estimada_minutos: z.coerce.number()
+    .min(10, "La duración estimada debe estar entre 10 y 1440 minutos (24 horas)")
+    .max(1440, "La duración estimada debe estar entre 10 y 1440 minutos (24 horas)"),
+  precio_base: z.coerce.number()
+    .min(10, "El precio base debe estar entre S/ 10.00 y S/ 200.00")
+    .max(200, "El precio base debe estar entre S/ 10.00 y S/ 200.00")
 });
 
 async function verifyAdminRole() {
@@ -103,12 +107,46 @@ export async function eliminarRuta(id: string | number) {
   try {
     await verifyAdminRole();
     const rutaId = parseId(id);
-    const viajes = await prisma.viaje.count({ where: { ruta_id: rutaId } });
-    if (viajes > 0) {
-      return { success: false, error: "No se puede eliminar la ruta porque tiene viajes históricos asociados." };
+    // Solo bloqueamos si hay viajes ACTIVOS (programados o en ruta)
+    const viajesActivos = await prisma.viaje.count({ 
+      where: { 
+        ruta_id: rutaId,
+        estado: { in: ["programado", "en_ruta"] }
+      } 
+    });
+    if (viajesActivos > 0) {
+      return { success: false, error: "No se puede eliminar la ruta porque tiene viajes activos (programados o en ruta). Cancélalos primero." };
     }
-    await prisma.ruta.delete({
-      where: { id: rutaId },
+
+    // Si solo hay viajes cancelados o completados, los eliminamos junto con la ruta
+    // La mayoría de modelos tienen onDelete: Cascade en su relación con Viaje
+    // Solo Pasaje requiere borrado manual porque AsientoViaje (con Cascade) es intermediario
+    await prisma.$transaction(async (tx) => {
+      const viajesRuta = await tx.viaje.findMany({
+        where: { ruta_id: rutaId },
+        select: { id: true }
+      });
+      const viajeIds = viajesRuta.map(v => v.id);
+      
+      if (viajeIds.length > 0) {
+        // Obtener los IDs de asientos para borrar los pasajes asociados
+        const asientos = await tx.asientoViaje.findMany({
+          where: { viaje_id: { in: viajeIds } },
+          select: { id: true }
+        });
+        const asientoIds = asientos.map(a => a.id);
+        
+        // Borrar pasajes manualmente (no tienen cascade directo al viaje)
+        if (asientoIds.length > 0) {
+          await tx.pasaje.deleteMany({ where: { asiento_viaje_id: { in: asientoIds } } });
+        }
+
+        // Eliminar los viajes (el resto de modelos hijos tienen onDelete: Cascade)
+        await tx.viaje.deleteMany({ where: { id: { in: viajeIds } } });
+      }
+
+      // Finalmente eliminar la ruta
+      await tx.ruta.delete({ where: { id: rutaId } });
     });
 
     revalidatePath("/admin/rutas");
@@ -116,7 +154,7 @@ export async function eliminarRuta(id: string | number) {
   } catch (error: any) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2003') {
-        return { success: false, error: "No se puede eliminar la ruta porque tiene viajes asociados" };
+        return { success: false, error: "No se puede eliminar la ruta porque tiene registros asociados." };
       }
     }
     return { success: false, error: error.message || "Error al eliminar ruta" };

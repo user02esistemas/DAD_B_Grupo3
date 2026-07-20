@@ -53,6 +53,42 @@ export default function SucursalClient({ initialData }: { initialData: Sucursal[
     setIsLoading(true);
     setError(null);
 
+    if (formData.nombre.trim().length < 3 || formData.nombre.trim().length > 100) {
+      setError("El nombre de la sucursal debe tener entre 3 y 100 caracteres.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!/^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.\,\#\°]+$/.test(formData.nombre)) {
+      setError("El nombre contiene caracteres no permitidos (solo letras, números, espacios y signos básicos).");
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.nombre.split(/[\s\-]+/).some(word => word.length > 30)) {
+      setError("El nombre contiene palabras demasiado largas (máximo 30 caracteres).");
+      setIsLoading(false);
+      return;
+    }
+
+    if (formData.direccion) {
+      if (formData.direccion.trim().length > 200) {
+        setError("La dirección no puede superar los 200 caracteres.");
+        setIsLoading(false);
+        return;
+      }
+      if (!/^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.\,\#\°\'\/]*$/.test(formData.direccion)) {
+        setError("La dirección contiene caracteres no permitidos.");
+        setIsLoading(false);
+        return;
+      }
+      if (formData.direccion.split(/[\s\-]+/).some(word => word.length > 30)) {
+        setError("La dirección contiene palabras demasiado largas (máximo 30 caracteres).");
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       if (editingId) {
         const res = await actualizarSucursal(editingId, formData);
@@ -178,14 +214,18 @@ export default function SucursalClient({ initialData }: { initialData: Sucursal[
       {/* Modal Formulario */}
       {mounted && isModalOpen && createPortal(
         <div 
-          onClick={handleCloseModal}
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseModal();
+            }
+          }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden"
+            className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
           >
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-900">
                 {editingId ? "Editar Sucursal" : "Nueva Sucursal"}
               </h3>
@@ -197,14 +237,14 @@ export default function SucursalClient({ initialData }: { initialData: Sucursal[
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6">
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-              
-              <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Nombre <span className="text-red-500">*</span>
@@ -212,6 +252,7 @@ export default function SucursalClient({ initialData }: { initialData: Sucursal[
                   <input
                     type="text"
                     required
+                    maxLength={100}
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all"
@@ -225,6 +266,7 @@ export default function SucursalClient({ initialData }: { initialData: Sucursal[
                   </label>
                   <input
                     type="text"
+                    maxLength={200}
                     value={formData.direccion}
                     onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all"
@@ -233,7 +275,7 @@ export default function SucursalClient({ initialData }: { initialData: Sucursal[
                 </div>
               </div>
 
-              <div className="mt-8 flex justify-end space-x-3">
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3 flex-shrink-0">
                 <button
                   type="button"
                   onClick={handleCloseModal}

@@ -1,0 +1,210 @@
+{
+  "sucursal": [
+    {
+      "id": "1",
+      "nombre": "Terminal Trujillo El Cumbe",
+      "direccion": "Av. Nicolas de Pierola 1234",
+      "created_at": "2026-07-20T15:37:48.674Z",
+      "updated_at": "2026-07-20T15:37:48.674Z"
+    },
+    {
+      "id": "2",
+      "nombre": "Terminal Chiclayo El Cumbe",
+      "direccion": "Av. Bolognesi 567",
+      "created_at": "2026-07-20T15:37:48.677Z",
+      "updated_at": "2026-07-20T15:37:48.677Z"
+    },
+    {
+      "id": "3",
+      "nombre": "Terminal Cajamarca El Cumbe",
+      "direccion": "Av. Atahualpa 890",
+      "created_at": "2026-07-20T15:37:48.679Z",
+      "updated_at": "2026-07-20T15:37:48.679Z"
+    }
+  ],
+  "bus": [
+    {
+      "id": "1",
+      "placa": "CUM-789",
+      "marca": "Marcopolo",
+      "capacidad": 40,
+      "pisos": 1,
+      "asientos_piso_1": 40,
+      "asientos_restringidos": null,
+      "imagenes": null,
+      "created_at": "2026-07-20T15:37:48.688Z",
+      "updated_at": "2026-07-20T15:37:48.688Z"
+    },
+    {
+      "id": "2",
+      "placa": "CUM-123",
+      "marca": "Marcopolo",
+      "capacidad": 52,
+      "pisos": 2,
+      "asientos_piso_1": 12,
+      "asientos_restringidos": null,
+      "imagenes": null,
+      "created_at": "2026-07-20T15:37:48.692Z",
+      "updated_at": "2026-07-20T15:37:48.692Z"
+    }
+  ],
+  "ruta": [
+    {
+      "id": "1",
+      "origen_id": "1",
+      "destino_id": "2",
+      "duracion_estimada_minutos": 180,
+      "precio_base": "45",
+      "created_at": "2026-07-20T15:37:48.681Z",
+      "updated_at": "2026-07-20T15:37:48.681Z"
+    },
+    {
+      "id": "2",
+      "origen_id": "2",
+      "destino_id": "1",
+      "duracion_estimada_minutos": 180,
+      "precio_base": "45",
+      "created_at": "2026-07-20T15:37:48.684Z",
+      "updated_at": "2026-07-20T15:37:48.684Z"
+    },
+    {
+      "id": "3",
+      "origen_id": "1",
+      "destino_id": "3",
+      "duracion_estimada_minutos": 420,
+      "precio_base": "65",
+      "created_at": "2026-07-20T15:37:48.686Z",
+      "updated_at": "2026-07-20T15:37:48.686Z"
+    }
+  ],
+  "persona": [
+    {
+      "id": "1",
+      "nombres": "Carlos",
+      "apellidos": "Mendoza",
+      "dni": "12345678",
+      "telefono": "987654321",
+      "fecha_nacimiento": null,
+      "created_at": "2026-07-20T15:37:49.291Z",
+      "updated_at": "2026-07-20T15:37:49.291Z"
+    },
+    {
+      "id": "2",
+      "nombres": "Juan",
+      "apellidos": "Quispe",
+      "dni": "87654321",
+      "telefono": "999888777",
+      "fecha_nacimiento": null,
+      "created_at": "2026-07-20T15:37:49.297Z",
+      "updated_at": "2026-07-20T15:37:49.297Z"
+    },
+    {
+      "id": "3",
+      "nombres": "Maria",
+      "apellidos": "Castro",
+      "dni": "55554444",
+      "telefono": "911222333",
+      "fecha_nacimiento": null,
+      "created_at": "2026-07-20T15:37:49.301Z",
+      "updated_at": "2026-07-20T15:37:49.301Z"
+    },
+    {
+      "id": "4",
+      "nombres": "Admin",
+      "apellidos": "General",
+      "dni": "00000000",
+      "telefono": "900000000",
+      "fecha_nacimiento": null,
+      "created_at": "2026-07-20T15:37:49.305Z",
+      "updated_at": "2026-07-20T15:37:49.305Z"
+    },
+    {
+      "id": "5",
+      "nombres": "Gerente",
+      "apellidos": "General",
+      "dni": "11111111",
+      "telefono": "911111111",
+      "fecha_nacimiento": null,
+      "created_at": "2026-07-20T15:45:59.426Z",
+      "updated_at": "2026-07-20T15:45:59.426Z"
+    },
+    {
+      "id": "6",
+      "nombres": "Vendedor",
+      "apellidos": "Prueba",
+      "dni": "22222222",
+      "telefono": "922222222",
+      "fecha_nacimiento": null,
+      "created_at": "2026-07-20T15:45:59.445Z",
+      "updated_at": "2026-07-20T15:45:59.445Z"
+    }
+  ],
+  "usuario": [
+    {
+      "id": "2",
+      "persona_id": "2",
+      "correo": "conductor2@cumbe.com",
+      "contrasena": "$2b$12$4rAY1sFzloGh3HciefulJuwmx4eCxZJtJgNkwrSzQL8bQPCvbLR3K",
+      "rol": "conductor",
+      "created_at": "2026-07-20T15:37:49.299Z",
+      "updated_at": "2026-07-20T15:37:49.299Z"
+    },
+    {
+      "id": "5",
+      "persona_id": "5",
+      "correo": "gerente@cumbe.com",
+      "contrasena": "$2b$12$7RDhlS9iiGJITRfaxuEh5e9UB5qRFwJdzPsbS1i.WskcSfIzEABI.",
+      "rol": "gerente",
+      "created_at": "2026-07-20T15:45:59.434Z",
+      "updated_at": "2026-07-20T15:46:57.145Z"
+    },
+    {
+      "id": "4",
+      "persona_id": "4",
+      "correo": "admin@cumbe.com",
+      "contrasena": "$2b$12$7RDhlS9iiGJITRfaxuEh5e9UB5qRFwJdzPsbS1i.WskcSfIzEABI.",
+      "rol": "admin",
+      "created_at": "2026-07-20T15:37:49.306Z",
+      "updated_at": "2026-07-20T15:46:57.149Z"
+    },
+    {
+      "id": "6",
+      "persona_id": "6",
+      "correo": "vendedor@cumbe.com",
+      "contrasena": "$2b$12$7RDhlS9iiGJITRfaxuEh5e9UB5qRFwJdzPsbS1i.WskcSfIzEABI.",
+      "rol": "vendedor",
+      "created_at": "2026-07-20T15:45:59.447Z",
+      "updated_at": "2026-07-20T15:46:57.152Z"
+    },
+    {
+      "id": "3",
+      "persona_id": "3",
+      "correo": "operario@cumbe.com",
+      "contrasena": "$2b$12$7RDhlS9iiGJITRfaxuEh5e9UB5qRFwJdzPsbS1i.WskcSfIzEABI.",
+      "rol": "operario",
+      "created_at": "2026-07-20T15:37:49.303Z",
+      "updated_at": "2026-07-20T15:46:57.155Z"
+    },
+    {
+      "id": "1",
+      "persona_id": "1",
+      "correo": "conductor@cumbe.com",
+      "contrasena": "$2b$12$7RDhlS9iiGJITRfaxuEh5e9UB5qRFwJdzPsbS1i.WskcSfIzEABI.",
+      "rol": "conductor",
+      "created_at": "2026-07-20T15:37:49.294Z",
+      "updated_at": "2026-07-20T15:46:57.158Z"
+    }
+  ],
+  "viaje": [],
+  "asientoViaje": [],
+  "pasaje": [],
+  "encomienda": [],
+  "reclamo": [],
+  "codigoDescuento": [],
+  "verificationCode": [],
+  "pago": [],
+  "gastoRuta": [],
+  "novedadMecanica": [],
+  "bitacoraViaje": [],
+  "alertaCentral": []
+}

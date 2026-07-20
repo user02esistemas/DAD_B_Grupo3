@@ -37,8 +37,8 @@ const UsuarioCreateSchema = z.object({
   telefono: z.string().regex(/^\d{9}$/, "El teléfono debe tener exactamente 9 dígitos"),
   correo: z.string().email("Correo inválido"),
   contrasena: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
-  rol: z.enum(["admin", "cliente", "vendedor", "gerente", "operario", "conductor"], {
-    error: "Rol inválido"
+  rol: z.enum(["admin", "vendedor", "gerente", "operario", "conductor"], {
+    error: "Rol inválido para creación"
   }),
 });
 

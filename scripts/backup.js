@@ -22,10 +22,10 @@ async function main() {
     codigoDescuento: await prisma.codigoDescuento.findMany(),
     verificationCode: await prisma.verificationCode.findMany(),
     pago: await prisma.pago.findMany(),
-    gastoRuta: await prisma.gastoRuta.findMany(),
+    gastoViaje: await prisma.gastoViaje.findMany(),
     novedadMecanica: await prisma.novedadMecanica.findMany(),
     bitacoraViaje: await prisma.bitacoraViaje.findMany(),
-    alertaCentral: await prisma.alertaCentral.findMany(),
+    notificacion: await prisma.notificacion.findMany(),
   };
 
   // Serializar BigInt convirtiéndolo a string para evitar errores en JSON.stringify

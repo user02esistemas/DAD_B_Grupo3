@@ -69,7 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         href={item.href}
         onClick={() => setSidebarOpen(false)}
         className={`
-          group flex items-center px-4 py-2.5 rounded-xl transition-all duration-200 relative
+          admin-sidebar-link group flex items-center px-3 py-1 rounded-xl transition-all duration-200 relative
           ${isActive 
             ? "bg-[#f07639]/10 text-[#f07639] font-bold nav-active-bar" 
             : "text-[#aeb9b3] hover:text-white hover:bg-white/[0.05] font-medium"
@@ -77,15 +77,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         `}
       >
         <div className={`
-          w-9 h-9 rounded-lg flex items-center justify-center mr-3 transition-all duration-200
+          admin-sidebar-icon w-7 h-7 rounded-lg flex items-center justify-center mr-2 transition-all duration-200
           ${isActive 
             ? "bg-[#f07639] text-white shadow-lg shadow-[#f07639]/30" 
             : "bg-white/[0.06] text-[#aeb9b3] group-hover:bg-white/[0.1] group-hover:text-white"
           }
         `}>
-          <item.icon className="w-[18px] h-[18px]" />
+          <item.icon className="w-[16px] h-[16px]" />
         </div>
-        <span className="text-[13px] tracking-wide">{item.name}</span>
+        <span className="admin-sidebar-text text-[13px] tracking-wide">{item.name}</span>
         {isActive && (
           <ChevronRight className="w-4 h-4 ml-auto text-[#f07639]/60" />
         )}
@@ -105,7 +105,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* ========= SIDEBAR ========= */}
       <div className={`
-        fixed md:sticky top-0 left-0 z-50 h-screen w-[260px] flex flex-col shrink-0 border-r border-[#26362f] transition-transform duration-300
+        admin-sidebar fixed md:sticky top-0 left-0 z-50 h-screen w-[260px] flex flex-col shrink-0 border-r border-[#26362f] transition-transform duration-300
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
         {/* Sidebar background with gradient */}
@@ -115,41 +115,41 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         
         <div className="relative flex flex-col h-full">
           {/* Logo Area */}
-          <div className="px-5 pt-7 pb-5 flex justify-center border-b border-white/[0.04]">
+          <div className="admin-sidebar-logo px-5 pt-3 pb-2 flex justify-center border-b border-white/[0.04]">
             <Link href="/admin" className="flex flex-col items-center text-center group">
-              <img src="/logocumbe.png" alt="El Cumbe Logo" className="h-14 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
-              <span className="text-[9px] font-black text-[#f07639] uppercase tracking-[0.2em] mt-2 block">
+              <img src="/logocumbe.png" alt="El Cumbe Logo" className="h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-105" />
+              <span className="text-[9px] font-black text-[#f07639] uppercase tracking-[0.2em] mt-1.5 block">
                 Panel Administrativo
               </span>
             </Link>
           </div>  
-            <button className="md:hidden absolute right-4 top-6 text-slate-400 hover:text-white transition-colors" onClick={() => setSidebarOpen(false)}>
+            <button className="md:hidden absolute right-4 top-5 text-slate-400 hover:text-white transition-colors" onClick={() => setSidebarOpen(false)}>
               <X className="w-5 h-5" />
             </button>
 
           {/* Navigation */}
-          <nav className="flex-1 px-3 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <nav className="admin-sidebar-nav flex-1 px-2 pt-2 overflow-y-auto pr-1 no-scrollbar">
             {/* Servicios */}
-            <div className="mb-6">
-              <div className="flex items-center px-4 mb-3">
+            <div className="admin-sidebar-section mb-2">
+              <div className="admin-sidebar-section-header flex items-center px-3 mb-1">
                 <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                <span className="px-3 text-[10px] font-black text-[#85958d] uppercase tracking-[0.2em]">Servicios</span>
+                <span className="px-2 text-[9px] font-black text-[#85958d] uppercase tracking-[0.2em]">Servicios</span>
                 <div className="h-px flex-1 bg-gradient-to-l from-white/10 to-transparent" />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-0.5">
                 {mainNav.filter(item => item.roles.includes(userRole)).map(renderNavItem)}
               </div>
             </div>
 
             {/* Gestión */}
             {managementNav.filter(item => item.roles.includes(userRole)).length > 0 && (
-              <div className="mb-6">
-                <div className="flex items-center px-4 mb-3">
+              <div className="admin-sidebar-section mb-2">
+                <div className="admin-sidebar-section-header flex items-center px-3 mb-1">
                   <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                  <span className="px-3 text-[10px] font-black text-[#85958d] uppercase tracking-[0.2em]">Gestión</span>
+                  <span className="px-2 text-[9px] font-black text-[#85958d] uppercase tracking-[0.2em]">Gestión</span>
                   <div className="h-px flex-1 bg-gradient-to-l from-white/10 to-transparent" />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   {managementNav.filter(item => item.roles.includes(userRole)).map(renderNavItem)}
                 </div>
               </div>
@@ -157,13 +157,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             {/* Reportes */}
             {reportsNav.filter(item => item.roles.includes(userRole)).length > 0 && (
-              <div className="mb-6">
-                <div className="flex items-center px-4 mb-3">
+              <div className="admin-sidebar-section mb-2">
+                <div className="admin-sidebar-section-header flex items-center px-3 mb-1">
                   <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
-                  <span className="px-3 text-[10px] font-black text-[#85958d] uppercase tracking-[0.2em]">Reportes</span>
+                  <span className="px-2 text-[9px] font-black text-[#85958d] uppercase tracking-[0.2em]">Reportes</span>
                   <div className="h-px flex-1 bg-gradient-to-l from-white/10 to-transparent" />
                 </div>
-                <div className="space-y-1">
+                <div className="space-y-0.5">
                   {reportsNav.filter(item => item.roles.includes(userRole)).map(renderNavItem)}
                 </div>
               </div>
@@ -171,7 +171,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
 
           {/* User Panel at Bottom */}
-          <div className="p-4 border-t border-white/[0.06]">
+          <div className="px-3 py-2.5 border-t border-white/[0.06]">
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               className="w-full flex items-center justify-center px-3 py-2.5 bg-white/[0.02] hover:bg-red-500/10 text-[#aeb9b3] hover:text-red-300 border border-white/[0.06] hover:border-red-500/25 rounded-xl transition-all duration-200 text-[12px] font-bold group"
@@ -184,9 +184,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* ========= MAIN CONTENT ========= */}
-      <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+      <div className="flex-1 flex flex-col min-h-screen overflow-hidden min-w-0">
         {/* Topbar */}
-        <header className="sticky top-0 z-30 flex h-[64px] items-center justify-between border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] px-6 shadow-[var(--shadow-sm)] transition-colors duration-300">
+        <header className="sticky top-0 z-30 flex h-[56px] items-center justify-between border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] px-4 shadow-[var(--shadow-sm)] transition-colors duration-300">
           {/* Left side */}
           <div className="flex items-center gap-4">
             <button
@@ -277,7 +277,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Page Content */}
-        <main className="min-h-[calc(100vh-72px)] flex-1 overflow-x-hidden overflow-y-auto bg-[var(--page-bg)] p-5 transition-colors duration-300 sm:p-6 lg:p-8">
+        <main className="min-h-[calc(100vh-56px)] flex-1 overflow-x-hidden overflow-y-auto bg-[var(--page-bg)] p-4 transition-colors duration-300 sm:p-5 lg:p-6 min-w-0">
           <div className="animate-fade-in-up max-w-[1750px] mx-auto">
             {children}
           </div>

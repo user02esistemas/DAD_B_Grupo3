@@ -86,6 +86,13 @@ export async function crearViajeConAsientos(data: {
       return { success: false, error: "Fecha de salida inválida." };
     }
 
+    const now = new Date();
+    // Permitir un margen de 5 minutos
+    const minAllowedDate = new Date(now.getTime() - 5 * 60 * 1000);
+    if (fechaSalida < minAllowedDate) {
+      return { success: false, error: "La fecha y hora de salida no puede ser anterior a la actual." };
+    }
+
     if (fechaLlegada && isNaN(fechaLlegada.getTime())) {
       return { success: false, error: "Fecha de llegada inválida." };
     }
@@ -264,6 +271,13 @@ export async function actualizarViaje(id: string | number, data: {
 
     if (isNaN(fechaSalida.getTime())) {
       return { success: false, error: "Fecha de salida inválida." };
+    }
+
+    const now = new Date();
+    // Permitir un margen de 5 minutos
+    const minAllowedDate = new Date(now.getTime() - 5 * 60 * 1000);
+    if (fechaSalida < minAllowedDate) {
+      return { success: false, error: "La fecha y hora de salida no puede ser anterior a la actual." };
     }
 
     if (fechaLlegada && isNaN(fechaLlegada.getTime())) {

@@ -1,10 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Users, Search, Edit2, Trash2, X, AlertTriangle, CheckCircle, ShieldAlert, Plus, Briefcase, UserCheck } from "lucide-react";
 import { actualizarRolUsuario, eliminarUsuario, crearUsuario } from "@/app/(admin)/actions/usuarios";
 
 export default function UsuariosClient({ usuarios, userRole, currentUserId }: { usuarios: any[], userRole: string, currentUserId: string }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isEditingRol, setIsEditingRol] = useState<any>(null);
@@ -17,7 +24,7 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
     telefono: "",
     correo: "",
     contrasena: "",
-    rol: "cliente"
+    rol: "vendedor"
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -82,7 +89,7 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
         telefono: "",
         correo: "",
         contrasena: "",
-        rol: "cliente"
+        rol: "vendedor"
       });
     } else {
       setError(res.error || "Error al crear usuario");
@@ -283,7 +290,7 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
       </div>
 
       {/* MODAL EDITAR ROL */}
-      {isEditingRol && (
+      {mounted && isEditingRol && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden scale-in-center">
             <div className="p-6">
@@ -326,11 +333,12 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL ELIMINAR */}
-      {isDeleting && (
+      {mounted && isDeleting && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden scale-in-center">
             <div className="p-6 text-center">
@@ -358,17 +366,18 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* MODAL CREAR USUARIO */}
-      {isCreating && (
+      {mounted && isCreating && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden scale-in-center max-h-[90vh] flex flex-col">
             <div className="p-6 border-b border-gray-100 flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-bold text-gray-900">Crear Nuevo Usuario</h3>
-                <p className="text-sm text-gray-500">Completa los datos del personal o cliente.</p>
+                <p className="text-sm text-gray-500">Completa los datos del personal de la empresa.</p>
               </div>
               <button onClick={() => setIsCreating(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                 <X className="w-5 h-5 text-gray-500" />
@@ -412,7 +421,6 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Rol</label>
                   <select value={formData.rol} onChange={(e) => setFormData({...formData, rol: e.target.value})} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639]/50 focus:border-[#f07639] transition-all">
-                    <option value="cliente">Cliente</option>
                     <option value="vendedor">Vendedor</option>
                     <option value="gerente">Gerente</option>
                     <option value="operario">Operario</option>
@@ -432,7 +440,8 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
