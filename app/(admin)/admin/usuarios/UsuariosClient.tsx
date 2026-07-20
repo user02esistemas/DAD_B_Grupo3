@@ -304,6 +304,7 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
                 <option value="vendedor">Vendedor</option>
                 <option value="gerente">Gerente</option>
                 <option value="operario">Operario</option>
+                <option value="conductor">Conductor</option>
                 <option value="admin">Admin</option>
               </select>
 
@@ -415,6 +416,7 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
                     <option value="vendedor">Vendedor</option>
                     <option value="gerente">Gerente</option>
                     <option value="operario">Operario</option>
+                    <option value="conductor">Conductor</option>
                     <option value="admin">Administrador</option>
                   </select>
                 </div>
