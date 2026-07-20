@@ -18,7 +18,7 @@ type Viaje = {
 };
 type Asiento = { id: string; numero_asiento: number; piso: number; estado: string };
 
-export default function PasajesClient({ initialSucursales }: { initialSucursales: Sucursal[] }) {
+export default function PasajesClient({ initialSucursales, userRole }: { initialSucursales: Sucursal[], userRole?: string }) {
   // Buscador
   const [origenId, setOrigenId] = useState<string>("");
   const [destinoId, setDestinoId] = useState<string>("");
@@ -27,7 +27,7 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
   // Vista actual — leer tab de la URL si existe (?tab=lista)
   const searchParams = useSearchParams();
   const tabParam = searchParams.get("tab");
-  const [view, setView] = useState<"venta" | "lista">(tabParam === "lista" ? "lista" : "venta");
+  const [view, setView] = useState<"venta" | "lista">(userRole !== "vendedor" ? "lista" : (tabParam === "lista" ? "lista" : "venta"));
 
   // Sincronizar vista cuando cambia el param de URL (navegación desde notificaciones)
   useEffect(() => {
@@ -568,24 +568,26 @@ export default function PasajesClient({ initialSucursales }: { initialSucursales
     <div className="flex flex-col h-[calc(100vh-8rem)]">
       
       {/* Selector de Vista */}
-      <div className="bg-slate-200/50 border border-slate-200/30 p-1.5 rounded-full shadow-inner mb-6 w-full max-w-md flex space-x-1 mx-auto flex-shrink-0">
-        <button
-          onClick={() => setView("venta")}
-          className={`flex-1 py-2.5 px-4 rounded-full font-bold transition-all duration-300 flex items-center justify-center ${
-            view === "venta" ? "bg-white text-slate-800 shadow-[0_4px_15px_rgba(0,0,0,0.05)] scale-[1.02] border border-slate-200/60" : "text-slate-500 hover:text-slate-700 hover:bg-slate-250/30"
-          }`}
-        >
-          <CreditCard className="w-4 h-4 mr-2" /> Vender Pasaje
-        </button>
-        <button
-          onClick={() => setView("lista")}
-          className={`flex-1 py-2.5 px-4 rounded-full font-bold transition-all duration-300 flex items-center justify-center ${
-            view === "lista" ? "bg-white text-slate-800 shadow-[0_4px_15px_rgba(0,0,0,0.05)] scale-[1.02] border border-slate-200/60" : "text-slate-500 hover:text-slate-700 hover:bg-slate-250/30"
-          }`}
-        >
-          <Ticket className="w-4 h-4 mr-2" /> Pasajes Vendidos
-        </button>
-      </div>
+      {userRole === "vendedor" && (
+        <div className="bg-slate-200/50 border border-slate-200/30 p-1.5 rounded-full shadow-inner mb-6 w-full max-w-md flex space-x-1 mx-auto flex-shrink-0">
+          <button
+            onClick={() => setView("venta")}
+            className={`flex-1 py-2.5 px-4 rounded-full font-bold transition-all duration-300 flex items-center justify-center ${
+              view === "venta" ? "bg-white text-slate-800 shadow-[0_4px_15px_rgba(0,0,0,0.05)] scale-[1.02] border border-slate-200/60" : "text-slate-500 hover:text-slate-700 hover:bg-slate-250/30"
+            }`}
+          >
+            <CreditCard className="w-4 h-4 mr-2" /> Vender Pasaje
+          </button>
+          <button
+            onClick={() => setView("lista")}
+            className={`flex-1 py-2.5 px-4 rounded-full font-bold transition-all duration-300 flex items-center justify-center ${
+              view === "lista" ? "bg-white text-slate-800 shadow-[0_4px_15px_rgba(0,0,0,0.05)] scale-[1.02] border border-slate-200/60" : "text-slate-500 hover:text-slate-700 hover:bg-slate-250/30"
+            }`}
+          >
+            <Ticket className="w-4 h-4 mr-2" /> Pasajes Vendidos
+          </button>
+        </div>
+      )}
 
       {view === "lista" ? (
         <ListaPasajes sucursales={initialSucursales} />

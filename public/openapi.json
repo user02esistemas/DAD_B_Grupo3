@@ -1,0 +1,243 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Empresa de Transportes El Cumbe - API RESTful",
+    "version": "1.0.0",
+    "description": "Especificación oficial de servicios RESTful y API Móvil para la plataforma de transporte interprovincial El Cumbe. Incluye servicios de autenticación JWT, búsqueda de salidas, reserva de asientos, pasarela de pagos Culqi y gestión de encomiendas."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor Local de Desarrollo"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Ingrese el token JWT obtenido en la API de Login Móvil (/api/movil/login)"
+      }
+    },
+    "schemas": {
+      "LoginRequest": {
+        "type": "object",
+        "required": ["correo", "contrasena"],
+        "properties": {
+          "correo": { "type": "string", "format": "email", "example": "cliente@cumbe.com" },
+          "contrasena": { "type": "string", "example": "123456" }
+        }
+      },
+      "LoginResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": true },
+          "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." },
+          "user": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "example": "1" },
+              "nombres": { "type": "string", "example": "Carlos Mendoza" },
+              "correo": { "type": "string", "example": "conductor@cumbe.com" },
+              "rol": { "type": "string", "example": "conductor" },
+              "dni": { "type": "string", "example": "12345678" }
+            }
+          }
+        }
+      },
+      "RegistroRequest": {
+        "type": "object",
+        "required": ["nombres", "apellidos", "correo", "contrasena", "dni"],
+        "properties": {
+          "nombres": { "type": "string", "example": "Juan Carlos" },
+          "apellidos": { "type": "string", "example": "Pérez Quispe" },
+          "correo": { "type": "string", "format": "email", "example": "juan.perez@gmail.com" },
+          "contrasena": { "type": "string", "example": "123456" },
+          "dni": { "type": "string", "example": "74829104" },
+          "telefono": { "type": "string", "example": "918273645" }
+        }
+      },
+      "BloqueoAsientosRequest": {
+        "type": "object",
+        "required": ["seatIds"],
+        "properties": {
+          "seatIds": {
+            "type": "array",
+            "items": { "type": "string" },
+            "example": ["101", "102"]
+          },
+          "email": { "type": "string", "example": "cliente@cumbe.com" },
+          "guestToken": { "type": "string", "example": "guest_token_123" }
+        }
+      },
+      "CompraPasajesRequest": {
+        "type": "object",
+        "required": ["tokenId", "viajeId", "asientosPasajeros", "amount"],
+        "properties": {
+          "tokenId": { "type": "string", "example": "tkn_live_xxxxxxxx" },
+          "viajeId": { "type": "string", "example": "10" },
+          "amount": { "type": "number", "example": 90.00 },
+          "asientosPasajeros": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "seatId": { "type": "string", "example": "101" },
+                "pasajeroData": {
+                  "type": "object",
+                  "properties": {
+                    "nombres": { "type": "string", "example": "Juan Carlos" },
+                    "apellidos": { "type": "string", "example": "Pérez Quispe" },
+                    "dni": { "type": "string", "example": "74829104" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/api/movil/login": {
+      "post": {
+        "summary": "Autenticación de Usuarios (Móvil)",
+        "description": "Autentica clientes, conductores y operarios, retornando un token Bearer JWT válido por 30 días.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Autenticación exitosa",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponse" }
+              }
+            }
+          },
+          "401": { "description": "Credenciales inválidas" }
+        }
+      }
+    },
+    "/api/movil/registro": {
+      "post": {
+        "summary": "Registro de Clientes (Móvil)",
+        "description": "Crea una cuenta de usuario con rol 'cliente' e inserta sus datos en la entidad Persona con validación de DNI único.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegistroRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Registro exitoso" },
+          "400": { "description": "Error de validación o usuario existente" }
+        }
+      }
+    },
+    "/api/movil/viajes": {
+      "get": {
+        "summary": "Búsqueda de Salidas y Sucursales",
+        "description": "Obtiene la lista de terminales/sucursales o realiza la búsqueda de viajes activos por origen, destino y fecha.",
+        "parameters": [
+          { "name": "type", "in": "query", "schema": { "type": "string", "example": "locations" } },
+          { "name": "originId", "in": "query", "schema": { "type": "string", "example": "1" } },
+          { "name": "destinationId", "in": "query", "schema": { "type": "string", "example": "2" } },
+          { "name": "date", "in": "query", "schema": { "type": "string", "example": "2026-07-20" } }
+        ],
+        "responses": {
+          "200": { "description": "Lista de viajes o sucursales obtenida exitosamente" }
+        }
+      }
+    },
+    "/api/movil/viajes/asientos": {
+      "get": {
+        "summary": "Obtener Croquis y Estado de Asientos",
+        "description": "Devuelve la distribución de asientos de un viaje específico con su estado (disponible, pendiente o vendido).",
+        "parameters": [
+          { "name": "tripId", "in": "query", "required": true, "schema": { "type": "string", "example": "1" } }
+        ],
+        "responses": {
+          "200": { "description": "Croquis de asientos obtenido exitosamente" }
+        }
+      },
+      "post": {
+        "summary": "Bloquear Asientos Temporalmente",
+        "security": [{ "bearerAuth": [] }],
+        "description": "Bloquea asientos por 8 minutos para evitar concurrencia y sobreventa.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/BloqueoAsientosRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Asientos bloqueados exitosamente" },
+          "401": { "description": "No autorizado (Falta JWT)" }
+        }
+      },
+      "delete": {
+        "summary": "Liberar Asientos Bloqueados",
+        "security": [{ "bearerAuth": [] }],
+        "description": "Libera manualmente los asientos bloqueados.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "seatIds": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Asientos liberados exitosamente" }
+        }
+      }
+    },
+    "/api/movil/compras": {
+      "post": {
+        "summary": "Procesar Compra de Boletos con Culqi",
+        "security": [{ "bearerAuth": [] }],
+        "description": "Procesa el cobro seguro con el token de tarjeta Culqi y emite los pasajes generando códigos QR.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CompraPasajesRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Compra realizada y boletos emitidos exitosamente" },
+          "401": { "description": "No autorizado (Falta JWT)" }
+        }
+      },
+      "get": {
+        "summary": "Obtener Boletos e Historial de Encomiendas del Cliente",
+        "security": [{ "bearerAuth": [] }],
+        "description": "Retorna los pasajes emitidos (con QR) y el historial de encomiendas enviadas o recibidas por el cliente.",
+        "parameters": [
+          { "name": "email", "in": "query", "required": true, "schema": { "type": "string", "example": "cliente@cumbe.com" } }
+        ],
+        "responses": {
+          "200": { "description": "Historial obtenido exitosamente" },
+          "401": { "description": "No autorizado (Falta JWT)" }
+        }
+      }
+    }
+  }
+}

@@ -31,11 +31,13 @@ type Encomienda = {
 export default function EncomiendaClient({ 
   initialEncomiendas,
   viajesActivos,
-  sucursales
+  sucursales,
+  userRole
 }: { 
   initialEncomiendas: Encomienda[],
   viajesActivos: Viaje[],
-  sucursales: { id: string; nombre: string }[]
+  sucursales: { id: string; nombre: string }[],
+  userRole?: string
 }) {
   const [encomiendas, setEncomiendas] = useState<Encomienda[]>(initialEncomiendas);
   const [mounted, setMounted] = useState(false);
@@ -159,24 +161,26 @@ export default function EncomiendaClient({
       </div>
 
       {/* Selector de Vista */}
-      <div className="bg-white p-1.5 rounded-2xl border border-slate-100 mb-6 flex space-x-1.5">
-        <button
-          onClick={() => setView("lista")}
-          className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-[13px] transition-all flex items-center justify-center ${
-            view === "lista" ? "bg-gradient-to-r from-[#f07639] to-[#d45a1f] text-white shadow-lg shadow-[#f07639]/15" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-          }`}
-        >
-          <Package className="w-4 h-4 mr-2" /> Lista de Encomiendas
-        </button>
-        <button
-          onClick={() => setView("registro")}
-          className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-[13px] transition-all flex items-center justify-center ${
-            view === "registro" ? "bg-gradient-to-r from-[#f07639] to-[#d45a1f] text-white shadow-lg shadow-[#f07639]/15" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"
-          }`}
-        >
-          <PlusCircle className="w-4 h-4 mr-2" /> Registrar Encomienda
-        </button>
-      </div>
+      {userRole === "vendedor" && (
+        <div className="bg-white p-1.5 rounded-2xl border border-slate-100 mb-6 flex space-x-1.5">
+          <button
+            onClick={() => setView("lista")}
+            className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-[13px] transition-all flex items-center justify-center ${
+              view === "lista" ? "bg-gradient-to-r from-[#f07639] to-[#d45a1f] text-white shadow-lg shadow-[#f07639]/15" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            }`}
+          >
+            <Package className="w-4 h-4 mr-2" /> Lista de Encomiendas
+          </button>
+          <button
+            onClick={() => setView("registro")}
+            className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-[13px] transition-all flex items-center justify-center ${
+              view === "registro" ? "bg-gradient-to-r from-[#f07639] to-[#d45a1f] text-white shadow-lg shadow-[#f07639]/15" : "bg-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700"
+            }`}
+          >
+            <PlusCircle className="w-4 h-4 mr-2" /> Registrar Encomienda
+          </button>
+        </div>
+      )}
 
       {view === "registro" ? (
         <RegistroEncomienda 

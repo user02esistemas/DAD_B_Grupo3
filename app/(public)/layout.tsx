@@ -1,6 +1,7 @@
 import FloatingTicketButton from "@/components/FloatingTicketButton";
 import Footer from "@/components/Footer";
 import Navbar from "@/components/Navbar";
+import WindowsNotificationTrap from "@/components/WindowsNotificationTrap";
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -22,6 +23,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <Footer />
       </div>
       <FloatingTicketButton />
+      <WindowsNotificationTrap />
     </>
   );
 }

@@ -3,7 +3,7 @@ import { authOptions } from "@/lib/auth";
 
 export async function requireAdminOrVendedor() {
   const session = await getServerSession(authOptions);
-  if (!session || (session.user.role !== "admin" && session.user.role !== "vendedor")) {
+  if (!session || (session.user.role !== "admin" && session.user.role !== "vendedor" && session.user.role !== "gerente")) {
     throw new Error("No autorizado.");
   }
   return session;

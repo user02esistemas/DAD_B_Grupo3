@@ -212,7 +212,7 @@ export async function searchTrips(originId: string, destinationId: string, date:
       if (trip.fecha_salida) {
         const d = new Date(trip.fecha_salida);
         timeStr = d.toLocaleTimeString("en-US", {
-          timeZone: "UTC", // Tratar el valor de la DB como hora local sin conversión
+          timeZone: "America/Lima",
           hour: "numeric",
           minute: "2-digit",
           hour12: true,
@@ -358,9 +358,38 @@ export async function getClienteProfile(email: string) {
       dni: pasaje.pasajero.dni,
     }));
 
+    const encomiendasBrutas = await prisma.encomienda.findMany({
+      where: {
+        OR: [
+          { remitente_id: usuario.persona_id },
+          { destinatario_id: usuario.persona_id },
+        ],
+      },
+      include: {
+        remitente: true,
+        destinatario: true,
+        origen: true,
+        destino: true,
+        viaje: {
+          include: {
+            ruta: {
+              include: {
+                origen: true,
+                destino: true,
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        created_at: "desc",
+      },
+    });
+
     return serializeBigInt({
       ...usuario,
       pasajes: pasajesMapeados,
+      encomiendas: encomiendasBrutas,
     });
   } catch (error) {
     console.error("Error al obtener perfil de cliente:", error);
@@ -1361,7 +1390,7 @@ export async function procesarPagoMultiplesAsientosCulqi(
           where: { id: BigInt(item.seatId) },
           data: {
             estado: "vendido",
-            bloqueado_por_usuario_id: userId,
+            bloqueado_por_usuario: userId ? { connect: { id: userId } } : { disconnect: true },
             bloqueado_por_token: null,
           },
         });
