@@ -52,3 +52,6 @@ cumbe_db.sql
 
 # Safe environment template
 !.env.example
+
+# Database backups
+init_data.json
