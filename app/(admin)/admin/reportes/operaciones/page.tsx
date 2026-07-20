@@ -13,7 +13,11 @@ import {
   Receipt,
   ClipboardList,
   BarChart3,
-  CircleAlert
+  CircleAlert,
+  Eye,
+  Camera,
+  Image,
+  X
 } from "lucide-react";
 import { obtenerDatosReporte } from "@/app/(admin)/actions/reportes";
 import { jsPDF } from "jspdf";
@@ -37,6 +41,7 @@ export default function ReportesOperacionesPage() {
   // Nuevos estados para filtros interactivos en tiempo real
   const [busquedaDni, setBusquedaDni] = useState("");
   const [filtroRuta, setFiltroRuta] = useState("");
+  const [previewFoto, setPreviewFoto] = useState<string | null>(null);
 
   const cargarReporte = async () => {
     setLoading(true);
@@ -709,11 +714,12 @@ export default function ReportesOperacionesPage() {
                 <table className="w-full text-left border-collapse table-fixed min-w-[1100px]">
                   <thead>
                     <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider sticky top-0 bg-white z-10">
-                      <th className="pb-3 w-[15%]">Fecha</th>
-                      <th className="pb-3 w-[25%]">Concepto</th>
+                      <th className="pb-3 w-[12%]">Fecha</th>
+                      <th className="pb-3 w-[20%]">Concepto</th>
                       <th className="pb-3 w-[22%]">Conductor</th>
+                      <th className="pb-3 w-[10%] text-center">Evidencia</th>
                       <th className="pb-3 w-[10%] text-center">Bus</th>
-                      <th className="pb-3 w-[18%]">Ruta</th>
+                      <th className="pb-3 w-[16%]">Ruta</th>
                       <th className="pb-3 w-[10%] text-right">Monto</th>
                     </tr>
                   </thead>
@@ -728,6 +734,18 @@ export default function ReportesOperacionesPage() {
                           <td className="py-3 font-semibold break-words">
                             {g.conductor}
                             <span className="text-[10px] text-slate-400 block font-normal">DNI: {g.conductorDni} • Tel: {g.conductorTelefono}</span>
+                          </td>
+                          <td className="py-3 text-center">
+                            {g.foto_url ? (
+                              <button 
+                                onClick={() => setPreviewFoto(g.foto_url)}
+                                className="inline-flex items-center gap-1 bg-slate-50 hover:bg-[#f07639]/10 text-slate-650 hover:text-[#f07639] border border-slate-200 hover:border-[#f07639]/30 px-2 py-0.5 rounded font-bold text-[10px] cursor-pointer transition-all active:scale-95"
+                              >
+                                <Eye className="w-3 h-3" /> Ver Foto
+                              </button>
+                            ) : (
+                              <span className="text-slate-400 text-[10px]">—</span>
+                            )}
                           </td>
                           <td className="py-3 text-center">
                             <span className="bg-slate-50 text-slate-600 border border-slate-200 px-2 py-0.5 rounded font-bold text-[10px]">
@@ -760,11 +778,12 @@ export default function ReportesOperacionesPage() {
                 <table className="w-full text-left border-collapse table-fixed min-w-[1100px]">
                   <thead>
                     <tr className="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider sticky top-0 bg-white z-10">
-                      <th className="pb-3 w-[12%]">Fecha</th>
-                      <th className="pb-3 w-[9%]">Tipo</th>
+                      <th className="pb-3 w-[11%]">Fecha</th>
+                      <th className="pb-3 w-[8%]">Tipo</th>
                       <th className="pb-3 w-[8%] text-center">Gravedad</th>
-                      <th className="pb-3 w-[12%]">Estado</th>
-                      <th className="pb-3 w-[20%]">Descripción</th>
+                      <th className="pb-3 w-[11%]">Estado</th>
+                      <th className="pb-3 w-[18%]">Descripción</th>
+                      <th className="pb-3 w-[8%] text-center">Evidencia</th>
                       <th className="pb-3 w-[7%] text-center">Retraso</th>
                       <th className="pb-3 w-[15%]">Conductor</th>
                       <th className="pb-3 w-[7%] text-center">Bus</th>
@@ -809,6 +828,18 @@ export default function ReportesOperacionesPage() {
                             )}
                           </td>
                           <td className="py-3 text-slate-500 font-medium break-words pr-2">{i.descripcion}</td>
+                          <td className="py-3 text-center">
+                            {i.foto_url ? (
+                              <button 
+                                onClick={() => setPreviewFoto(i.foto_url)}
+                                className="inline-flex items-center gap-1 bg-slate-50 hover:bg-[#f07639]/10 text-slate-650 hover:text-[#f07639] border border-slate-200 hover:border-[#f07639]/30 px-2 py-0.5 rounded font-bold text-[9px] cursor-pointer transition-all active:scale-95"
+                              >
+                                <Eye className="w-3 h-3" /> Ver Foto
+                              </button>
+                            ) : (
+                              <span className="text-slate-400 text-[10px]">—</span>
+                            )}
+                          </td>
                           <td className="py-3 text-center font-bold text-slate-700">{i.retraso} min</td>
                           <td className="py-3 font-semibold break-words">
                             {i.conductor}
@@ -910,6 +941,26 @@ export default function ReportesOperacionesPage() {
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Vista Previa de Evidencia para el Administrador */}
+      {previewFoto && (
+        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="relative bg-white rounded-3xl p-5 max-w-lg w-full overflow-hidden shadow-2xl flex flex-col items-center">
+            <button 
+              onClick={() => setPreviewFoto(null)} 
+              className="absolute top-4 right-4 bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-full transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-base font-bold text-slate-800 mb-3 pr-8 w-full text-left flex items-center gap-1.5">
+              <Receipt className="w-5 h-5 text-[#f07639]" /> Evidencia Adjunta
+            </h3>
+            <div className="w-full rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 flex items-center justify-center min-h-[300px] max-h-[70vh]">
+              <img src={previewFoto} alt="Evidencia" className="w-full max-h-[70vh] object-contain" />
+            </div>
           </div>
         </div>
       )}

@@ -252,6 +252,7 @@ export async function obtenerDatosReporte(desdeStr: string, hastaStr: string) {
         ruta: `${g.viaje.ruta.origen.nombre} a ${g.viaje.ruta.destino.nombre}`,
         horaSalida: g.viaje.fecha_salida ? g.viaje.fecha_salida.toISOString() : null,
         fecha: g.created_at ? g.created_at.toISOString() : null,
+        foto_url: g.foto_url,
       })),
       incidentes: incidentes.map(i => ({
         id: i.id.toString(),
@@ -268,6 +269,7 @@ export async function obtenerDatosReporte(desdeStr: string, hastaStr: string) {
         ruta: `${i.viaje.ruta.origen.nombre} a ${i.viaje.ruta.destino.nombre}`,
         horaSalida: i.viaje.fecha_salida ? i.viaje.fecha_salida.toISOString() : null,
         fecha: i.created_at ? i.created_at.toISOString() : null,
+        foto_url: (i as any).foto_url || null,
       })),
       embarques: viajesEmbarque.map(v => {
         const pasajesDelViaje = v.asientos_viaje
