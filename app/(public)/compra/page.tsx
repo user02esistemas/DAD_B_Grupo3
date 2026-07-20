@@ -976,7 +976,15 @@ function CompraContent() {
                           <button 
                             onClick={(e) => {
                               e.stopPropagation();
-                              const imgs = trip.bus.imagenes.split(",").map((i: string) => i.trim()).filter((i: string) => i !== "").map((i: string) => i.startsWith("http") || i.startsWith("/") ? i : `/${i}`);
+                              let imgs: string[] = [];
+                              try {
+                                const parsed = JSON.parse(trip.bus.imagenes);
+                                if (Array.isArray(parsed)) imgs = parsed;
+                                else imgs = [trip.bus.imagenes];
+                              } catch (e) {
+                                imgs = trip.bus.imagenes.split(",");
+                              }
+                              imgs = imgs.map((i: string) => i.trim()).filter((i: string) => i !== "").map((i: string) => i.startsWith("http") || i.startsWith("/") || i.startsWith("data:") ? i : `/${i}`);
                               if (imgs.length > 0) {
                                 setBusImages(imgs);
                                 setCurrentImageIndex(0);
