@@ -10,25 +10,24 @@ import { getCustomerProfileByUserId } from "@/lib/customer-profile";
 import { Resend } from "resend";
 import { jsPDF } from "jspdf";
 import QRCode from "qrcode";
+import { randomBytes } from "crypto";
+import { Prisma } from "@prisma/client";
+import { refundCulqiCharge, verifyCulqiCharge } from "@/lib/culqi";
+import { createComplaintCode } from "@/lib/complaints";
+import { getPeruDayRange } from "@/lib/dates";
+import { headers } from "next/headers";
+import { assertRateLimit, rateLimitKey, requestAddress } from "@/lib/rate-limit";
 
-// Rate limiting en memoria (Anti-DDoS básico)
-const rateLimits = new Map<string, { count: number; resetTime: number }>();
-
-function checkRateLimit(token: string) {
-  const now = Date.now();
-  const limit = rateLimits.get(token);
-
-  if (limit) {
-    if (now > limit.resetTime) {
-      rateLimits.set(token, { count: 1, resetTime: now + 60000 }); // 1 minuto
-    } else {
-      if (limit.count >= 10) {
-        throw new Error("Límite de solicitudes excedido. Intenta de nuevo en 1 minuto.");
-      }
-      limit.count++;
+async function checkPublicRateLimit(scope: string, discriminator = "") {
+  try {
+    const requestHeaders = await headers();
+    const address = requestAddress(requestHeaders);
+    assertRateLimit(rateLimitKey(scope, address, discriminator), 10, 60_000);
+  } catch (err: any) {
+    if (err?.message?.includes("outside a request scope") || err?.digest === "DYNAMIC_SERVER_USAGE") {
+      return;
     }
-  } else {
-    rateLimits.set(token, { count: 1, resetTime: now + 60000 });
+    throw new Error("Límite de solicitudes excedido. Intenta de nuevo en 1 minuto.");
   }
 }
 
@@ -43,15 +42,61 @@ const pasajeroSchema = z.object({
 const checkoutSchema = z.array(z.object({
   seatId: z.string(),
   pasajeroData: pasajeroSchema
-}));
+})).min(1).max(6);
+
+function escapeHtml(value: unknown): string {
+  return String(value ?? "").replace(/[&<>'"]/g, (char) => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char] || char
+  ));
+}
+
+async function validateCheckoutReservation(
+  viajeId: string,
+  seatIds: string[],
+  guestToken?: string,
+  userId?: bigint | null,
+) {
+  const uniqueSeatIds = [...new Set(seatIds)];
+  if (
+    !/^\d+$/.test(viajeId) ||
+    uniqueSeatIds.length !== seatIds.length ||
+    uniqueSeatIds.length === 0 ||
+    uniqueSeatIds.length > 6 ||
+    uniqueSeatIds.some((id) => !/^\d+$/.test(id))
+  ) {
+    throw new Error("La selección de asientos no es válida.");
+  }
+
+  const asientos = await prisma.asientoViaje.findMany({
+    where: { id: { in: uniqueSeatIds.map(BigInt) } },
+    include: { viaje: { include: { ruta: true } } },
+  });
+  if (asientos.length !== uniqueSeatIds.length) throw new Error("Uno o más asientos no existen.");
+
+  const expectedTripId = BigInt(viajeId);
+  for (const asiento of asientos) {
+    if (asiento.viaje_id !== expectedTripId) throw new Error("Todos los asientos deben pertenecer al mismo viaje.");
+    if (asiento.viaje.estado !== "programado") throw new Error("El viaje ya no está disponible para venta.");
+    if (asiento.viaje.fecha_salida <= new Date()) throw new Error("No se pueden comprar pasajes para un viaje que ya salió.");
+    if (asiento.estado !== "pendiente") throw new Error(`El asiento ${asiento.numero_asiento} ya no está reservado.`);
+    const ownedByUser = Boolean(userId) && asiento.bloqueado_por_usuario_id === userId;
+    const ownedByToken = Boolean(guestToken) && asiento.bloqueado_por_token === guestToken;
+    if (!ownedByUser && !ownedByToken) throw new Error(`El asiento ${asiento.numero_asiento} pertenece a otra reserva.`);
+  }
+
+  return {
+    asientos,
+    total: asientos.reduce((sum, asiento) => sum + Number(asiento.viaje.ruta.precio_base), 0),
+  };
+}
 
 async function getCurrentUser() {
   const session = await getServerSession(authOptions);
-  if (!session || !session.user?.email) {
+  if (!session || !session.user?.id) {
     return null;
   }
   const user = await prisma.usuario.findUnique({
-    where: { correo: session.user.email },
+    where: { id: BigInt(session.user.id) },
     include: { persona: true }
   });
   return user;
@@ -165,6 +210,7 @@ export async function searchTrips(originId: string, destinationId: string, date:
 
     const trips = await prisma.viaje.findMany({
       where: {
+        estado: "programado",
         ruta: {
           origen_id: BigInt(originId),
           destino_id: BigInt(destinationId),
@@ -375,8 +421,7 @@ export async function updateClienteProfile(
 export async function getAdminDashboardStats() {
   try {
     await requireLegacyRoles(["admin", "vendedor", "gerente"]);
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
+    const { start: startOfToday } = getPeruDayRange();
 
     const endOfToday = new Date();
     endOfToday.setHours(23, 59, 59, 999);
@@ -416,7 +461,7 @@ export async function getAdminDashboardStats() {
       },
       include: {
         pasajero: true,
-        comprador: true,
+        comprador: { select: { id: true, correo: true, rol: true } },
         asiento_viaje: {
           include: {
             viaje: {
@@ -584,7 +629,7 @@ export async function createEncomienda(data: {
       let esUnico = false;
 
       while (!esUnico) {
-        codigo = `ENT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        codigo = `ENT-${randomBytes(16).toString("hex").toUpperCase()}`;
         const existe = await tx.encomienda.findUnique({ where: { codigo_seguimiento: codigo } });
         if (!existe) esUnico = true;
       }
@@ -656,7 +701,7 @@ export async function getAdminPasajes() {
     const pasajes = await prisma.pasaje.findMany({
       include: {
         pasajero: true,
-        comprador: true,
+        comprador: { select: { id: true, correo: true, rol: true } },
         asiento_viaje: {
           include: {
             viaje: {
@@ -1204,26 +1249,27 @@ export async function crearOrdenCulqi(
   }
 }
 
-export async function crearCargoCulqi(tokenId: string, email: string, amount: number, seatIds?: string[]) {
+export async function crearCargoCulqi(
+  tokenId: string,
+  email: string,
+  amount: number,
+  seatIds: string[],
+  viajeId: string,
+  guestToken?: string,
+) {
   try {
     const SECRET_KEY = process.env.CULQI_SECRET_KEY;
     if (!SECRET_KEY) {
       throw new Error("CULQI_SECRET_KEY no está configurada en las variables de entorno.");
     }
 
-    // Validar monto contra precios en base de datos si se proveen seatIds
-    if (seatIds && Array.isArray(seatIds) && seatIds.length > 0) {
-      const asientos = await prisma.asientoViaje.findMany({
-        where: { id: { in: seatIds.map(id => BigInt(id)) } },
-        include: { viaje: { include: { ruta: true } } }
-      });
-      if (asientos.length === 0) {
-        throw new Error("Los asientos seleccionados no existen.");
-      }
-      const totalEsperado = asientos.reduce((acc, a) => acc + Number(a.viaje.ruta.precio_base), 0);
-      if (Math.abs(totalEsperado - amount) > 0.01) {
-        throw new Error("El monto de pago no coincide con el precio de los asientos en el sistema.");
-      }
+    const session = await getServerSession(authOptions);
+    const currentUser = session?.user?.id
+      ? await prisma.usuario.findUnique({ where: { id: BigInt(session.user.id) }, select: { id: true } })
+      : null;
+    const reservation = await validateCheckoutReservation(viajeId, seatIds, guestToken, currentUser?.id);
+    if (Math.abs(reservation.total - amount) > 0.01) {
+      throw new Error("El monto de pago no coincide con el precio de los asientos en el sistema.");
     }
 
     const response = await fetch("https://api.culqi.com/v2/charges", {
@@ -1237,6 +1283,11 @@ export async function crearCargoCulqi(tokenId: string, email: string, amount: nu
         currency_code: "PEN",
         email: email,
         source_id: tokenId,
+        capture: true,
+        metadata: {
+          viaje_id: viajeId,
+          asiento_ids: seatIds.join(","),
+        },
       }),
     });
 
@@ -1263,6 +1314,7 @@ export async function procesarPagoMultiplesAsientosCulqi(
   email?: string,
   guestToken?: string
 ) {
+  let verifiedCharge = false;
   try {
     // Validación de seguridad estricta en el servidor con Zod
     try {
@@ -1272,20 +1324,37 @@ export async function procesarPagoMultiplesAsientosCulqi(
       return { success: false, error: "Datos de pasajeros inválidos, manipulados o con formato incorrecto." };
     }
 
+    const uniqueSeatIds = [...new Set(asientosPasajeros.map((item) => item.seatId))];
+    if (uniqueSeatIds.length !== asientosPasajeros.length) {
+      return { success: false, error: "No se puede comprar el mismo asiento más de una vez." };
+    }
+
     let userId: bigint | null = null;
     const session = await getServerSession(authOptions);
-    if (session?.user?.email) {
-      const user = await prisma.usuario.findUnique({ where: { correo: session.user.email } });
+    if (session?.user?.id) {
+      const user = await prisma.usuario.findUnique({ where: { id: BigInt(session.user.id) } });
       userId = user?.id ?? null;
     }
+
+    const reservation = await validateCheckoutReservation(viajeId, uniqueSeatIds, guestToken, userId);
+    if (Math.abs(reservation.total - amount) > 0.01) {
+      throw new Error("El monto no coincide con el precio vigente de los asientos.");
+    }
+    await verifyCulqiCharge(chargeId, reservation.total, email);
+    verifiedCharge = true;
+
     const result = await prisma.$transaction(async (tx) => {
+      const pagoExistente = await tx.pago.findFirst({ where: { preference_id: chargeId }, select: { id: true } });
+      if (pagoExistente) throw new Error("CHARGE_ALREADY_PROCESSED");
+
       const tickets = [];
-      const paymentAmountPerSeat = amount / asientosPasajeros.length;
+      const paymentAmountPerSeat = reservation.total / asientosPasajeros.length;
 
       for (const item of asientosPasajeros) {
         // Validar que el asiento exista y esté en estado 'pendiente' (reservado por el usuario temporalmente)
         const asientoActual = await tx.asientoViaje.findUnique({
-          where: { id: BigInt(item.seatId) }
+          where: { id: BigInt(item.seatId) },
+          include: { viaje: true },
         });
 
         if (!asientoActual) {
@@ -1294,6 +1363,10 @@ export async function procesarPagoMultiplesAsientosCulqi(
 
         if (asientoActual.estado !== "pendiente") {
           throw new Error(`El asiento número ${asientoActual.numero_asiento} ya no está reservado (estado actual: ${asientoActual.estado}). Su tiempo de reserva de 8 minutos pudo haber expirado.`);
+        }
+
+        if (asientoActual.viaje_id !== BigInt(viajeId) || asientoActual.viaje.estado !== "programado") {
+          throw new Error("El asiento no pertenece a un viaje disponible.");
         }
 
         // Validar propiedad de la reserva del asiento
@@ -1328,6 +1401,7 @@ export async function procesarPagoMultiplesAsientosCulqi(
             estado: "vendido",
             bloqueado_por_usuario: userId ? { connect: { id: userId } } : { disconnect: true },
             bloqueado_por_token: null,
+            bloqueado_en: null,
           },
         });
 
@@ -1363,7 +1437,7 @@ export async function procesarPagoMultiplesAsientosCulqi(
             persona_id: persona.id,
             comprador_id: userId,
             precio: paymentAmountPerSeat,
-            codigo_qr: `QR-${Math.random().toString(36).substring(2, 10).toUpperCase()}-${Date.now()}`,
+            codigo_qr: `QR-${randomBytes(18).toString("base64url")}`,
           },
         });
         tickets.push({
@@ -1375,11 +1449,23 @@ export async function procesarPagoMultiplesAsientosCulqi(
       }
 
       return tickets;
-    });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     return { success: true, tickets: serializeBigInt(result) };
   } catch (error: any) {
     console.error("Error al registrar pasajes con Culqi:", error);
+    if (error?.message === "CHARGE_ALREADY_PROCESSED") {
+      return { success: false, error: "Este cargo ya fue procesado anteriormente." };
+    }
+    if (verifiedCharge) {
+      const refunded = await refundCulqiCharge(chargeId, amount).catch(() => false);
+      return {
+        success: false,
+        error: refunded
+          ? "No se pudieron emitir los boletos y el cargo fue devuelto automáticamente."
+          : "No se pudieron emitir los boletos. El cargo requiere revisión manual por soporte.",
+      };
+    }
     return { success: false, error: error.message || "Error al emitir los pasajes en la base de datos." };
   }
 }
@@ -1390,7 +1476,7 @@ export async function marcarAsientosPendientes(seatIds: string[], guestToken: st
     const uniqueSeatIds = [...new Set(seatIds)];
     if (uniqueSeatIds.length === 0 || uniqueSeatIds.length > 6 || uniqueSeatIds.some((id) => !/^\d+$/.test(id))) throw new Error("La selección de asientos no es válida.");
     if (typeof guestToken !== "string" || guestToken.length < 16) throw new Error("La sesión de reserva no es válida.");
-    checkRateLimit(guestToken);
+    await checkPublicRateLimit("seat-reservation", guestToken);
     await limpiarBloqueosExpirados();
 
     const ids = uniqueSeatIds.map((id) => BigInt(id));
@@ -1432,6 +1518,57 @@ export async function liberarAsientos(seatIds: string[], guestToken?: string) {
 }
 export async function enviarTicketEmail(emailDestino: string, tickets: any[], tripDetails: any) {
   try {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailDestino) || !Array.isArray(tickets) || tickets.length === 0 || tickets.length > 6) {
+      throw new Error("Solicitud de correo inválida.");
+    }
+    const ticketIds = [...new Set(tickets.map((ticket) => String(ticket?.id || "")))];
+    if (ticketIds.length !== tickets.length || ticketIds.some((id) => !/^\d+$/.test(id))) {
+      throw new Error("Los boletos proporcionados no son válidos.");
+    }
+
+    const storedTickets = await prisma.pasaje.findMany({
+      where: { id: { in: ticketIds.map((id) => BigInt(id)) } },
+      include: {
+        pasajero: true,
+        asiento_viaje: {
+          include: {
+            pagos: { where: { status: "approved" }, orderBy: { created_at: "desc" } },
+            viaje: { include: { ruta: { include: { origen: true, destino: true } }, bus: true } },
+          },
+        },
+      },
+    });
+    if (storedTickets.length !== ticketIds.length) throw new Error("No se encontraron todos los boletos.");
+    const viajeId = storedTickets[0].asiento_viaje.viaje_id;
+    if (storedTickets.some((ticket) => ticket.asiento_viaje.viaje_id !== viajeId)) {
+      throw new Error("Los boletos no pertenecen al mismo viaje.");
+    }
+
+    const session = await getServerSession(authOptions);
+    const sessionUser = session?.user?.id
+      ? await prisma.usuario.findUnique({ where: { id: BigInt(session.user.id) }, select: { id: true, correo: true } })
+      : null;
+    const ownsAllTickets = Boolean(sessionUser) && storedTickets.every((ticket) => ticket.comprador_id === sessionUser!.id);
+    if (ownsAllTickets) {
+      emailDestino = sessionUser!.correo;
+    } else {
+      const chargeIds = storedTickets.map((ticket) => ticket.asiento_viaje.pagos[0]?.preference_id).filter(Boolean) as string[];
+      const commonChargeId = chargeIds[0];
+      if (!commonChargeId || chargeIds.some((id) => id !== commonChargeId)) throw new Error("No se pudo acreditar la compra de los boletos.");
+      const total = storedTickets.reduce((sum, ticket) => sum + Number(ticket.precio), 0);
+      await verifyCulqiCharge(commonChargeId, total, emailDestino);
+    }
+
+    tickets = storedTickets.map((ticket) => ({
+      id: ticket.id.toString(),
+      nombres: ticket.pasajero.nombres,
+      apellidos: ticket.pasajero.apellidos,
+      dni: ticket.pasajero.dni,
+      numero_asiento: ticket.asiento_viaje.numero_asiento,
+      codigo_qr: ticket.codigo_qr,
+    }));
+    tripDetails = storedTickets[0].asiento_viaje.viaje;
+
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
       console.log("No se ha configurado RESEND_API_KEY, no se enviará el correo.");
@@ -1469,6 +1606,10 @@ export async function enviarTicketEmail(emailDestino: string, tickets: any[], tr
     let yOffset = 55;
 
     for (const [index, t] of tickets.entries()) {
+      if (index > 0) {
+        doc.addPage();
+        yOffset = 30;
+      }
       const qrDataUrl = await QRCode.toDataURL(t.codigo_qr || `QR-${t.id}`);
 
       doc.setFontSize(12);
@@ -1479,7 +1620,7 @@ export async function enviarTicketEmail(emailDestino: string, tickets: any[], tr
       doc.setTextColor(51, 65, 85);
       doc.text(`Pasajero: ${t.nombres || ''} ${t.apellidos || ''}`, 14, yOffset + 8);
       doc.text(`DNI / Identificación: ${t.dni || 'N/A'}`, 14, yOffset + 15);
-      doc.text(`Asiento N°: #${t.asiento_viaje_id || t.id}`, 14, yOffset + 22);
+      doc.text(`Asiento N°: #${t.numero_asiento}`, 14, yOffset + 22);
       doc.text(`Código de Abordaje: ${t.codigo_qr || 'N/A'}`, 14, yOffset + 29);
 
       doc.setFontSize(12);
@@ -1512,12 +1653,12 @@ export async function enviarTicketEmail(emailDestino: string, tickets: any[], tr
     // 2. Construir HTML del correo
     let ticketsHtml = tickets.map(t => `
       <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; background-color: #f9fafb;">
-        <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #111827;">Pasajero: ${t.nombres} ${t.apellidos}</p>
-        <p style="margin: 0 0 8px 0; color: #4b5563;">DNI: ${t.dni}</p>
-        <p style="margin: 0 0 8px 0; color: #4b5563;">Asiento ID: ${t.asiento_viaje_id}</p>
+        <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #111827;">Pasajero: ${escapeHtml(t.nombres)} ${escapeHtml(t.apellidos)}</p>
+        <p style="margin: 0 0 8px 0; color: #4b5563;">DNI: ${escapeHtml(t.dni)}</p>
+        <p style="margin: 0 0 8px 0; color: #4b5563;">Asiento: ${escapeHtml(t.numero_asiento)}</p>
         <div style="background-color: #fff; border: 1px dashed #f07639; padding: 12px; text-align: center; border-radius: 4px; margin-top: 12px;">
           <p style="margin: 0; font-size: 12px; color: #6b7280; text-transform: uppercase;">Código de Abordaje</p>
-          <p style="margin: 4px 0 0 0; font-size: 20px; font-weight: bold; color: #f07639; font-family: monospace;">${t.codigo_qr}</p>
+          <p style="margin: 4px 0 0 0; font-size: 20px; font-weight: bold; color: #f07639; font-family: monospace;">${escapeHtml(t.codigo_qr)}</p>
         </div>
       </div>
     `).join("");
@@ -1534,11 +1675,11 @@ export async function enviarTicketEmail(emailDestino: string, tickets: any[], tr
           <table style="width: 100%; border-collapse: collapse; margin-top: 16px;">
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Origen:</td>
-              <td style="padding: 8px 0; font-weight: bold; text-align: right;">${origenNombre}</td>
+              <td style="padding: 8px 0; font-weight: bold; text-align: right;">${escapeHtml(origenNombre)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Destino:</td>
-              <td style="padding: 8px 0; font-weight: bold; text-align: right;">${destinoNombre}</td>
+              <td style="padding: 8px 0; font-weight: bold; text-align: right;">${escapeHtml(destinoNombre)}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; color: #6b7280;">Fecha y Hora:</td>
@@ -1597,6 +1738,7 @@ export async function registrarReclamo(data: {
 }) {
   try {
     const { nombres, apellidos, dni, telefono, correo, tipo, fecha_incidente, detalle_incidente, pedido_cliente } = data;
+    await checkPublicRateLimit("complaint", dni);
 
     if (!nombres || !apellidos || !dni || !tipo || !fecha_incidente || !detalle_incidente || !pedido_cliente) {
       return { success: false, error: "Todos los campos obligatorios deben ser completados." };
@@ -1631,11 +1773,7 @@ export async function registrarReclamo(data: {
     // 1. Buscar o crear la Persona a partir del DNI
     const persona = await prisma.persona.upsert({
       where: { dni },
-      update: {
-        nombres: nombres.trim().toUpperCase(),
-        apellidos: apellidos.trim().toUpperCase(),
-        telefono: telefono ? telefono.trim() : null
-      },
+      update: {},
       create: {
         nombres: nombres.trim().toUpperCase(),
         apellidos: apellidos.trim().toUpperCase(),
@@ -1645,9 +1783,7 @@ export async function registrarReclamo(data: {
     });
 
     // 2. Generar código correlativo de reclamo
-    const count = await prisma.reclamo.count();
-    const correlativo = String(count + 1).padStart(4, "0");
-    const codigoReclamo = `REC-2026-${correlativo}`;
+    const codigoReclamo = createComplaintCode();
 
     // 3. Registrar el reclamo en la base de datos
     const nuevoReclamo = await prisma.reclamo.create({
@@ -1658,6 +1794,7 @@ export async function registrarReclamo(data: {
         fecha_incidente: new Date(fecha_incidente),
         detalle_incidente: detalle_incidente.trim(),
         pedido_cliente: pedido_cliente.trim(),
+        correo_contacto: correo ? correo.trim().toLowerCase() : null,
         estado: "pendiente"
       }
     });
@@ -1724,6 +1861,7 @@ export async function buscarPersonaPorDNI(dni: string) {
 
 export async function buscarEncomiendaPorCodigo(codigo: string) {
   try {
+    await checkPublicRateLimit("shipment-tracking");
     if (!codigo || codigo.trim().length === 0) {
       return { success: false, error: "Debe ingresar un código de seguimiento válido." };
     }
@@ -1748,7 +1886,20 @@ export async function buscarEncomiendaPorCodigo(codigo: string) {
     const ofuscarTelefono = (t: string | null) => t ? t.slice(0, 4) + "****" : "";
 
     const encMapeada = {
-      ...enc,
+      id: enc.id,
+      codigo_seguimiento: enc.codigo_seguimiento,
+      origen_id: enc.origen_id,
+      destino_id: enc.destino_id,
+      viaje_id: enc.viaje_id,
+      peso_kg: enc.peso_kg,
+      descripcion: enc.descripcion,
+      precio: enc.precio,
+      estado: enc.estado,
+      created_at: enc.created_at,
+      updated_at: enc.updated_at,
+      origen: enc.origen,
+      destino: enc.destino,
+      viaje: enc.viaje,
       remitente_nombre: `${enc.remitente.nombres} ${enc.remitente.apellidos}`,
       destinatario_nombre: `${enc.destinatario.nombres} ${enc.destinatario.apellidos}`,
       // Reemplazar campos de datos sensibles para invitados

@@ -2,6 +2,7 @@ import { createHash, randomInt } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Resend } from "resend";
+import { assertRateLimit, rateLimitKey, requestAddress } from "@/lib/rate-limit";
 
 const GENERIC_MESSAGE = "Si el correo está registrado, enviaremos un código de recuperación";
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
@@ -21,13 +22,14 @@ export async function POST(req: Request) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json({ message: "El correo no tiene un formato válido" }, { status: 400 });
     }
+    assertRateLimit(rateLimitKey("forgot-password", requestAddress(req.headers), email), 3, 15 * 60_000);
 
     const user = await prisma.usuario.findUnique({ where: { correo: email }, include: { persona: true } });
     if (!user) return NextResponse.json({ message: GENERIC_MESSAGE });
 
     const windowStart = new Date(Date.now() - 15 * 60_000);
     const recentCodes = await prisma.verificationCode.count({ where: { user_id: user.id, created_at: { gte: windowStart } } });
-    if (recentCodes >= 3) return NextResponse.json({ message: "Demasiados intentos. Intenta nuevamente en 15 minutos" }, { status: 429 });
+    if (recentCodes >= 3) return NextResponse.json({ message: GENERIC_MESSAGE });
 
     if (!resend) {
       console.error("RESEND_API_KEY no está configurada.");
@@ -50,6 +52,9 @@ export async function POST(req: Request) {
     if (error) console.error("Resend API error:", error);
     return NextResponse.json({ message: GENERIC_MESSAGE });
   } catch (error) {
+    if (error instanceof Error && error.message === "RATE_LIMIT") {
+      return NextResponse.json({ message: GENERIC_MESSAGE });
+    }
     console.error("Error en forgot-password:", error);
     return NextResponse.json({ message: "Error interno del servidor" }, { status: 500 });
   }

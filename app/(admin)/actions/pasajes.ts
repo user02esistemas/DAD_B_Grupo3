@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requireAdminOrVendedor } from "./_auth";
+import { getPeruDayRange } from "@/lib/dates";
 
 // Helper genérico para resolver BigInts
 function serializeBigInt<T>(obj: T): any {
@@ -17,8 +18,7 @@ function serializeBigInt<T>(obj: T): any {
 export async function buscarViajes(origenId: string | number, destinoId: string | number, fechaStr: string) {
   try {
     await requireAdminOrVendedor();
-    const fechaInicio = new Date(`${fechaStr}T00:00:00.000Z`);
-    const fechaFin = new Date(`${fechaStr}T23:59:59.999Z`);
+    const { start: fechaInicio, end: fechaFin } = getPeruDayRange(fechaStr);
 
     const viajes = await prisma.viaje.findMany({
       where: {
@@ -63,7 +63,10 @@ export async function obtenerAsientosPorViaje(viajeId: string | number) {
       orderBy: { numero_asiento: "asc" },
       include: {
         pasaje: {
-          include: { pasajero: true, comprador: true }
+          include: {
+            pasajero: true,
+            comprador: { select: { id: true, correo: true, rol: true } },
+          }
         }
       }
     });
@@ -120,6 +123,9 @@ export async function venderPasaje(data: {
       });
 
       if (!asientoData) throw new Error("Asiento no encontrado en el sistema.");
+      if (asientoData.viaje_id !== vId || asientoData.viaje.estado !== "programado") {
+        throw new Error("El asiento no pertenece a un viaje disponible.");
+      }
       
       // 2. Validación estricta de Precio (Evitar fraude)
       // Mínimo 50% del precio base permitido por si hacen descuento manual, sino rechaza.
@@ -197,8 +203,7 @@ export async function buscarPasajesVendidos(filtros: { origenId?: string, destin
 
     // Filtro por fecha (fecha de salida del viaje)
     if (filtros.fecha) {
-      const fechaInicio = new Date(`${filtros.fecha}T00:00:00.000Z`);
-      const fechaFin = new Date(`${filtros.fecha}T23:59:59.999Z`);
+      const { start: fechaInicio, end: fechaFin } = getPeruDayRange(filtros.fecha);
       whereClause.asiento_viaje = {
         viaje: {
           fecha_salida: {
@@ -232,7 +237,7 @@ export async function buscarPasajesVendidos(filtros: { origenId?: string, destin
       where: whereClause,
       include: {
         pasajero: true,
-        comprador: true,
+        comprador: { select: { id: true, correo: true, rol: true } },
         asiento_viaje: {
           include: {
             viaje: {
@@ -326,7 +331,7 @@ export async function editarPasaje(data: {
         },
         include: {
           pasajero: true,
-          comprador: true,
+          comprador: { select: { id: true, correo: true, rol: true } },
           asiento_viaje: {
             include: {
               viaje: {

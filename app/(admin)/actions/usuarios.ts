@@ -33,8 +33,8 @@ const RolUpdateSchema = z.object({
 const UsuarioCreateSchema = z.object({
   nombres: z.string().min(2, "Los nombres son obligatorios"),
   apellidos: z.string().min(2, "Los apellidos son obligatorios"),
-  dni: z.string().min(8, "El DNI debe tener 8 dígitos"),
-  telefono: z.string().min(9, "El teléfono es obligatorio"),
+  dni: z.string().regex(/^\d{8}$/, "El DNI debe tener exactamente 8 dígitos"),
+  telefono: z.string().regex(/^\d{9}$/, "El teléfono debe tener exactamente 9 dígitos"),
   correo: z.string().email("Correo inválido"),
   contrasena: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
   rol: z.enum(["admin", "cliente", "vendedor", "gerente", "operario", "conductor"], {
@@ -62,8 +62,13 @@ export async function obtenerUsuarios() {
   try {
     await verifyAdminOrGerenteRole();
     const usuarios = await prisma.usuario.findMany({
-      include: {
-        persona: true
+      select: {
+        id: true,
+        correo: true,
+        rol: true,
+        created_at: true,
+        updated_at: true,
+        persona: true,
       },
       orderBy: { created_at: "desc" },
     });
@@ -133,7 +138,8 @@ export async function crearUsuario(data: any) {
     });
 
     revalidatePath("/admin/usuarios");
-    return { success: true, data: serializeBigInt(result) };
+    const { contrasena: _contrasena, ...usuarioSeguro } = result;
+    return { success: true, data: serializeBigInt(usuarioSeguro) };
 
   } catch (error: any) {
     if (error instanceof z.ZodError) {

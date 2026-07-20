@@ -17,12 +17,7 @@ const eslintConfig = defineConfig([
       "react-hooks/exhaustive-deps": "off"
     }
   },
-  {
-    files: ["app-movil-elcumbe/**/*.{ts,tsx}"],
-    rules: {
-      "jsx-a11y/alt-text": "off",
-    },
-  },  globalIgnores([
+  globalIgnores([
     ".next/**",
     "out/**",
     "build/**",

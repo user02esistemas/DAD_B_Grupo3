@@ -26,10 +26,9 @@ git clone https://github.com/user02esistemas/DAD_B_Grupo3.git
 cd DAD_B_Grupo3
 ```
 
-### 2. Instalar dependencias del proyecto Web y Móvil
+### 2. Instalar dependencias del proyecto Web
 ```bash
 npm install
-cd app-movil-elcumbe && npm install && cd ..
 ```
 
 ### 3. Configurar Variables de Entorno
@@ -48,7 +47,6 @@ NEXTAUTH_SECRET="genera_un_secreto_aleatorio_de_32_bytes_o_mas"
 NEXT_PUBLIC_CULQI_PUBLIC_KEY="pk_test_REEMPLAZAR"
 CULQI_SECRET_KEY="sk_test_REEMPLAZAR"
 RESEND_API_KEY="re_REEMPLAZAR"
-EXPO_PUBLIC_API_URL="http://TU_IP_LOCAL:3000"
 ```
 
 ### 4. Sincronizar Base de Datos y Cargar Datos Iniciales
@@ -82,16 +80,9 @@ El sistema provee una especificación completa **OpenAPI 3.0.0** accesible inter
 
 ---
 
-## 📱 Ejecución del Proyecto
-
 ### Iniciar Servidor Web / Backend REST:
 ```bash
 npm run dev
-```
-
-### Iniciar App Móvil Expo:
-```bash
-npm run mobile
 ```
 
 ---
@@ -99,4 +90,4 @@ npm run mobile
 ## 🔒 Seguridad y Roles
 
 * **Estrategia JWT:** Firma y verificación de tokens Bearer (`jsonwebtoken` + `NextAuth`) en encabezados HTTP `Authorization: Bearer <token>`.
-* **Control de Acceso por Roles (RBAC):** `admin`, `vendedor`, `gerente`, `conductor`, `operario` y `cliente`. Restricción de rutas mediante middleware `proxy.ts` en la Web y middleware `lib/mobileAuth.ts` en la API Móvil.
+* **Control de Acceso por Roles (RBAC):** `admin`, `vendedor`, `gerente`, `conductor`, `operario` y `cliente`. Restricción de rutas mediante middleware `proxy.ts` en la Web.

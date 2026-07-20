@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, MapPin, Calendar, Clock, CreditCard, User, Tag, ChevronRight, CheckCircle2, Ticket, ArrowLeft, Monitor, Maximize2, X, RotateCcw, Printer } from "lucide-react";
 import { buscarViajes, obtenerAsientosPorViaje, buscarPasajeroPorDni, venderPasaje } from "../../actions/pasajes";
+import { getPeruDateString } from "@/lib/dates";
 import ListaPasajes from "./ListaPasajes";
 import QRCode from "qrcode";
 
@@ -22,7 +23,7 @@ export default function PasajesClient({ initialSucursales, userRole }: { initial
   // Buscador
   const [origenId, setOrigenId] = useState<string>("");
   const [destinoId, setDestinoId] = useState<string>("");
-  const [fecha, setFecha] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [fecha, setFecha] = useState<string>(getPeruDateString());
 
   // Vista actual — leer tab de la URL si existe (?tab=lista)
   const searchParams = useSearchParams();
@@ -80,7 +81,7 @@ export default function PasajesClient({ initialSucursales, userRole }: { initial
   const handleLimpiar = () => {
     setOrigenId("");
     setDestinoId("");
-    setFecha(new Date().toISOString().split('T')[0]);
+    setFecha(getPeruDateString());
     setViajes([]);
     setSelectedViaje(null);
     setSelectedAsiento(null);

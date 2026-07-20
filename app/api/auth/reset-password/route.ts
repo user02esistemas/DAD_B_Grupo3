@@ -2,18 +2,7 @@ import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
-
-const resetAttemptLimits = new Map<string, { count: number; resetTime: number }>();
-function checkAttemptRateLimit(key: string) {
-  const now = Date.now();
-  const limit = resetAttemptLimits.get(key);
-  if (!limit || now > limit.resetTime) {
-    resetAttemptLimits.set(key, { count: 1, resetTime: now + 15 * 60_000 });
-    return;
-  }
-  if (limit.count >= 5) throw new Error("RATE_LIMIT");
-  limit.count++;
-}
+import { assertRateLimit, rateLimitKey, requestAddress } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
@@ -24,7 +13,7 @@ export async function POST(req: Request) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\d{6}$/.test(code) || newPassword.length < 8) {
       return NextResponse.json({ message: "Los datos proporcionados no son válidos" }, { status: 400 });
     }
-    checkAttemptRateLimit(email);
+    assertRateLimit(rateLimitKey("reset-password", requestAddress(req.headers), email), 5, 15 * 60_000);
 
     const user = await prisma.usuario.findUnique({ where: { correo: email } });
     if (!user) return NextResponse.json({ message: "Código inválido o expirado" }, { status: 400 });
@@ -39,7 +28,6 @@ export async function POST(req: Request) {
       prisma.usuario.update({ where: { id: user.id }, data: { contrasena: hashedPassword } }),
       prisma.verificationCode.updateMany({ where: { user_id: user.id, is_used: false }, data: { is_used: true } }),
     ]);
-    resetAttemptLimits.delete(email);
     return NextResponse.json({ message: "Contraseña actualizada correctamente" });
   } catch (error) {
     if (error instanceof Error && error.message === "RATE_LIMIT") {

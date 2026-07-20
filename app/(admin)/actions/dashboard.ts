@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAdminOrVendedor } from "./_auth";
+import { getPeruDayRange } from "@/lib/dates";
 
 // Helper para convertir BigInt y Decimal de forma segura para el Cliente
 function serializeBigInt<T>(obj: T): any {
@@ -15,10 +16,8 @@ function serializeBigInt<T>(obj: T): any {
 export async function getDashboardStats() {
   try {
     await requireAdminOrVendedor();
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const manana = new Date(hoy);
-    manana.setDate(manana.getDate() + 1);
+    const { start: hoy, end } = getPeruDayRange();
+    const manana = new Date(end.getTime() + 1);
 
     const [totalBuses, totalSucursales, viajesActivosHoy, pasajesVendidosHoy] = await Promise.all([
       prisma.bus.count(),
@@ -253,8 +252,7 @@ export async function getViajesPorDestino() {
 export async function getDemandaAlertas() {
   try {
     await requireAdminOrVendedor();
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    const { start: hoy } = getPeruDayRange();
     const ayer = new Date(hoy);
     ayer.setDate(ayer.getDate() - 1);
     const manana = new Date(hoy);

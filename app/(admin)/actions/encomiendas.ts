@@ -3,6 +3,27 @@
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requireAdminOrVendedor } from "./_auth";
+import { randomBytes } from "crypto";
+import { z } from "zod";
+
+const ESTADOS_ENCOMIENDA = new Set(["recepcionado", "en_transito", "en_destino", "entregado"]);
+const PersonaEnvioSchema = z.object({
+  dni: z.string().regex(/^\d{8}$/, "El DNI debe tener 8 dígitos."),
+  nombres: z.string().trim().min(2).max(80),
+  apellidos: z.string().trim().min(2).max(80),
+  telefono: z.string().regex(/^\d{9}$/).optional().or(z.literal("")),
+});
+const EncomiendaSchema = z.object({
+  remitente: PersonaEnvioSchema,
+  destinatario: PersonaEnvioSchema,
+  paquete: z.object({
+    origen_id: z.string().regex(/^\d+$/),
+    destino_id: z.string().regex(/^\d+$/),
+    peso_kg: z.string().refine((value) => Number.isFinite(Number(value)) && Number(value) > 0, "El peso debe ser mayor a cero."),
+    precio: z.string().refine((value) => Number.isFinite(Number(value)) && Number(value) > 0, "El precio debe ser mayor a cero."),
+    descripcion: z.string().trim().max(500),
+  }),
+});
 
 // Función auxiliar para parsear y validar ID numéricos / BigInt
 function parseId(id: string | number | bigint): bigint {
@@ -66,6 +87,12 @@ export async function actualizarEstadoEncomienda(
 ) {
   try {
     await requireAdminOrVendedor();
+    if (!ESTADOS_ENCOMIENDA.has(nuevoEstado)) {
+      return { success: false, error: "Estado de encomienda inválido." };
+    }
+    if (nuevoEstado === "en_transito" && !viaje_id) {
+      return { success: false, error: "Debe asignar un viaje para poner la encomienda en tránsito." };
+    }
     const encomiendaId = parseId(id);
     
     let updateData: any = { estado: nuevoEstado };
@@ -97,9 +124,11 @@ export async function registrarEncomienda(data: {
 }) {
   try {
     await requireAdminOrVendedor();
+    data = EncomiendaSchema.parse(data);
     if (data.remitente.dni.trim() === data.destinatario.dni.trim()) {
       throw new Error("El remitente y el destinatario no pueden tener el mismo DNI.");
     }
+    if (data.paquete.origen_id === data.paquete.destino_id) throw new Error("El origen y el destino deben ser diferentes.");
     const resultado = await prisma.$transaction(async (tx) => {
       // 1. Upsert Remitente
       const remitente = await tx.persona.upsert({
@@ -130,7 +159,7 @@ export async function registrarEncomienda(data: {
       });
 
       // 3. Generar código de seguimiento
-      const codigoSeguimiento = `ENC-${Date.now()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      const codigoSeguimiento = `ENC-${randomBytes(16).toString("hex").toUpperCase()}`;
 
       // 4. Crear Encomienda
       const nuevaEncomienda = await tx.encomienda.create({
@@ -167,9 +196,12 @@ export async function editarEncomienda(id: string | number, data: {
 }) {
   try {
     await requireAdminOrVendedor();
+    const validated = EncomiendaSchema.parse({ remitente: data.remitente, destinatario: data.destinatario, paquete: data.paquete });
+    data = { ...data, ...validated };
     if (data.remitente.dni.trim() === data.destinatario.dni.trim()) {
       throw new Error("El remitente y el destinatario no pueden tener el mismo DNI.");
     }
+    if (data.paquete.origen_id === data.paquete.destino_id) throw new Error("El origen y el destino deben ser diferentes.");
     const encomiendaId = parseId(id);
 
     // Verificamos que la encomienda exista y esté en estado 'recepcionado'
