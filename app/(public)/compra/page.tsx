@@ -542,8 +542,9 @@ function CompraContent() {
           console.error("Error de tokenización:", Culqi.error);
           const ids = selectedSeats.map(s => s.id);
           await liberarAsientos(ids, getGuestToken());
-          alert("Pago fallido");
-          setPaymentError(Culqi.error?.user_message || "Pago fallido");
+          const msg = Culqi.error?.user_message || Culqi.error?.merchant_message || "No se pudo procesar el pago con Yape o Tarjeta.";
+          alert(`Pago fallido: ${msg}`);
+          setPaymentError(msg);
           setStep(3);
           setSelectedSeats([]);
           // Recargar asientos
