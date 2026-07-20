@@ -106,16 +106,16 @@ export async function crearViajeConAsientos(data: {
     // Validar solapamientos de horario para el bus y el conductor
     const estimacionLlegada = fechaLlegada || new Date(fechaSalida.getTime() + 4 * 60 * 60 * 1000);
 
-    const busConflict = await prisma.viaje.findFirst({
+    const busTrips = await prisma.viaje.findMany({
       where: {
         bus_id: busId,
-        estado: { in: ["programado", "en_ruta"] },
-        fecha_salida: { lt: estimacionLlegada },
-        OR: [
-          { fecha_llegada: { gt: fechaSalida } },
-          { fecha_llegada: null }
-        ]
+        estado: { in: ["programado", "en_ruta"] }
       }
+    });
+
+    const busConflict = busTrips.find(v => {
+      const vLlegada = v.fecha_llegada || new Date(v.fecha_salida.getTime() + 4 * 60 * 60 * 1000);
+      return v.fecha_salida < estimacionLlegada && vLlegada > fechaSalida;
     });
 
     if (busConflict) {
@@ -123,16 +123,16 @@ export async function crearViajeConAsientos(data: {
     }
 
     if (conductorId) {
-      const condConflict = await prisma.viaje.findFirst({
+      const condTrips = await prisma.viaje.findMany({
         where: {
           conductor_id: conductorId,
-          estado: { in: ["programado", "en_ruta"] },
-          fecha_salida: { lt: estimacionLlegada },
-          OR: [
-            { fecha_llegada: { gt: fechaSalida } },
-            { fecha_llegada: null }
-          ]
+          estado: { in: ["programado", "en_ruta"] }
         }
+      });
+
+      const condConflict = condTrips.find(v => {
+        const vLlegada = v.fecha_llegada || new Date(v.fecha_salida.getTime() + 4 * 60 * 60 * 1000);
+        return v.fecha_salida < estimacionLlegada && vLlegada > fechaSalida;
       });
 
       if (condConflict) {
@@ -283,17 +283,17 @@ export async function actualizarViaje(id: string | number, data: {
     // Validar solapamientos de horario al actualizar
     const estimacionLlegada = fechaLlegada || new Date(fechaSalida.getTime() + 4 * 60 * 60 * 1000);
 
-    const busConflict = await prisma.viaje.findFirst({
+    const busTrips = await prisma.viaje.findMany({
       where: {
         id: { not: viajeId },
         bus_id: busId,
-        estado: { in: ["programado", "en_ruta"] },
-        fecha_salida: { lt: estimacionLlegada },
-        OR: [
-          { fecha_llegada: { gt: fechaSalida } },
-          { fecha_llegada: null }
-        ]
+        estado: { in: ["programado", "en_ruta"] }
       }
+    });
+
+    const busConflict = busTrips.find(v => {
+      const vLlegada = v.fecha_llegada || new Date(v.fecha_salida.getTime() + 4 * 60 * 60 * 1000);
+      return v.fecha_salida < estimacionLlegada && vLlegada > fechaSalida;
     });
 
     if (busConflict) {
@@ -301,17 +301,17 @@ export async function actualizarViaje(id: string | number, data: {
     }
 
     if (conductorId) {
-      const condConflict = await prisma.viaje.findFirst({
+      const condTrips = await prisma.viaje.findMany({
         where: {
           id: { not: viajeId },
           conductor_id: conductorId,
-          estado: { in: ["programado", "en_ruta"] },
-          fecha_salida: { lt: estimacionLlegada },
-          OR: [
-            { fecha_llegada: { gt: fechaSalida } },
-            { fecha_llegada: null }
-          ]
+          estado: { in: ["programado", "en_ruta"] }
         }
+      });
+
+      const condConflict = condTrips.find(v => {
+        const vLlegada = v.fecha_llegada || new Date(v.fecha_salida.getTime() + 4 * 60 * 60 * 1000);
+        return v.fecha_salida < estimacionLlegada && vLlegada > fechaSalida;
       });
 
       if (condConflict) {
