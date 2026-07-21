@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getPeruDayRange } from "@/lib/dates";
 
 // Función auxiliar para verificar si el usuario tiene rol de operario o administrador
 async function checkOperarioOrAdmin() {
@@ -42,16 +43,12 @@ export async function obtenerViajesOperario(filtros: FiltrosOperario = {}) {
 
     // Filtro por fecha: si se envía una fecha específica usar ese día, sino hoy y mañana
     if (filtros.fecha) {
-      const inicio = new Date(filtros.fecha);
-      inicio.setHours(0, 0, 0, 0);
-      const fin = new Date(inicio);
-      fin.setDate(fin.getDate() + 1);
+      const { start: inicio, end } = getPeruDayRange(filtros.fecha);
+      const fin = new Date(end.getTime() + 1);
       where.fecha_salida = { gte: inicio, lt: fin };
     } else {
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-      const pasadoMañana = new Date(hoy);
-      pasadoMañana.setDate(pasadoMañana.getDate() + 2);
+      const { start: hoy } = getPeruDayRange();
+      const pasadoMañana = new Date(hoy.getTime() + 2 * 24 * 60 * 60 * 1000);
       where.fecha_salida = { gte: hoy, lt: pasadoMañana };
     }
 

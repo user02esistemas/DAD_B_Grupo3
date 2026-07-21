@@ -102,8 +102,13 @@ export async function crearRuta(data: any) {
 export async function eliminarRuta(id: string | number) {
   try {
     await verifyAdminRole();
+    const rutaId = parseId(id);
+    const viajes = await prisma.viaje.count({ where: { ruta_id: rutaId } });
+    if (viajes > 0) {
+      return { success: false, error: "No se puede eliminar la ruta porque tiene viajes históricos asociados." };
+    }
     await prisma.ruta.delete({
-      where: { id: parseId(id) },
+      where: { id: rutaId },
     });
 
     revalidatePath("/admin/rutas");

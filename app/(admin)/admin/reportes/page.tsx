@@ -18,15 +18,16 @@ import {
   Receipt
 } from "lucide-react";
 import { obtenerDatosReporte } from "@/app/(admin)/actions/reportes";
+import { getPeruDateString } from "@/lib/dates";
 import { jsPDF } from "jspdf";
 
 export default function ReportesPage() {
   // Inicializar rango de fechas: desde hace 7 días hasta hoy
-  const getTodayStr = () => new Date().toISOString().split("T")[0];
+  const getTodayStr = () => getPeruDateString();
   const getPrevWeekStr = () => {
     const d = new Date();
     d.setDate(d.getDate() - 7);
-    return d.toISOString().split("T")[0];
+    return getPeruDateString(d);
   };
 
   const [desde, setDesde] = useState(getPrevWeekStr());

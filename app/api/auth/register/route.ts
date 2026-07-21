@@ -53,6 +53,9 @@ export async function POST(req: NextRequest) {
 
     const birthDateObj = new Date(birth_date);
     const today = new Date();
+    if (Number.isNaN(birthDateObj.getTime()) || birthDateObj > today) {
+      return NextResponse.json({ message: "La fecha de nacimiento no es válida" }, { status: 400 });
+    }
     let age = today.getFullYear() - birthDateObj.getFullYear();
     const m = today.getMonth() - birthDateObj.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
@@ -86,12 +89,14 @@ export async function POST(req: NextRequest) {
           nombres: nombres.trim().toUpperCase(),
           apellidos: apellidos.trim().toUpperCase(),
           telefono: phone
+          ,fecha_nacimiento: birthDateObj
         },
         create: {
           nombres: nombres.trim().toUpperCase(),
           apellidos: apellidos.trim().toUpperCase(),
           dni,
           telefono: phone,
+          fecha_nacimiento: birthDateObj,
         },
       });
 

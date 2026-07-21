@@ -270,6 +270,10 @@ export async function actualizarViaje(id: string | number, data: {
       return { success: false, error: "Fecha de llegada inválida." };
     }
 
+    if (fechaLlegada && fechaLlegada <= fechaSalida) {
+      return { success: false, error: "La fecha de llegada debe ser posterior a la fecha de salida." };
+    }
+
     // Obtener viaje actual para ver si cambió el bus
     const viajeActual = await prisma.viaje.findUnique({
       where: { id: viajeId },

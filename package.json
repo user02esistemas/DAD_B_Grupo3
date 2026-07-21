@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev -H 0.0.0.0 --turbo",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0",
     "mobile": "node --env-file=.env app-movil-elcumbe/node_modules/expo/bin/cli start app-movil-elcumbe",
     "test": "npx tsx scripts/unit-tests.ts && npx tsx scripts/run-tests.ts",
     "lint": "eslint",

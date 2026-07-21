@@ -108,9 +108,16 @@ export async function actualizarSucursal(id: string | number, data: { nombre: st
 export async function eliminarSucursal(id: string | number) {
   try {
     await verifyAdminRole();
-    
+    const sucursalId = parseId(id);
+    const [rutas, encomiendas] = await Promise.all([
+      prisma.ruta.count({ where: { OR: [{ origen_id: sucursalId }, { destino_id: sucursalId }] } }),
+      prisma.encomienda.count({ where: { OR: [{ origen_id: sucursalId }, { destino_id: sucursalId }] } }),
+    ]);
+    if (rutas > 0 || encomiendas > 0) {
+      return { success: false, error: "No se puede eliminar la sucursal porque tiene rutas o encomiendas históricas asociadas." };
+    }
     await prisma.sucursal.delete({
-      where: { id: parseId(id) },
+      where: { id: sucursalId },
     });
 
     revalidatePath("/admin/sucursales");

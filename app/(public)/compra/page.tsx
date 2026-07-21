@@ -468,9 +468,9 @@ function CompraContent() {
         installments: false,
         paymentMethods: {
           tarjeta: true,
-          yape: true,
-          bancaMovil: true,
-          agente: true,
+          yape: false,
+          bancaMovil: false,
+          agente: false,
           cuotealo: false,
         },
       });
@@ -489,7 +489,9 @@ function CompraContent() {
               token,
               email,
               totalAmount,
-              selectedSeats.map(s => s.id)
+              selectedSeats.map(s => s.id),
+              selectedTrip.id,
+              getGuestToken(),
             );
 
             if (!chargeRes.success) {

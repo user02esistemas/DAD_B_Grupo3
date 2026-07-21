@@ -406,7 +406,7 @@ export default function UsuariosClient({ usuarios, userRole, currentUserId }: { 
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-                  <input required type="password" minLength={6} value={formData.contrasena} onChange={(e) => setFormData({...formData, contrasena: e.target.value})} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639]/50 focus:border-[#f07639] transition-all" />
+                  <input required type="password" minLength={8} value={formData.contrasena} onChange={(e) => setFormData({...formData, contrasena: e.target.value})} className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639]/50 focus:border-[#f07639] transition-all" />
                 </div>
 
                 <div>

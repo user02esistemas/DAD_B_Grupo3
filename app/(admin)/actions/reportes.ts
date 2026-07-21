@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { getPeruDayRange } from "@/lib/dates";
 
 // Helper para verificar rol de administrador o gerente
 async function checkAdmin() {
@@ -27,8 +28,8 @@ export async function obtenerDatosReporte(desdeStr: string, hastaStr: string) {
 
     // Las fechas vienen en formato YYYY-MM-DD
     // Las tratamos como naive UTC al igual que en las demás partes de la app
-    const fechaInicio = new Date(`${desdeStr}T00:00:00.000Z`);
-    const fechaFin = new Date(`${hastaStr}T23:59:59.999Z`);
+    const { start: fechaInicio } = getPeruDayRange(desdeStr);
+    const { end: fechaFin } = getPeruDayRange(hastaStr);
 
     if (isNaN(fechaInicio.getTime()) || isNaN(fechaFin.getTime())) {
       return { success: false, error: "Fechas inválidas." };

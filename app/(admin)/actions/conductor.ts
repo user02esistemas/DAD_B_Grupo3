@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { requireConductorOwner } from "./_auth";
 
+const ESTADOS_VIAJE_PERMITIDOS = new Set(["programado", "abordando", "en_ruta", "completado", "finalizado"]);
+
 async function requireTripAccess(viajeId: number | bigint) {
   const viaje = await prisma.viaje.findUnique({
     where: { id: BigInt(viajeId) },
@@ -54,6 +56,7 @@ export async function getViajesConductor(personaId: number) {
 
 export async function updateEstadoViaje(viajeId: number, estado: string) {
   try {
+    if (!ESTADOS_VIAJE_PERMITIDOS.has(estado)) throw new Error("Estado de viaje inválido.");
     await requireTripAccess(viajeId);
     const vId = BigInt(viajeId);
 

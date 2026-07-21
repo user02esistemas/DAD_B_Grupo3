@@ -2,6 +2,7 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+import { assertRateLimit, rateLimitKey } from "@/lib/rate-limit";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,6 +17,7 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Faltan credenciales");
         }
         const email = credentials.email.trim().toLowerCase();
+        assertRateLimit(rateLimitKey("web-login", email), 8, 15 * 60_000);
 
         const user = await prisma.usuario.findUnique({
           where: { correo: email },
@@ -65,8 +67,11 @@ export const authOptions: NextAuthOptions = {
           token.role = currentUser.rol;
           token.dni = currentUser.persona.dni;
           token.persona_id = currentUser.persona_id.toString();
+          token.email = currentUser.correo;
+          token.name = `${currentUser.persona.nombres} ${currentUser.persona.apellidos}`.trim();
         }
-      }      return token;
+      }
+      return token;
     },
     async session({ session, token }) {
       if (token) {

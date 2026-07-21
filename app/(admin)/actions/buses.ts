@@ -29,6 +29,20 @@ const BusSchema = z.object({
   asientos_piso_1: z.coerce.number().optional().nullable(),
   asientos_restringidos: z.string().optional().nullable(),
   imagenes: z.string().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.pisos === 2 && (!data.asientos_piso_1 || data.asientos_piso_1 <= 0 || data.asientos_piso_1 >= data.capacidad)) {
+    ctx.addIssue({ code: "custom", path: ["asientos_piso_1"], message: "Los asientos del primer piso deben ser menores que la capacidad total." });
+  }
+  if (data.asientos_restringidos) {
+    try {
+      const values = JSON.parse(data.asientos_restringidos);
+      if (!Array.isArray(values) || values.some((value) => !Number.isInteger(value) || value < 1 || value > data.capacidad)) {
+        throw new Error();
+      }
+    } catch {
+      ctx.addIssue({ code: "custom", path: ["asientos_restringidos"], message: "La lista de asientos restringidos no es válida." });
+    }
+  }
 });
 
 async function verifyAdminRole() {
@@ -122,8 +136,13 @@ export async function actualizarBus(id: string | number, data: any) {
 export async function eliminarBus(id: string | number) {
   try {
     await verifyAdminRole();
+    const busId = parseId(id);
+    const viajes = await prisma.viaje.count({ where: { bus_id: busId } });
+    if (viajes > 0) {
+      return { success: false, error: "No se puede eliminar el bus porque tiene viajes históricos asociados." };
+    }
     await prisma.bus.delete({
-      where: { id: parseId(id) },
+      where: { id: busId },
     });
 
     revalidatePath("/admin/buses");

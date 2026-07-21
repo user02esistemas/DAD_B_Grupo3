@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { requireAdminOrVendedor } from "./_auth";
+import { getPeruDayRange } from "@/lib/dates";
 
 function serializeBigInt<T>(obj: T): any {
   return JSON.parse(
@@ -25,10 +26,8 @@ export async function obtenerNotificaciones(): Promise<{ success: boolean; data:
   try {
     await requireAdminOrVendedor();
     const ahora = new Date();
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-    const manana = new Date(hoy);
-    manana.setDate(manana.getDate() + 1);
+    const { start: hoy, end } = getPeruDayRange();
+    const manana = new Date(end.getTime() + 1);
 
     // En paralelo: obtenemos datos recientes de varias fuentes
     const [pasajesRecientes, encomiendasRecientes, viajesProximos, reclamosPendientes] = await Promise.all([

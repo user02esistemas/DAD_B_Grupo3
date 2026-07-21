@@ -18,6 +18,7 @@ model Persona {
   apellidos  String
   dni        String    @unique
   telefono   String?
+  fecha_nacimiento DateTime?
   created_at DateTime? @default(now())
   updated_at DateTime? @default(now()) @updatedAt
 
@@ -78,7 +79,7 @@ model Bus {
   asientos_restringidos String?
   imagenes              String?
   created_at            DateTime? @default(now())
-  updated_at            DateTime? @default(now())
+  updated_at            DateTime? @default(now()) @updatedAt
 
   viajes    Viaje[]
   novedades NovedadMecanica[]
@@ -91,10 +92,10 @@ model Ruta {
   duracion_estimada_minutos Int
   precio_base               Decimal
   created_at                DateTime? @default(now())
-  updated_at                DateTime? @default(now())
+  updated_at                DateTime? @default(now()) @updatedAt
 
-  origen  Sucursal @relation("RutaOrigen", fields: [origen_id], references: [id], onDelete: Cascade)
-  destino Sucursal @relation("RutaDestino", fields: [destino_id], references: [id], onDelete: Cascade)
+  origen  Sucursal @relation("RutaOrigen", fields: [origen_id], references: [id], onDelete: Restrict)
+  destino Sucursal @relation("RutaDestino", fields: [destino_id], references: [id], onDelete: Restrict)
   viajes  Viaje[]
 }
 
@@ -107,10 +108,10 @@ model Viaje {
   fecha_llegada DateTime?
   estado        String    @default("programado")
   created_at    DateTime? @default(now())
-  updated_at    DateTime? @default(now())
+  updated_at    DateTime? @default(now()) @updatedAt
 
-  ruta           Ruta              @relation(fields: [ruta_id], references: [id], onDelete: Cascade)
-  bus            Bus               @relation(fields: [bus_id], references: [id], onDelete: Cascade)
+  ruta           Ruta              @relation(fields: [ruta_id], references: [id], onDelete: Restrict)
+  bus            Bus               @relation(fields: [bus_id], references: [id], onDelete: Restrict)
   conductor      Persona?          @relation("Piloto", fields: [conductor_id], references: [id], onDelete: SetNull)
   asientos_viaje AsientoViaje[]
   encomiendas    Encomienda[]
@@ -134,7 +135,7 @@ model AsientoViaje {
   bloqueado_por_token      String?
   bloqueado_en             DateTime?
   created_at               DateTime? @default(now())
-  updated_at               DateTime? @default(now())
+  updated_at               DateTime? @default(now()) @updatedAt
 
   viaje                 Viaje    @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
   bloqueado_por_usuario Usuario? @relation(fields: [bloqueado_por_usuario_id], references: [id], onDelete: SetNull)
@@ -163,7 +164,7 @@ model Pasaje {
   codigo_qr    String?   @unique
   abordado     Boolean   @default(false)
   created_at   DateTime? @default(now())
-  updated_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now()) @updatedAt
 
   asiento_viaje AsientoViaje @relation(fields: [asiento_viaje_id], references: [id], onDelete: Cascade)
   pasajero      Persona      @relation(fields: [persona_id], references: [id], onDelete: Cascade)
@@ -189,12 +190,12 @@ model Encomienda {
   precio      Decimal
   estado      String    @default("recepcionado")
   created_at  DateTime? @default(now())
-  updated_at  DateTime? @default(now())
+  updated_at  DateTime? @default(now()) @updatedAt
 
   remitente    Persona  @relation("Remitente", fields: [remitente_id], references: [id])
   destinatario Persona  @relation("Destinatario", fields: [destinatario_id], references: [id])
-  origen       Sucursal @relation("EncomiendaOrigen", fields: [origen_id], references: [id], onDelete: Cascade)
-  destino      Sucursal @relation("EncomiendaDestino", fields: [destino_id], references: [id], onDelete: Cascade)
+  origen       Sucursal @relation("EncomiendaOrigen", fields: [origen_id], references: [id], onDelete: Restrict)
+  destino      Sucursal @relation("EncomiendaDestino", fields: [destino_id], references: [id], onDelete: Restrict)
   viaje        Viaje?   @relation(fields: [viaje_id], references: [id], onDelete: SetNull)
 
   @@index([estado])
@@ -216,9 +217,11 @@ model Reclamo {
   pedido_cliente    String
   estado            String    @default("pendiente") // "pendiente", "en_proceso", "resuelto"
   respuesta_admin   String?
+  correo_contacto   String?
+  referencia        String?
   fecha_incidente   DateTime
   created_at        DateTime? @default(now())
-  updated_at        DateTime? @default(now())
+  updated_at        DateTime? @default(now()) @updatedAt
 
   persona Persona @relation(fields: [persona_id], references: [id], onDelete: Cascade)
 
@@ -238,7 +241,7 @@ model CodigoDescuento {
   esta_usado           Boolean   @default(false)
   fecha_expiracion     DateTime?
   created_at           DateTime? @default(now())
-  updated_at           DateTime? @default(now())
+  updated_at           DateTime? @default(now()) @updatedAt
 
   usuario Usuario @relation(fields: [usuario_id], references: [id], onDelete: Cascade)
 }
@@ -250,7 +253,7 @@ model VerificationCode {
   expires_at DateTime
   is_used    Boolean  @default(false)
   created_at DateTime @default(now())
-  updated_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
   usuario    Usuario  @relation(fields: [user_id], references: [id], onDelete: Cascade)
 
   @@index([user_id], map: "idx_verification_codes_user_id")
@@ -266,7 +269,7 @@ model Pago {
   status        String        @default("pending")
   amount        Decimal
   created_at    DateTime      @default(now())
-  updated_at    DateTime      @default(now())
+  updated_at    DateTime      @default(now()) @updatedAt
   asiento       AsientoViaje? @relation(fields: [asiento_id], references: [id])
   viaje         Viaje         @relation(fields: [viaje_id], references: [id], onDelete: Cascade)
 
