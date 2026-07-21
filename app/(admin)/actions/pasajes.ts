@@ -17,8 +17,8 @@ function serializeBigInt<T>(obj: T): any {
 export async function buscarViajes(origenId: string | number, destinoId: string | number, fechaStr: string) {
   try {
     await requireAdminOrVendedor();
-    const fechaInicio = new Date(`${fechaStr}T00:00:00.000Z`);
-    const fechaFin = new Date(`${fechaStr}T23:59:59.999Z`);
+    const fechaInicio = new Date(`${fechaStr}T00:00:00-05:00`);
+    const fechaFin = new Date(`${fechaStr}T23:59:59-05:00`);
 
     const viajes = await prisma.viaje.findMany({
       where: {
@@ -197,8 +197,8 @@ export async function buscarPasajesVendidos(filtros: { origenId?: string, destin
 
     // Filtro por fecha (fecha de salida del viaje)
     if (filtros.fecha) {
-      const fechaInicio = new Date(`${filtros.fecha}T00:00:00.000Z`);
-      const fechaFin = new Date(`${filtros.fecha}T23:59:59.999Z`);
+      const fechaInicio = new Date(`${filtros.fecha}T00:00:00-05:00`);
+      const fechaFin = new Date(`${filtros.fecha}T23:59:59-05:00`);
       whereClause.asiento_viaje = {
         viaje: {
           fecha_salida: {
