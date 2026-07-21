@@ -1188,6 +1188,57 @@ export default function PasajesClient({ initialSucursales, userRole }: { initial
                               />
                             </div>
 
+                            {/* Botón de Venta o Impresión de Ticket */}
+                            {saleSuccess && ticketsVendidos.length > 0 ? (
+                              <div className="space-y-2 mt-6">
+                                {ticketsVendidos.map((t, index) => (
+                                  <button
+                                    key={t.id}
+                                    onClick={() => imprimirTicket(t, selectedViaje, selectedAsientos[index])}
+                                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+                                  >
+                                    <Printer className="w-4 h-4" />
+                                    Imprimir Ticket Asiento #{selectedAsientos[index]?.numero_asiento || ""}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <button
+                                onClick={handleVender}
+                                disabled={isSelling}
+                                className={`
+                                  w-full py-4 rounded-xl font-bold text-white text-lg transition-all mt-6 shadow-md cursor-pointer
+                                  ${isSelling 
+                                    ? 'bg-slate-400 cursor-not-allowed animate-pulse' 
+                                    : 'bg-[#f07639] hover:bg-orange-600 hover:-translate-y-1 hover:shadow-xl'
+                                  }
+                                `}
+                              >
+                                {isSelling ? "Procesando..." : "Confirmar Venta"}
+                              </button>
+                            )}
+                            
+                            {saleSuccess && (
+                              <button
+                                onClick={() => {
+                                  setSelectedAsientos([]);
+                                  setPasajeros({});
+                                  setSaleSuccess(false);
+                                  setTicketsVendidos([]);
+                                }}
+                                className="w-full py-3 text-sm text-[#f07639] hover:underline font-bold transition-all text-center"
+                              >
+                                Realizar otra venta
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </>
             )}
             
           </div>
