@@ -67,7 +67,29 @@ npx tsx scripts/seed-initial.ts
 
 ---
 
-## 🚀 Ejecución en Entorno de Desarrollo
+## 🐳 Ejecución y Despliegue con Docker (Opcional)
+
+Si prefieres ejecutar todo el entorno (Base de Datos PostgreSQL + Aplicación Web Next.js) mediante contenedores Docker, el proyecto incluye configuración preconfigurada con `Dockerfile` y `docker-compose.yml`:
+
+### 1. Iniciar contenedores de Base de Datos y Web
+```bash
+docker-compose up -d --build
+```
+
+### 2. Verificar contenedores activos
+```bash
+docker-compose ps
+```
+La aplicación web estará ejecutándose en `http://localhost:3000` y la base de datos PostgreSQL estará escuchando en el puerto `5432`.
+
+### 3. Detener contenedores
+```bash
+docker-compose down
+```
+
+---
+
+## 🚀 Ejecución en Entorno de Desarrollo (Local)
 
 ### Iniciar Servidor Web
 ```bash
