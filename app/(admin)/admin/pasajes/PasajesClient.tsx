@@ -1187,7 +1187,6 @@ export default function PasajesClient({ initialSucursales, userRole }: { initial
                                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200/60 rounded-2xl outline-none font-black text-2xl text-slate-700 cursor-not-allowed"
                               />
                             </div>
-
                             {/* Botón de Venta o Impresión de Ticket */}
                             {saleSuccess && ticketsVendidos.length > 0 ? (
                               <div className="space-y-2 mt-6">
