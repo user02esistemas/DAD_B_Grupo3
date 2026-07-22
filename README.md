@@ -18,73 +18,64 @@ Bienvenido al repositorio oficial de la plataforma de gestión y venta de pasaje
 
 ---
 
-## 🛠️ Requisitos Previos e Instalación
+## 🛠️ Instalación y Configuración Inicial (Sin Base de Datos Previa)
 
-### Requisitos:
-* [Node.js](https://nodejs.org/es/) (v18.x o superior)
-* [PostgreSQL](https://www.postgresql.org/) local o instancia remota (ej. Supabase)
-* Git
+Elige una de las siguientes dos opciones para preparar el entorno y crear la base de datos desde cero:
 
-### 1. Clonar el repositorio
+### 💡 Opción 1: Levantar todo con Docker (Recomendado - No requiere instalar PostgreSQL)
+Si no tienes PostgreSQL instalado en tu computadora, Docker creará e iniciará automáticamente el motor de base de datos y la aplicación en un solo paso:
+
 ```bash
+# 1. Clonar el repositorio
 git clone https://github.com/user02esistemas/DAD_B_Grupo3.git
 cd DAD_B_Grupo3
+
+# 2. Iniciar contenedores (Crea la BD PostgreSQL y la Web automáticamente)
+docker-compose up -d --build
 ```
-
-### 2. Instalar dependencias del proyecto
-```bash
-npm install
-```
-
-### 3. Configurar Variables de Entorno
-Crea un archivo `.env` en la raíz del proyecto basándote en `.env.example`:
-
-```env
-# Base de Datos PostgreSQL (Local o Remota)
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/elcumbe?schema=public"
-DIRECT_URL="postgresql://postgres:postgres@localhost:5432/elcumbe?schema=public"
-
-# Autenticación NextAuth
-NEXTAUTH_SECRET="development_secret_key_32_characters_long"
-NEXTAUTH_URL="http://localhost:3000"
-
-# Pasarela de Pagos Culqi (Sandbox)
-NEXT_PUBLIC_CULQI_PUBLIC_KEY="pk_test_lkYsEtGV030Goa3V"
-CULQI_SECRET_KEY="sk_test_Lr8ZyYy1HvncSGGz"
-
-# Servicio de Correo Electrónico Resend (Opcional)
-RESEND_API_KEY="re_xxxxxxxxxxxx"
-```
-
-### 4. Sincronizar Base de Datos y Poblar Datos Iniciales
-```bash
-# 1. Generar cliente de Prisma y estructurar esquemas
-npx prisma db push
-
-# 2. Poblar sucursales, buses, rutas reales de Perú y usuarios por defecto
-npx tsx scripts/seed-initial.ts
-```
+*La aplicación estará lista en `http://localhost:3000` con la base de datos conectada en el puerto `5432`.*
 
 ---
 
-## 🐳 Ejecución y Despliegue con Docker (Opcional)
+### 💻 Opción 2: Instalación Manual Local (Si tienes PostgreSQL en tu PC)
 
-Si prefieres ejecutar todo el entorno (Base de Datos PostgreSQL + Aplicación Web Next.js) mediante contenedores Docker, el proyecto incluye configuración preconfigurada con `Dockerfile` y `docker-compose.yml`:
-
-### 1. Iniciar contenedores de Base de Datos y Web
+#### 1. Clonar e instalar dependencias
 ```bash
-docker-compose up -d --build
+git clone https://github.com/user02esistemas/DAD_B_Grupo3.git
+cd DAD_B_Grupo3
+npm install
 ```
 
-### 2. Verificar contenedores activos
-```bash
-docker-compose ps
-```
-La aplicación web estará ejecutándose en `http://localhost:3000` y la base de datos PostgreSQL estará escuchando en el puerto `5432`.
+#### 2. Configurar Variables de Entorno
+Crea un archivo `.env` en la raíz del proyecto (puedes copiar el contenido de `.env.example`):
 
-### 3. Detener contenedores
+```env
+# Base de Datos PostgreSQL Local
+DATABASE_URL="postgresql://postgres:tu_contraseña@localhost:5432/elcumbe?schema=public"
+DIRECT_URL="postgresql://postgres:tu_contraseña@localhost:5432/elcumbe?schema=public"
+
+# Autenticación y Claves
+NEXTAUTH_SECRET="development_secret_key_32_characters_long"
+NEXTAUTH_URL="http://localhost:3000"
+NEXT_PUBLIC_CULQI_PUBLIC_KEY="pk_test_lkYsEtGV030Goa3V"
+CULQI_SECRET_KEY="sk_test_Lr8ZyYy1HvncSGGz"
+```
+
+#### 3. Crear la Base de Datos e Iniciar Tablas
+1. Crea una base de datos vacía llamada `elcumbe` en tu servidor PostgreSQL (vía `pgAdmin` o terminal `CREATE DATABASE elcumbe;`).
+2. Ejecuta los siguientes comandos para crear todas las tablas, relaciones e insertar los datos iniciales automáticamente:
+
 ```bash
-docker-compose down
+# a. Crear todas las tablas e índices en la BD automáticamente
+npx prisma db push
+
+# b. Poblar sucursales, buses, rutas reales de Perú y usuarios por defecto (admin, vendedor, etc.)
+npx tsx scripts/seed-initial.ts
+```
+
+#### 4. Iniciar la aplicación
+```bash
+npm run dev
 ```
 
 ---
