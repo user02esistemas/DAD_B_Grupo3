@@ -10,23 +10,21 @@ services:
       POSTGRES_PASSWORD: mysecretpassword
       POSTGRES_DB: elcumbe
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Si creas un archivo init.sql en este directorio, se cargará automáticamente al iniciar por primera vez
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
   web:
     build: .
     container_name: elcumbe-web
     restart: always
     ports:
-      - "3000:3000"
+      - "3005:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:mysecretpassword@db:5432/elcumbe?schema=public
       - DIRECT_URL=postgresql://postgres:mysecretpassword@db:5432/elcumbe?schema=public
       - NEXTAUTH_SECRET=a_very_long_random_secret_string_for_next_auth_32_chars
-      - NEXTAUTH_URL=http://localhost:3000
+      - NEXTAUTH_URL=http://localhost:3005
     depends_on:
       - db
 

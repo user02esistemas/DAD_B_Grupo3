@@ -7,7 +7,7 @@ async function main() {
   const password = "1234";
   const passwordHash = await bcrypt.hash(password, 12);
 
-  console.log("🚀 Creando/actualizando cuentas para todos los roles...");
+  console.log(" Creando/actualizando cuentas para todos los roles...");
 
   const usersData = [
     {
@@ -25,6 +25,14 @@ async function main() {
       nombres: "Admin",
       apellidos: "General",
       telefono: "900000000"
+    },
+    {
+      email: "administrador@cumbe.com",
+      role: "admin",
+      dni: "00000001",
+      nombres: "Administrador",
+      apellidos: "General",
+      telefono: "900000001"
     },
     {
       email: "vendedor@cumbe.com",
@@ -49,6 +57,14 @@ async function main() {
       nombres: "Carlos",
       apellidos: "Mendoza",
       telefono: "987654321"
+    },
+    {
+      email: "cliente@cumbe.com",
+      role: "cliente",
+      dni: "77777777",
+      nombres: "Juan",
+      apellidos: "Perez",
+      telefono: "977777777"
     }
   ];
 
