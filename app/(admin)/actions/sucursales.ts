@@ -23,8 +23,18 @@ function serializeBigInt<T>(obj: T): any {
 
 // Esquemas de validación Zod
 const SucursalSchema = z.object({
-  nombre: z.string().min(3, "El nombre debe tener al menos 3 caracteres"),
-  direccion: z.string().optional().nullable(),
+  nombre: z.string()
+    .min(3, "El nombre debe tener al menos 3 caracteres")
+    .max(100, "El nombre no puede superar los 100 caracteres")
+    .regex(/^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.\,\#\°]+$/, "El nombre contiene caracteres no permitidos (solo letras, números y signos básicos)")
+    .refine((val) => !val.split(/[\s\-]+/).some(word => word.length > 30), "El nombre contiene palabras demasiado largas"),
+  direccion: z.string()
+    .max(200, "La dirección no puede superar los 200 caracteres")
+    .regex(/^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.\,\#\°\'\/]*$/, "La dirección contiene caracteres no permitidos")
+    .refine((val) => !val || !val.split(/[\s\-]+/).some(word => word.length > 30), "La dirección contiene palabras demasiado largas")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
 });
 
 // Función de validación de rol

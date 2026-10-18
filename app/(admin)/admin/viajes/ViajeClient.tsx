@@ -388,6 +388,15 @@ export default function ViajeClient({
         return;
       }
 
+      const now = new Date();
+      // Permitir un margen de 5 minutos
+      const minAllowedDate = new Date(now.getTime() - 5 * 60 * 1000);
+      if (departureDateTime < minAllowedDate) {
+        setError("La fecha y hora de salida no puede ser anterior a la actual.");
+        setIsLoading(false);
+        return;
+      }
+
       const arrivalDateTime = new Date(departureDateTime.getTime() + duration * 60 * 1000);
 
       const payload = {
@@ -507,7 +516,7 @@ export default function ViajeClient({
       </div>
 
       {/* Barra de Filtros y Búsqueda */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-100 mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white p-3.5 rounded-2xl border border-slate-100 mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3 flex-1">
           {/* Buscador de Texto */}
           <div className="relative flex-1 max-w-xs min-w-[200px]">
@@ -575,20 +584,20 @@ export default function ViajeClient({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-[#f8f9fc] border-b border-slate-100">
-                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Ruta</th>
-                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Salida</th>
-                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Llegada</th>
-                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Bus Asignado</th>
-                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider">Conductor</th>
-                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Estado</th>
-                <th className="px-7 py-4 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right">Acciones</th>
+                <th className="px-3 py-2.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Ruta</th>
+                <th className="px-3 py-2.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Salida</th>
+                <th className="px-3 py-2.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Llegada</th>
+                <th className="px-3 py-2.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Bus Asignado</th>
+                <th className="px-3 py-2.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Conductor</th>
+                <th className="px-3 py-2.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Estado</th>
+                <th className="px-3 py-2.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
               {filteredViajes.length > 0 ? (
                 filteredViajes.map((viaje) => (
                   <tr key={viaje.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-7 py-4.5">
+                    <td className="px-3 py-2.5">
                       <div className="flex items-center">
                         <MapPin className="w-5 h-5 text-slate-400 mr-3" />
                         <div>
@@ -598,7 +607,7 @@ export default function ViajeClient({
                         </div>
                       </div>
                     </td>
-                    <td className="px-7 py-4.5">
+                    <td className="px-3 py-2.5 whitespace-nowrap">
                       <div className="flex items-center text-slate-600">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span className="font-medium" suppressHydrationWarning>
@@ -610,7 +619,7 @@ export default function ViajeClient({
                         </span>
                       </div>
                     </td>
-                    <td className="px-7 py-4.5">
+                    <td className="px-3 py-2.5 whitespace-nowrap">
                       <div className="flex items-center text-slate-600">
                         <Calendar className="w-4 h-4 mr-2" />
                         <span className="font-medium" suppressHydrationWarning>
@@ -622,21 +631,21 @@ export default function ViajeClient({
                         </span>
                       </div>
                     </td>
-                    <td className="px-7 py-4.5">
+                    <td className="px-3 py-2.5 whitespace-nowrap">
                       <div className="flex flex-col">
                         <div className="flex items-center font-bold text-slate-800">
                           <BusIcon className="w-4 h-4 mr-2 text-slate-400" />
                           {viaje.bus.placa}
                         </div>
-                        <span className="text-xs text-slate-500 ml-6">
+                        <span className="text-xs text-slate-500 ml-6 whitespace-nowrap">
                           Capacidad: {viaje.bus.capacidad} | Pisos: {viaje.bus.pisos}
                         </span>
                       </div>
                     </td>
-                    <td className="px-7 py-4.5">
+                    <td className="px-3 py-2.5 whitespace-nowrap">
                       {viaje.conductor ? (
                         <div className="flex flex-col">
-                          <span className="font-bold text-slate-850">
+                          <span className="font-bold text-slate-850 whitespace-nowrap">
                             {viaje.conductor.nombres} {viaje.conductor.apellidos}
                           </span>
                           <span className="text-[10px] text-slate-450 uppercase font-black tracking-wider">Conductor</span>
@@ -645,10 +654,10 @@ export default function ViajeClient({
                         <span className="text-[10px] font-black text-red-600 bg-red-50/50 px-2.5 py-1 rounded border border-red-100 uppercase tracking-wide">Sin Asignar</span>
                       )}
                     </td>
-                    <td className="px-7 py-4.5 text-center">
+                    <td className="px-3 py-2.5 text-center">
                       {getStatusBadge(viaje.estado)}
                     </td>
-                    <td className="px-7 py-4.5 text-right">
+                    <td className="px-3 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-3">
                         {viaje.estado === 'programado' && (
                           <>
@@ -703,7 +712,11 @@ export default function ViajeClient({
       {/* Modal Formulario */}
       {mounted && isFormOpen && createPortal(
         <div
-          onClick={handleCloseForm}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseForm();
+            }
+          }}
           className="fixed inset-0 z-[9999] overflow-y-auto bg-black/40 backdrop-blur-sm flex justify-center items-start py-8 px-4 sm:px-6"
         >
           <div
@@ -798,6 +811,7 @@ export default function ViajeClient({
                       <input
                         type="date"
                         required
+                        min={new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' })}
                         value={fechaSalidaDate}
                         onChange={(e) => setFechaSalidaDate(e.target.value)}
                         className="w-full px-3 py-2 bg-white border border-gray-200 text-gray-800 focus:border-[#f07639] focus:ring-1 focus:ring-[#f07639] rounded-xl outline-none transition-all cursor-pointer shadow-sm text-sm"
@@ -842,7 +856,11 @@ export default function ViajeClient({
       {/* Modal Enviar Alerta */}
       {mounted && isAlertModalOpen && alertTargetViaje && createPortal(
         <div
-          onClick={handleCloseAlertModal}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseAlertModal();
+            }
+          }}
           className="fixed inset-0 z-[9999] overflow-y-auto bg-black/40 backdrop-blur-sm flex justify-center items-start py-8 px-4 sm:px-6"
         >
           <div
@@ -905,7 +923,11 @@ export default function ViajeClient({
       {/* Modal Lista de Pasajeros / Manifiesto de Embarque */}
       {mounted && isPassengerModalOpen && selectedViajeForPassengers && createPortal(
         <div
-          onClick={() => setIsPassengerModalOpen(false)}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsPassengerModalOpen(false);
+            }
+          }}
           className="fixed inset-0 z-[9999] overflow-y-auto bg-black/40 backdrop-blur-sm flex justify-center items-start py-8 px-4 sm:px-6"
         >
           <div

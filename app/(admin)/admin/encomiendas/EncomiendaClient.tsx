@@ -474,7 +474,11 @@ export default function EncomiendaClient({
       {/* Modal Actualizar Estado */}
       {mounted && isModalOpen && createPortal(
         <div 
-          onClick={handleCloseModal}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseModal();
+            }
+          }}
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
         >
           <div 

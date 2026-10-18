@@ -169,7 +169,11 @@ export default function ReclamacionesClient({ initialData }: { initialData: any[
       {/* Modal */}
       {mounted && isModalOpen && selectedReclamo && createPortal(
         <div 
-          onClick={() => setIsModalOpen(false)}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsModalOpen(false);
+            }
+          }}
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
         >
           <div 

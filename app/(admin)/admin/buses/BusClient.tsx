@@ -36,7 +36,7 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
     marca: "",
     capacidad: 40,
     pisos: 1,
-    asientos_piso_1: 40,
+    asientos_piso_1: 40 as number | string,
     imagenes: "",
   });
 
@@ -155,8 +155,56 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
     // Ajustar asientos piso 1 si es de 1 piso
     const submitData = {
       ...formData,
-      asientos_piso_1: formData.pisos === 1 ? formData.capacidad : formData.asientos_piso_1
+      asientos_piso_1: formData.pisos === 1 
+        ? Number(formData.capacidad) 
+        : (Number(formData.asientos_piso_1) || 0)
     };
+
+    // Validar placa (debe tener exactamente 6 caracteres alfanuméricos, ignorando guiones)
+    const cleanPlaca = submitData.placa.replace(/-/g, "");
+    if (!/^[A-Za-z0-9]{6}$/.test(cleanPlaca)) {
+      setError("La placa debe tener exactamente 6 caracteres alfanuméricos (ej. ABC-123 o ABC123).");
+      setIsLoading(false);
+      return;
+    }
+
+    // Validar marca
+    if (submitData.marca) {
+      if (submitData.marca.trim().length < 1 || submitData.marca.trim().length > 50) {
+        setError("La marca es obligatoria y no puede superar los 50 caracteres.");
+        setIsLoading(false);
+        return;
+      }
+      if (!/^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.]+$/.test(submitData.marca)) {
+        setError("La marca contiene caracteres no permitidos (solo letras, números, espacios, guiones o puntos).");
+        setIsLoading(false);
+        return;
+      }
+      if (submitData.marca.split(/[\s\-]+/).some(word => word.length > 20)) {
+        setError("La marca contiene palabras demasiado largas.");
+        setIsLoading(false);
+        return;
+      }
+    }
+
+    // Validar capacidad según el tipo de bus
+    if (submitData.pisos === 1 && submitData.capacidad !== 40) {
+      setError("La capacidad para un bus de 1 piso (BUS NORMAL) debe ser exactamente de 40 asientos.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (submitData.pisos === 2 && submitData.capacidad !== 52) {
+      setError("La capacidad para un bus de 2 pisos (BUS CAMA) debe ser exactamente de 52 asientos.");
+      setIsLoading(false);
+      return;
+    }
+
+    if (submitData.pisos === 2 && (submitData.asientos_piso_1 < 8 || submitData.asientos_piso_1 > 20)) {
+      setError("Los asientos del primer piso para un bus de 2 pisos (BUS CAMA) deben estar entre 8 y 20.");
+      setIsLoading(false);
+      return;
+    }
 
     if (submitData.asientos_piso_1 > submitData.capacidad) {
       setError("Los asientos del piso 1 no pueden ser mayores a la capacidad total.");
@@ -291,6 +339,7 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
               <tr className="bg-[#f8f9fc] border-b border-slate-100">
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Placa</th>
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider">Marca</th>
+                <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Tipo</th>
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Capacidad</th>
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-center">Pisos</th>
                 <th className="px-6 py-3.5 text-[11px] font-black text-slate-400 uppercase tracking-wider text-right">Acciones</th>
@@ -310,6 +359,15 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                     </td>
                     <td className="px-6 py-4 text-gray-600 font-medium">
                       {bus.marca || "-"}
+                    </td>
+                    <td className="px-6 py-4 text-center">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        bus.pisos === 1 
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                          : 'bg-purple-50 text-purple-700 border border-purple-200'
+                      }`}>
+                        {bus.pisos === 1 ? "BUS NORMAL" : "BUS CAMA"}
+                      </span>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -357,7 +415,7 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                     No hay buses registrados.
                   </td>
                 </tr>
@@ -370,14 +428,18 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
       {/* Modal Formulario Bus */}
       {mounted && isModalOpen && createPortal(
         <div 
-          onClick={handleCloseModal}
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              handleCloseModal();
+            }
+          }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
         >
           <div 
             onClick={(e) => e.stopPropagation()}
-            className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden"
+            className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200"
           >
-            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 flex-shrink-0">
               <h3 className="text-lg font-bold text-gray-900">
                 {editingId ? "Editar Bus" : "Nuevo Bus"}
               </h3>
@@ -389,14 +451,14 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
               </button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6">
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-              
-              <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {error && (
+                  <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm">
+                    {error}
+                  </div>
+                )}
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Placa <span className="text-red-500">*</span>
@@ -404,7 +466,7 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                   <input
                     type="text"
                     required
-                    maxLength={15}
+                    maxLength={8}
                     value={formData.placa}
                     onChange={(e) => setFormData({ ...formData, placa: e.target.value.toUpperCase() })}
                     className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all uppercase"
@@ -418,6 +480,7 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                   </label>
                   <input
                     type="text"
+                    maxLength={50}
                     value={formData.marca}
                     onChange={(e) => setFormData({ ...formData, marca: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all"
@@ -432,20 +495,15 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                     </label>
                     <input
                       type="number"
-                      required
-                      min={1}
-                      max={100}
+                      readOnly
                       value={formData.capacidad}
-                      onChange={(e) => {
-                        const cap = parseInt(e.target.value) || 0;
-                        setFormData({ 
-                          ...formData, 
-                          capacidad: cap,
-                          asientos_piso_1: formData.pisos === 1 ? cap : formData.asientos_piso_1
-                        });
-                      }}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all"
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-500 outline-none cursor-not-allowed transition-all"
                     />
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      {formData.pisos === 1 
+                        ? "Fijo: 40 asientos (BUS NORMAL)" 
+                        : "Fijo: 52 asientos (BUS CAMA)"}
+                    </p>
                   </div>
 
                   <div>
@@ -454,7 +512,16 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                     </label>
                     <select
                       value={formData.pisos}
-                      onChange={(e) => setFormData({ ...formData, pisos: parseInt(e.target.value) || 1 })}
+                      onChange={(e) => {
+                        const newPisos = parseInt(e.target.value) || 1;
+                        const newCapacidad = newPisos === 1 ? 40 : 52;
+                        setFormData({
+                          ...formData,
+                          pisos: newPisos,
+                          capacidad: newCapacidad,
+                          asientos_piso_1: newPisos === 1 ? 40 : 12 // Default standard split: 12 seats on 1st floor for BUS CAMA
+                        });
+                      }}
                       className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all bg-white"
                     >
                       <option value={1}>1 Piso</option>
@@ -471,14 +538,14 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                     <input
                       type="number"
                       required
-                      min={1}
-                      max={formData.capacidad - 1}
+                      min={8}
+                      max={20}
                       value={formData.asientos_piso_1}
-                      onChange={(e) => setFormData({ ...formData, asientos_piso_1: parseInt(e.target.value) || 0 })}
+                      onChange={(e) => setFormData({ ...formData, asientos_piso_1: e.target.value === "" ? "" : (parseInt(e.target.value) || 0) })}
                       className="w-full px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#f07639] focus:border-transparent outline-none transition-all"
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      El Piso 2 tendrá automáticamente {Math.max(0, formData.capacidad - formData.asientos_piso_1)} asientos.
+                      El Piso 2 tendrá automáticamente {Math.max(0, formData.capacidad - (Number(formData.asientos_piso_1) || 0))} asientos. (El Piso 1 debe tener entre 8 y 20 asientos).
                     </p>
                   </div>
                 )}
@@ -543,7 +610,7 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
                 </div>
               </div>
 
-              <div className="mt-8 flex justify-end space-x-3">
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3 flex-shrink-0">
                 <button
                   type="button"
                   onClick={handleCloseModal}
@@ -568,9 +635,11 @@ export default function BusClient({ initialData }: { initialData: Bus[] }) {
       {/* Modal Configuración de Asientos (Cuadrícula) */}
       {mounted && isConfigModalOpen && selectedBus && createPortal(
         <div 
-          onClick={() => {
-            setIsConfigModalOpen(false);
-            setSelectedBus(null);
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setIsConfigModalOpen(false);
+              setSelectedBus(null);
+            }
           }}
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
         >

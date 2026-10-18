@@ -22,16 +22,39 @@ function serializeBigInt<T>(obj: T): any {
 }
 
 const BusSchema = z.object({
-  placa: z.string().min(3, "La placa es obligatoria"),
-  marca: z.string().min(1, "La marca es obligatoria"),
+  placa: z.string()
+    .min(3, "La placa es obligatoria")
+    .refine((val) => {
+      const cleanPlate = val.replace(/-/g, "");
+      return /^[A-Za-z0-9]{6}$/.test(cleanPlate);
+    }, "La placa debe tener exactamente 6 caracteres alfanuméricos (ej. ABC-123 o ABC123)"),
+  marca: z.string()
+    .min(1, "La marca es obligatoria")
+    .max(50, "La marca no puede superar los 50 caracteres")
+    .regex(/^[A-Za-z0-9ÁÉÍÓÚáéíóúÑñ\s\-\.]+$/, "La marca contiene caracteres no permitidos")
+    .refine((val) => !val.split(/[\s\-]+/).some(word => word.length > 20), "La marca contiene palabras demasiado largas"),
   capacidad: z.coerce.number().min(1, "Capacidad inválida"),
   pisos: z.coerce.number().min(1).max(2, "Pisos inválidos"),
   asientos_piso_1: z.coerce.number().optional().nullable(),
   asientos_restringidos: z.string().optional().nullable(),
   imagenes: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
-  if (data.pisos === 2 && (!data.asientos_piso_1 || data.asientos_piso_1 <= 0 || data.asientos_piso_1 >= data.capacidad)) {
-    ctx.addIssue({ code: "custom", path: ["asientos_piso_1"], message: "Los asientos del primer piso deben ser menores que la capacidad total." });
+  if (data.pisos === 1 && data.capacidad !== 40) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["capacidad"],
+      message: "La capacidad para un bus de 1 piso (BUS NORMAL) debe ser exactamente de 40 asientos."
+    });
+  }
+  if (data.pisos === 2 && data.capacidad !== 52) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["capacidad"],
+      message: "La capacidad para un bus de 2 pisos (BUS CAMA) debe ser exactamente de 52 asientos."
+    });
+  }
+  if (data.pisos === 2 && (!data.asientos_piso_1 || data.asientos_piso_1 < 8 || data.asientos_piso_1 > 20)) {
+    ctx.addIssue({ code: "custom", path: ["asientos_piso_1"], message: "Los asientos del primer piso para un bus cama (2 pisos) deben estar entre 8 y 20." });
   }
   if (data.asientos_restringidos) {
     try {
