@@ -6,13 +6,11 @@ WORKDIR /app
 RUN apk add --no-cache openssl libc6-compat
 
 COPY package.json package-lock.json ./
+COPY prisma ./prisma/
 
 RUN npm ci
 
 COPY . .
-
-# Generar el cliente de Prisma
-RUN npx prisma generate
 
 # Compilar la aplicación
 RUN npm run build

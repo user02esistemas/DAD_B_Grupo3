@@ -94,8 +94,10 @@ export default function PasajesClient({ initialSucursales, userRole }: { initial
   };
 
   // === IMPRIMIR BOLETO TÉRMICO (FORMATO TICKET 80MM) ===
-  const imprimirTicket = async (ticket: any, viajeObj = selectedViaje, asientoObj = selectedAsiento) => {
+  const imprimirTicket = async (ticket: any, viajeObj = selectedViaje, asientoObj = ticket?.asiento_viaje || selectedAsientos[0]) => {
     if (!ticket || !viajeObj || !asientoObj) return;
+
+    const pasajero = ticket?.pasajero || ticket?.persona || {};
 
     let qrBase64 = "";
     try {
@@ -819,7 +821,7 @@ export default function PasajesClient({ initialSucursales, userRole }: { initial
                       <button 
                         onClick={() => {
                           setSelectedViaje(null);
-                          setSelectedAsiento(null);
+                          setSelectedAsientos([]);
                           setSaleSuccess(false);
                         }}
                         className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-[#f07639]/20 text-slate-600 hover:text-[#f07639] flex items-center justify-center transition-all border border-slate-200 hover:border-[#f07639]/30 cursor-pointer"

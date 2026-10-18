@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { prisma } from "../lib/prisma";
 import { liberarAsientos, marcarAsientosPendientes } from "../app/actions";
 import assert from "assert";

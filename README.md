@@ -1,152 +1,153 @@
-# Empresa de Transportes "El Cumbe" - Plataforma Web & App Móvil
+# 🚌 Empresa de Transportes "El Cumbe" — Plataforma Web
 
-Bienvenido al repositorio oficial de la plataforma de gestión y venta de pasajes interprovinciales de la **Empresa de Transportes "El Cumbe"**. El sistema cuenta con una arquitectura moderna en **Next.js (App Router)**, **TypeScript**, **TailwindCSS**, **Prisma ORM**, base de datos PostgreSQL, autenticación **NextAuth** con soporte dinámico para túneles (ngrok) y un módulo de abordaje mediante escáner de códigos QR.
+<div align="center">
+
+![Next.js](https://img.shields.io/badge/Next.js_16-black?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript_5-007ACC?style=for-the-badge&logo=typescript&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS_v4-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Prisma](https://img.shields.io/badge/Prisma_ORM-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+
+**Sistema Integral de Gestión, Venta de Pasajes Interprovinciales y Control de Abordaje QR**
+
+[Inicio Rápido](#-inicio-rápido-instalación--docker) •
+[Sincronización en Equipo](#-flujo-de-trabajo-en-equipo-git--prisma) •
+[Credenciales de Prueba](#-usuarios-y-credenciales-de-prueba) •
+[Prisma Studio GUI](#-inspección-visual-de-la-base-de-datos-prisma-studio) •
+[Características](#-características-principales) •
+[Pruebas](#-pruebas-y-calidad)
+
+</div>
 
 ---
 
-## 🌐 Arquitectura y Características Principales
+## 🚀 Inicio Rápido (Instalación + Docker)
 
-* **Plataforma Web (Pública y Administrativa):** Desarrollada con Next.js 16 (App Router), React 19, TypeScript y TailwindCSS.
-* **Control de Acceso por Roles (RBAC):** `admin`, `gerente`, `vendedor`, `conductor`, `operario` y `cliente`. Protección mediante middleware `proxy.ts`.
-* **Sostenibilidad y Alta Concurrencia:** Bloqueo temporal atómico de asientos por 8 minutos previa compra para evitar sobreventa (Race Conditions).
-* **Gestión de Pasajes y QR Únicos:** Generación de códigos de abordaje QR individuales e independientes para cada pasajero, incluso en compras grupales.
-* **Integración con ngrok / Accesibilidad Externa:** Detección automática del host y protocolo (`x-forwarded-host`) para inicio de sesión transparente desde túneles locales y compartidos.
-* **Módulo de Abordaje para Operarios (`/staff/operario`):** Interfaz móvil/web con escáner de cámara en tiempo real (`html5-qrcode`) o ingreso manual para validación de tickets y control de abordaje.
-* **Pasarela de Pagos:** Integración con Culqi Sandbox para procesamiento simulado de tarjetas de crédito/débito.
-* **Envío de Comprobantes PDF & Email:** Generación de boletos de viaje en PDF (`jsPDF`, `qrcode`) y notificación automática mediante Resend API.
-* **App Móvil:** Proyecto React Native / Expo ubicado en la subcarpeta `app-movil-elcumbe`.
+Al clonar el proyecto por primera vez, sigue estos **4 pasos sencillos**:
 
----
-
-## 🛠️ Instalación y Configuración Inicial (Sin Base de Datos Previa)
-
-Elige una de las siguientes dos opciones para preparar el entorno y crear la base de datos desde cero:
-
-### 💡 Opción 1: Levantar todo con Docker (Recomendado - No requiere instalar PostgreSQL)
-Si no tienes PostgreSQL instalado en tu computadora, Docker creará e iniciará automáticamente el motor de base de datos y la aplicación en un solo paso:
-
+### 1. Instalar Dependencias (`node_modules`)
+Instala los paquetes necesarios del proyecto:
 ```bash
-# 1. Clonar el repositorio
-git clone https://github.com/user02esistemas/DAD_B_Grupo3.git
-cd DAD_B_Grupo3
-
-# 2. Iniciar contenedores (Crea la BD PostgreSQL y la Web automáticamente)
-docker-compose up -d --build
-```
-*La aplicación estará lista en `http://localhost:3000` con la base de datos conectada en el puerto `5432`.*
-
----
-
-### 💻 Opción 2: Instalación Manual Local (Si tienes PostgreSQL en tu PC)
-
-#### 1. Clonar e instalar dependencias
-```bash
-git clone https://github.com/user02esistemas/DAD_B_Grupo3.git
-cd DAD_B_Grupo3
 npm install
 ```
+> 💡 *La carpeta `node_modules` no se sube a Git. Este comando descarga y genera `node_modules` en tu laptop.*
 
-#### 2. Configurar Variables de Entorno
-Crea un archivo `.env` en la raíz del proyecto (puedes copiar el contenido de `.env.example`):
-
-```env
-# Base de Datos PostgreSQL Local
-DATABASE_URL="postgresql://postgres:tu_contraseña@localhost:5432/elcumbe?schema=public"
-DIRECT_URL="postgresql://postgres:tu_contraseña@localhost:5432/elcumbe?schema=public"
-
-# Autenticación y Claves
-NEXTAUTH_SECRET="development_secret_key_32_characters_long"
-NEXTAUTH_URL="http://localhost:3000"
-NEXT_PUBLIC_CULQI_PUBLIC_KEY="pk_test_lkYsEtGV030Goa3V"
-CULQI_SECRET_KEY="sk_test_Lr8ZyYy1HvncSGGz"
+### 2. Encender Docker
+Levanta la base de datos PostgreSQL en segundo plano:
+```bash
+docker-compose up -d
 ```
 
-#### 3. Crear la Base de Datos e Iniciar Tablas
-1. Crea una base de datos vacía llamada `elcumbe` en tu servidor PostgreSQL (vía `pgAdmin` o terminal `CREATE DATABASE elcumbe;`).
-2. Ejecuta los siguientes comandos para crear todas las tablas, relaciones e insertar los datos iniciales automáticamente:
-
+### 3. Aplicar Migraciones y Cargar la Data Inicial
+Crea la estructura de tablas con Prisma y siembra la data inicial (sucursales, rutas, buses y usuarios de prueba):
 ```bash
-# a. Crear todas las tablas e índices en la BD automáticamente
+# Crear/actualizar tablas en la base de datos de Docker
 npx prisma db push
 
-# b. Poblar sucursales, buses, rutas reales de Perú y usuarios por defecto (admin, vendedor, etc.)
+# Cargar la data inicial de prueba
 npx tsx scripts/seed-initial.ts
 ```
 
-#### 4. Iniciar la aplicación
+### 4. Iniciar el Proyecto Web
 ```bash
 npm run dev
 ```
+> 📍 Accede a la aplicación en `http://localhost:3000`.
 
 ---
 
-## 🚀 Ejecución en Entorno de Desarrollo (Local)
+## 🔄 Flujo de Trabajo en Equipo (Git + Prisma)
 
-### Iniciar Servidor Web
-```bash
-npm run dev
-```
-La aplicación estará disponible en `http://localhost:3000`.
+Cuando otro desarrollador sube cambios a Git en las dependencias o el esquema de la base de datos:
 
-### Acceso a Túnel Externo (ngrok)
-Para compartir el proyecto externamente con tu equipo sin fallos de autenticación:
+### Pasos para sincronizar tu proyecto local:
 ```bash
-ngrok http 3000
+# 1. Traer los cambios más recientes desde Git
+git pull
+
+# 2. Si se instalaron nuevas librerías, actualizar node_modules
+npm install
+
+# 3. Actualizar la estructura de tablas en tu Docker local
+npx prisma db push
+
+# 4. (Opcional) Regenerar datos de prueba si hubo cambios en los datos iniciales
+npx tsx scripts/seed-initial.ts
 ```
-*El sistema resolverá dinámicamente el host de ngrok para los callbacks de NextAuth.*
+
+> 💡 **¿Cómo funciona?**
+> - **Dependencias (`node_modules`)**: Se sincronizan ejecutando `npm install` si alguien agregó nuevas librerías en `package.json`.
+> - **Estructura y Tablas**: Al hacer `git pull` y luego `npx prisma db push`, Prisma sincroniza automáticamente las tablas de tu Docker local para que tengan exactamente la misma estructura que las de tu equipo.
+> - **Datos de Prueba**: Cada desarrollador tiene su propia base de datos en su Docker local. Para tener los mismos registros base (sucursales, buses, usuarios), ambos ejecutan el script de semillas (`seed-initial.ts`).
 
 ---
 
-## 🧪 Pruebas Unitarias y de Integración
+## 🔑 Usuarios y Credenciales de Prueba
 
-Ejecuta la suite completa de verificación del sistema:
+Al ejecutar el script `seed-initial.ts`, se crean automáticamente los siguientes usuarios de prueba (Contraseña por defecto en `.env`: `test_password_123`):
+
+| Rol | Correo Electrónico | Descripción de Acceso |
+| :--- | :--- | :--- |
+| 🔑 **Administrador** | `admin@cumbe.com` | Control total del sistema (`/admin`) |
+| 💼 **Gerente** | `gerente@cumbe.com` | Reportes de ingresos y estadísticas |
+| 🎟️ **Vendedor** | `vendedor@cumbe.com` | Venta presencial de pasajes en ventanilla |
+| 📱 **Operario** | `operario@cumbe.com` | Escaneo QR y control de abordaje (`/staff/operario`) |
+| 🚌 **Conductor** | `conductor@cumbe.com` | Manifiesto de viaje y pasajeros (`/staff/conductor`) |
+| 👤 **Cliente** | `cliente@cumbe.com` | Portal de compras e historial personal |
+
+---
+
+## 🗄️ Inspección Visual de la Base de Datos (Prisma Studio)
+
+Si deseas explorar o editar los registros de la base de datos de manera gráfica desde tu navegador:
 
 ```bash
+npx prisma studio
+```
+> 📍 **Panel Visual**: Se abrirá automáticamente en `http://localhost:5555`.
+
+### 📌 Puertos del Proyecto:
+| Puerto | Servicio | Descripción |
+| :--- | :--- | :--- |
+| **`3000`** | 🌐 **Web App (Next.js)** | Plataforma web accesible desde el navegador (`http://localhost:3000`) |
+| **`5555`** | 🗄️ **Prisma Studio (GUI)** | Panel visual para explorar tablas de la BD (`http://localhost:5555`) |
+| **`5432`** | 🐘 **PostgreSQL (Docker)** | Servicio de BD interno TCP (Usado por Prisma y Docker, no es URL de navegador) |
+
+---
+
+## 🌐 Características Principales
+
+| Módulo / Dominio | Funcionalidades Destacadas |
+| :--- | :--- |
+| 🛒 **Portal Cliente (Público)** | • Búsqueda interactiva de viajes por origen, destino y fecha.<br>• Selección de asientos en tiempo real (Piso 1 y Piso 2).<br>• Pago seguro simulado con pasarela Culqi.<br>• Descarga de boletos PDF e historial de compras. |
+| 🛠️ **Panel Administrativo (`/admin`)** | • Gestión completa de Sucursales, Flota de Buses, Rutas y Programación de Viajes.<br>• Reportes analíticos y métricas operativas.<br>• Gestión de usuarios y asignación de roles. |
+| 📲 **Módulo de Abordaje (`/staff/operario`)** | • Escáner en tiempo real mediante cámara web/móvil.<br>• Validación instantánea de tickets y estado de abordaje.<br>• Opción de búsqueda manual por DNI o código de pasaje. |
+| 🚚 **Bitácora de Conductor (`/staff/conductor`)** | • Visualización de manifiesto de pasajeros por viaje.<br>• Hoja de ruta y estado del vehículo. |
+| 📑 **Comprobantes y Notificaciones** | • Generación automática de boletos en PDF con QR.<br>• Envío automático de confirmaciones por correo electrónico. |
+
+---
+
+## 🛠️ Stack Tecnológico
+
+* **Framework Web:** [Next.js 16](https://nextjs.org/) (App Router & Server Actions)
+* **Frontend:** [React 19](https://react.dev/) + [TypeScript 5](https://www.typescriptlang.org/) + [Tailwind CSS v4](https://tailwindcss.com/)
+* **ORM & BD:** [Prisma v6](https://www.prisma.io/) + PostgreSQL (vía Docker)
+* **Autenticación:** [NextAuth.js v4](https://next-auth.js.org/) (JWT + Cookies seguras)
+* **Pasarela de Pago:** Culqi API (Sandbox)
+
+---
+
+## 🧪 Pruebas Automatizadas
+
+```bash
+# Ejecutar suite de pruebas unitarias e integración
 npm test
 ```
 
-### Cobertura de Pruebas:
-* **Validaciones de Entrada (`scripts/unit-tests.ts`):** Verificación de DNI peruano (8 dígitos), teléfono (9 dígitos), nombres y apellidos.
-* **Seguridad y Tokens JWT:** Firma y verificación de tokens de sesión y asignación de roles RBAC.
-* **Reglas de Negocio:** Cálculo de precios totales, límite de hasta 6 asientos por transacción y prevención de doble reserva atómica (Race Conditions).
-
 ---
 
-## 📁 Estructura del Proyecto
+## 👥 Equipo de Desarrollo
 
-```
-app-WebCumbe/
-├── app/                        # Next.js App Router (Rutas públicas, admin y staff)
-│   ├── (admin)/                # Panel de administración (Rutas, Viajes, Pasajes, Buses, Sucursales)
-│   ├── (public)/               # Portal de venta pública (/compra, /perfil, /reclamaciones)
-│   ├── api/                    # endpoints API REST y NextAuth
-│   └── staff/                  # Paneles dedicados para Conductores y Operarios de abordaje
-├── components/                 # Componentes React reutilizables (UI, Modales, Tablas)
-├── lib/                        # Clientes de BD (Prisma), utilidades PDF y helper de Auth
-├── prisma/                     # Esquema de base de datos (`schema.prisma`)
-├── public/                     # Archivos estáticos e imágenes de buses
-├── scripts/                    # Scripts de semillas, respaldo BD (`backup.js`) y suites de prueba
-├── proxy.ts                    # Middleware principal de Next.js para control de acceso (RBAC)
-└── init_data.json              # Datos de respaldo / inicialización del sistema
-```
-
----
-
-## 🔒 Usuarios y Credenciales por Defecto (Entorno Pruebas)
-
-Al ejecutar la semilla `seed-initial.ts`, se crean las siguientes cuentas de prueba (Contraseña para todas: `1234`):
-
-| Rol | Correo | Permisos / Acceso |
-| :--- | :--- | :--- |
-| **Administrador** | `admin@cumbe.com` | Acceso total al panel `/admin` |
-| **Vendedor** | `vendedor@cumbe.com` | Venta presencial de pasajes y encomiendas |
-| **Gerente** | `gerente@cumbe.com` | Reportes y supervisión |
-| **Operario** | `operario@cumbe.com` | Escaneo y abordaje de pasajeros (`/staff/operario`) |
-| **Conductor** | `conductor@cumbe.com` | Vista de bitácora y hoja de ruta (`/staff/conductor`) |
-| **Cliente** | `cliente@cumbe.com` | Portal web público y gestión de mi perfil |
-
----
-
-## 📄 Licencia
-
-Este proyecto forma parte del trabajo académico del Grupo 3 - DAD B.
+Proyecto desarrollado para la **Empresa de Transportes "El Cumbe"**. Todos los derechos reservados.
